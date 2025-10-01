@@ -5,9 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite && open -a \"Google Chrome\" http://localhost:4000",
+    "prebuild": "npm run lint && npm run prettier && npm run test",
     "build": "tsc -b && vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "prettier": "prettier --check \"src/**/(*.jsx|*.js|*.tsx|*ts|*.css|*.scss)\"",
+    "prettier:fix": "prettier --write \"src/**/(*.jsx|*.js|*.tsx|*ts|*.css|*.scss)\""
   },
   "dependencies": {
     "@fullcalendar/core": "^6.1.15",
@@ -39,11 +43,14 @@
     "@types/react-dom": "^19.0.4",
     "@vitejs/plugin-react": "^4.3.4",
     "eslint": "^9.19.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-react-refresh": "^0.4.18",
     "globals": "^15.14.0",
     "open": "^10.2.0",
     "postcss": "^8.5.2",
+    "prettier": "^3.6.2",
     "tailwindcss": "^4.0.8",
     "typescript": "~5.7.2",
     "typescript-eslint": "^8.22.0",
