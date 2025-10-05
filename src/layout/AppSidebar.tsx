@@ -17,47 +17,78 @@ import {
 } from '../icons'
 import { useSidebar } from '../context/SidebarContext'
 import SidebarWidget from './SidebarWidget'
+import { Role } from '../constants/Roles'
+import { AppPath } from '../constants/Paths'
 
 type NavItem = {
   name: string
   icon: React.ReactNode
   path?: string
-  subItems?: { name: string; path: string; pro?: boolean; new?: boolean }[]
+  subItems?: { name: string; path: string; pro?: boolean; new?: boolean; allowedRoles?: Role[] }[]
+  allowedRoles?: Role[]
 }
+
+export const PATHS = {
+  TABLES: {
+    // ROOT: '/basic-tables',
+    USER: '/basic-tables',
+    ORDER: '/basic-tables-order',
+    PRODUCT: '/basic-tables-product'
+  },
+  DASHBOARD: {
+    ROOT: '/dashboard',
+    STATISTICS: '/dashboard/statistics'
+  }
+} as const
 
 const navItems: NavItem[] = [
   {
     icon: <GridIcon />,
     name: 'Dashboard',
-    subItems: [{ name: 'Ecommerce', path: '/', pro: false }]
+    subItems: [{ name: 'Ecommerce', path: AppPath.HOME, pro: false, allowedRoles: [Role.ADMIN] }],
+    allowedRoles: [Role.ADMIN]
   },
   {
     icon: <CalenderIcon />,
     name: 'Calendar',
-    path: '/calendar'
+    path: AppPath.CALENDAR,
+    allowedRoles: [Role.ADMIN]
   },
   {
     icon: <UserCircleIcon />,
     name: 'User Profile',
-    path: '/profile'
+    path: AppPath.PROFILE,
+    allowedRoles: [Role.ADMIN]
   },
   {
     name: 'Forms',
     icon: <ListIcon />,
-    subItems: [{ name: 'Form Elements', path: '/form-elements', pro: false }]
+    subItems: [{ name: 'Form Elements', path: AppPath.FORM_ELEMENTS, pro: false, allowedRoles: [Role.CONTENT_STAFF] }],
+    allowedRoles: [Role.CONTENT_STAFF]
   },
   {
     name: 'Tables',
     icon: <TableIcon />,
-    subItems: [{ name: 'Basic Tables', path: '/basic-tables', pro: false }]
+    subItems: [
+      { name: 'User', path: AppPath.BASIC_TABLES, pro: false, allowedRoles: [Role.ADMIN] },
+      { name: 'Order', path: AppPath.BASIC_TABLES_ORDER, pro: false, allowedRoles: [Role.ADMIN, Role.PRODUCT_STAFF] },
+      {
+        name: 'Product',
+        path: AppPath.BASIC_TABLES_PRODUCT,
+        pro: false,
+        allowedRoles: [Role.ADMIN, Role.CONTENT_STAFF]
+      }
+    ],
+    allowedRoles: [Role.ADMIN, Role.CONTENT_STAFF, Role.PRODUCT_STAFF]
   },
   {
     name: 'Pages',
     icon: <PageIcon />,
     subItems: [
-      { name: 'Blank Page', path: '/blank', pro: false },
-      { name: '404 Error', path: '/error-404', pro: false }
-    ]
+      { name: 'Blank Page', path: AppPath.BLANK, pro: false, allowedRoles: [Role.ADMIN, Role.CONTENT_STAFF] },
+      { name: '404 Error', path: AppPath.NOT_FOUND, pro: false, allowedRoles: [Role.ADMIN] }
+    ],
+    allowedRoles: [Role.ADMIN, Role.CONTENT_STAFF]
   }
 ]
 
@@ -66,33 +97,72 @@ const othersItems: NavItem[] = [
     icon: <PieChartIcon />,
     name: 'Charts',
     subItems: [
-      { name: 'Line Chart', path: '/line-chart', pro: false },
-      { name: 'Bar Chart', path: '/bar-chart', pro: false }
-    ]
+      {
+        name: 'Line Chart',
+        path: AppPath.LINE_CHART,
+        pro: false,
+        allowedRoles: [Role.ADMIN, Role.CONTENT_STAFF, Role.PRODUCT_STAFF]
+      },
+      {
+        name: 'Bar Chart',
+        path: AppPath.BAR_CHART,
+        pro: false,
+        allowedRoles: [Role.ADMIN, Role.CONTENT_STAFF, Role.PRODUCT_STAFF]
+      }
+    ],
+    allowedRoles: [Role.ADMIN, Role.CONTENT_STAFF, Role.PRODUCT_STAFF]
   },
   {
     icon: <BoxCubeIcon />,
     name: 'UI Elements',
     subItems: [
-      { name: 'Alerts', path: '/alerts', pro: false },
-      { name: 'Avatar', path: '/avatars', pro: false },
-      { name: 'Badge', path: '/badge', pro: false },
-      { name: 'Buttons', path: '/buttons', pro: false },
-      { name: 'Images', path: '/images', pro: false },
-      { name: 'Videos', path: '/videos', pro: false }
-    ]
+      {
+        name: 'Alerts',
+        path: AppPath.ALERTS,
+        pro: false,
+        allowedRoles: [Role.ADMIN, Role.CONTENT_STAFF, Role.PRODUCT_STAFF]
+      },
+      {
+        name: 'Avatar',
+        path: AppPath.AVATARS,
+        pro: false,
+        allowedRoles: [Role.ADMIN, Role.CONTENT_STAFF, Role.PRODUCT_STAFF]
+      },
+      { name: 'Badge', path: '/badge', pro: false, allowedRoles: [Role.ADMIN, Role.CONTENT_STAFF, Role.PRODUCT_STAFF] },
+      {
+        name: 'Buttons',
+        path: AppPath.BUTTONS,
+        pro: false,
+        allowedRoles: [Role.ADMIN, Role.CONTENT_STAFF, Role.PRODUCT_STAFF]
+      },
+      {
+        name: 'Images',
+        path: AppPath.IMAGES,
+        pro: false,
+        allowedRoles: [Role.ADMIN, Role.CONTENT_STAFF, Role.PRODUCT_STAFF]
+      },
+      {
+        name: 'Videos',
+        path: AppPath.VIDEOS,
+        pro: false,
+        allowedRoles: [Role.ADMIN, Role.CONTENT_STAFF, Role.PRODUCT_STAFF]
+      }
+    ],
+    allowedRoles: [Role.ADMIN, Role.CONTENT_STAFF, Role.PRODUCT_STAFF]
   },
   {
     icon: <PlugInIcon />,
     name: 'Authentication',
     subItems: [
-      { name: 'Sign In', path: '/signin', pro: false },
-      { name: 'Sign Up', path: '/signup', pro: false }
-    ]
+      { name: 'Sign In', path: AppPath.SIGN_IN, pro: false },
+      { name: 'Sign Up', path: AppPath.SIGN_UP, pro: false }
+    ],
+    allowedRoles: [Role.ADMIN, Role.CONTENT_STAFF, Role.PRODUCT_STAFF]
   }
 ]
 
 const AppSidebar: React.FC = () => {
+  const userRole = (localStorage.getItem('role') as Role) || Role.ADMIN
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar()
   const location = useLocation()
 
@@ -105,6 +175,14 @@ const AppSidebar: React.FC = () => {
 
   // const isActive = (path: string) => location.pathname === path;
   const isActive = useCallback((path: string) => location.pathname === path, [location.pathname])
+
+  const filterByRole = (items: NavItem[]): NavItem[] =>
+    items
+      .filter((item) => !item.allowedRoles || item.allowedRoles.includes(userRole))
+      .map((item) => ({
+        ...item,
+        subItems: item.subItems?.filter((sub) => !sub.allowedRoles || sub.allowedRoles.includes(userRole))
+      }))
 
   useEffect(() => {
     let submenuMatched = false
@@ -285,7 +363,7 @@ const AppSidebar: React.FC = () => {
               >
                 {isExpanded || isHovered || isMobileOpen ? 'Menu' : <HorizontaLDots className='size-6' />}
               </h2>
-              {renderMenuItems(navItems, 'main')}
+              {renderMenuItems(filterByRole(navItems), 'main')}
             </div>
             <div className=''>
               <h2
@@ -295,7 +373,7 @@ const AppSidebar: React.FC = () => {
               >
                 {isExpanded || isHovered || isMobileOpen ? 'Others' : <HorizontaLDots />}
               </h2>
-              {renderMenuItems(othersItems, 'others')}
+              {renderMenuItems(filterByRole(othersItems), 'others')}
             </div>
           </div>
         </nav>
