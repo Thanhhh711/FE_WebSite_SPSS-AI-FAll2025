@@ -7,8 +7,11 @@ import Label from '../form/Label'
 import Checkbox from '../form/input/Checkbox'
 import Input from '../form/input/InputField'
 import Button from '../ui/button/Button'
+import { useAuth } from '../../context/AuthContext'
 
 export default function SignInForm() {
+  const { setUserRole } = useAuth()
+
   const [showPassword, setShowPassword] = useState(false)
   const [isChecked, setIsChecked] = useState(false)
   const navigate = useNavigate()
@@ -24,16 +27,20 @@ export default function SignInForm() {
 
     if (email === 'admin@gmail.com' && password === '123') {
       localStorage.setItem('role', Role.ADMIN)
+      setUserRole(Role.ADMIN)
       navigate(AppPath.HOME)
     }
 
     if (email === 'content@gmail.com' && password === '123') {
       localStorage.setItem('role', Role.CONTENT_STAFF)
+      setUserRole(Role.CONTENT_STAFF)
       navigate(AppPath.BASIC_TABLES_PRODUCT)
     }
 
     if (email === 'product@gmail.com' && password === '123') {
       localStorage.setItem('role', Role.PRODUCT_STAFF)
+      setUserRole(Role.PRODUCT_STAFF)
+
       navigate(AppPath.BASIC_TABLES_ORDER)
     }
   }

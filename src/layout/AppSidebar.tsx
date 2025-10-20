@@ -1,7 +1,11 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router'
 
 // Assume these icons are imported from an icon library
+import { AppPath } from '../constants/Paths'
+import { Role } from '../constants/Roles'
+import { useSidebar } from '../context/SidebarContext'
 import {
   BoxCubeIcon,
   CalenderIcon,
@@ -15,10 +19,6 @@ import {
   TableIcon,
   UserCircleIcon
 } from '../icons'
-import { useSidebar } from '../context/SidebarContext'
-import SidebarWidget from './SidebarWidget'
-import { Role } from '../constants/Roles'
-import { AppPath } from '../constants/Paths'
 
 type NavItem = {
   name: string
@@ -27,19 +27,6 @@ type NavItem = {
   subItems?: { name: string; path: string; pro?: boolean; new?: boolean; allowedRoles?: Role[] }[]
   allowedRoles?: Role[]
 }
-
-export const PATHS = {
-  TABLES: {
-    // ROOT: '/basic-tables',
-    USER: '/basic-tables',
-    ORDER: '/basic-tables-order',
-    PRODUCT: '/basic-tables-product'
-  },
-  DASHBOARD: {
-    ROOT: '/dashboard',
-    STATISTICS: '/dashboard/statistics'
-  }
-} as const
 
 const navItems: NavItem[] = [
   {
@@ -80,16 +67,16 @@ const navItems: NavItem[] = [
       }
     ],
     allowedRoles: [Role.ADMIN, Role.CONTENT_STAFF, Role.PRODUCT_STAFF]
-  },
-  {
-    name: 'Pages',
-    icon: <PageIcon />,
-    subItems: [
-      { name: 'Blank Page', path: AppPath.BLANK, pro: false, allowedRoles: [Role.ADMIN, Role.CONTENT_STAFF] },
-      { name: '404 Error', path: AppPath.NOT_FOUND, pro: false, allowedRoles: [Role.ADMIN] }
-    ],
-    allowedRoles: [Role.ADMIN, Role.CONTENT_STAFF]
   }
+  // {
+  //   name: 'Pages',
+  //   icon: <PageIcon />,
+  //   subItems: [
+  //     { name: 'Blank Page', path: AppPath.BLANK, pro: false, allowedRoles: [Role.ADMIN, Role.CONTENT_STAFF] },
+  //     { name: '404 Error', path: AppPath.NOT_FOUND, pro: false, allowedRoles: [Role.ADMIN] }
+  //   ],
+  //   allowedRoles: [Role.ADMIN, Role.CONTENT_STAFF]
+  // }
 ]
 
 const othersItems: NavItem[] = [
@@ -184,29 +171,29 @@ const AppSidebar: React.FC = () => {
         subItems: item.subItems?.filter((sub) => !sub.allowedRoles || sub.allowedRoles.includes(userRole))
       }))
 
-  useEffect(() => {
-    let submenuMatched = false
-    ;['main', 'others'].forEach((menuType) => {
-      const items = menuType === 'main' ? navItems : othersItems
-      items.forEach((nav, index) => {
-        if (nav.subItems) {
-          nav.subItems.forEach((subItem) => {
-            if (isActive(subItem.path)) {
-              setOpenSubmenu({
-                type: menuType as 'main' | 'others',
-                index
-              })
-              submenuMatched = true
-            }
-          })
-        }
-      })
-    })
+  // useEffect(() => {
+  //   let submenuMatched = false
+  //   ;['main', 'others'].forEach((menuType) => {
+  //     const items = menuType === 'main' ? navItems : othersItems
+  //     items.forEach((nav, index) => {
+  //       if (nav.subItems) {
+  //         nav.subItems.forEach((subItem) => {
+  //           if (isActive(subItem.path)) {
+  //             setOpenSubmenu({
+  //               type: menuType as 'main' | 'others',
+  //               index
+  //             })
+  //             submenuMatched = true
+  //           }
+  //         })
+  //       }
+  //     })
+  //   })
 
-    if (!submenuMatched) {
-      setOpenSubmenu(null)
-    }
-  }, [location, isActive])
+  //   if (!submenuMatched) {
+  //     setOpenSubmenu(null)
+  //   }
+  // }, [location, isActive])
 
   useEffect(() => {
     if (openSubmenu !== null) {
@@ -365,7 +352,7 @@ const AppSidebar: React.FC = () => {
               </h2>
               {renderMenuItems(filterByRole(navItems), 'main')}
             </div>
-            <div className=''>
+            {/* <div className=''>
               <h2
                 className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${
                   !isExpanded && !isHovered ? 'lg:justify-center' : 'justify-start'
@@ -374,10 +361,10 @@ const AppSidebar: React.FC = () => {
                 {isExpanded || isHovered || isMobileOpen ? 'Others' : <HorizontaLDots />}
               </h2>
               {renderMenuItems(filterByRole(othersItems), 'others')}
-            </div>
+            </div> */}
           </div>
         </nav>
-        {isExpanded || isHovered || isMobileOpen ? <SidebarWidget /> : null}
+        {/* {isExpanded || isHovered || isMobileOpen ? <SidebarWidget /> : null} */}
       </div>
     </aside>
   )

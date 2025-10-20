@@ -23,12 +23,14 @@ import Home from './pages/Dashboard/Home'
 import ProtectedRoute from './components/ProtectedRoute'
 import { Role } from './constants/Roles'
 import { AppPath } from './constants/Paths'
+import { useAuth } from './context/AuthContext'
 
 export default function App() {
   // Tạm thời hard-code role (sau này có thể lấy từ localStorage hoặc API)
   // const userRole: Role = Role.PRODUCT_STAFF // 'admin' | 'content-staff' | 'product-staff'
-  const storedRole = localStorage.getItem('role')
-  const userRole = storedRole && Object.values(Role).includes(storedRole as Role) ? (storedRole as Role) : null
+  const { userRole } = useAuth()
+
+  console.log('useRole', userRole)
 
   return (
     <Router>
