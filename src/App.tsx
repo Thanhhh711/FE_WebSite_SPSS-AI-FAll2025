@@ -1,29 +1,28 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router'
+import { Route, BrowserRouter as Router, Routes } from 'react-router'
+import { ScrollToTop } from './components/common/ScrollToTop'
+import ProtectedRoute from './components/ProtectedRoute'
+import { AppPath } from './constants/Paths'
+import { Role } from './constants/Roles'
+import { useAuth } from './context/AuthContext'
+import AppLayout from './layout/AppLayout'
 import SignIn from './pages/AuthPages/SignIn'
 import SignUp from './pages/AuthPages/SignUp'
-import NotFound from './pages/OtherPage/NotFound'
-import UserProfiles from './pages/UserProfiles'
-import Videos from './pages/UiElements/Videos'
-import Images from './pages/UiElements/Images'
-import Alerts from './pages/UiElements/Alerts'
-import Badges from './pages/UiElements/Badges'
-import Avatars from './pages/UiElements/Avatars'
-import Buttons from './pages/UiElements/Buttons'
-import LineChart from './pages/Charts/LineChart'
-import BarChart from './pages/Charts/BarChart'
 import Calendar from './pages/Calendar'
+import BarChart from './pages/Charts/BarChart'
+import LineChart from './pages/Charts/LineChart'
+import Home from './pages/Dashboard/Home'
+import FormElements from './pages/Forms/FormElements'
+import NotFound from './pages/OtherPage/NotFound'
 import BasicTables from './pages/Tables/BasicTables'
 import BasicTablesOrder from './pages/Tables/BasicTablesOrder'
-import BasicTablesProduct from './pages/Tables/BasicTablesProduct'
-import FormElements from './pages/Forms/FormElements'
-import Blank from './pages/Blank'
-import AppLayout from './layout/AppLayout'
-import { ScrollToTop } from './components/common/ScrollToTop'
-import Home from './pages/Dashboard/Home'
-import ProtectedRoute from './components/ProtectedRoute'
-import { Role } from './constants/Roles'
-import { AppPath } from './constants/Paths'
-import { useAuth } from './context/AuthContext'
+import Alerts from './pages/UiElements/Alerts'
+import Avatars from './pages/UiElements/Avatars'
+import Badges from './pages/UiElements/Badges'
+import Buttons from './pages/UiElements/Buttons'
+import Images from './pages/UiElements/Images'
+import Videos from './pages/UiElements/Videos'
+import UserProfiles from './pages/UserProfiles'
+import BasicTableProduct from './components/tables/BasicTables/BasicTableProduct'
 
 export default function App() {
   // Tạm thời hard-code role (sau này có thể lấy từ localStorage hoặc API)
@@ -46,7 +45,7 @@ export default function App() {
             <Route index path={AppPath.HOME} element={<Home />} />
             {/* Tables */}
             <Route path={AppPath.BASIC_TABLES} element={<BasicTables />} />
-
+            <Route path={AppPath.BASIC_TABLES_PRODUCT} element={<BasicTableProduct />} />
             {/* UI */}
             <Route path={AppPath.ALERTS} element={<Alerts />} />
             <Route path={AppPath.AVATARS} element={<Avatars />} />
@@ -61,23 +60,25 @@ export default function App() {
 
             {/* Others */}
             <Route path={AppPath.PROFILE} element={<UserProfiles />} />
-            <Route path={AppPath.CALENDAR} element={<Calendar />} />
-          </Route>
-        </Route>
-
-        {/* === ONLY CONTENT STAFF ROUTES === */}
-        <Route element={<ProtectedRoute allowedRoles={[Role.CONTENT_STAFF]} userRole={userRole} />}>
-          <Route element={<AppLayout />}>
+            {/* <Route path={AppPath.CALENDAR} element={<Calendar />} /> */}
             <Route path={AppPath.FORM_ELEMENTS} element={<FormElements />} />
           </Route>
         </Route>
 
-        {/* === CONTENT STAFF AND ADMIN ROUTES === */}
-        <Route element={<ProtectedRoute allowedRoles={[Role.ADMIN, Role.CONTENT_STAFF]} userRole={userRole} />}>
+        {/* === SCHEDULAR STAFF AND SKINCARE SPECIALIST === */}
+        <Route
+          element={
+            <ProtectedRoute allowedRoles={[Role.SCHEDULAR_STAFF, Role.SKINCARE_SPECIALIST]} userRole={userRole} />
+          }
+        >
           <Route element={<AppLayout />}>
-            <Route path={AppPath.BASIC_TABLES_PRODUCT} element={<BasicTablesProduct />} />
-            <Route path={AppPath.BLANK} element={<Blank />} />
+            <Route path={AppPath.CALENDAR} element={<Calendar />} />
           </Route>
+        </Route>
+
+        {/* === SCHEDULAR STAFF AND SKINCARE SPECIALIST === */}
+        <Route element={<ProtectedRoute allowedRoles={[Role.SKINCARE_SPECIALIST]} userRole={userRole} />}>
+          <Route element={<AppLayout />}>{/* <Route path={AppPath.CALENDAR} element={<FormElements />} /> */}</Route>
         </Route>
 
         {/* === PRODUCT STAFF AND ADMIN ROUTES === */}

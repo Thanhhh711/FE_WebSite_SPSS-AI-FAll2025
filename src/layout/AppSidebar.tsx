@@ -39,7 +39,7 @@ const navItems: NavItem[] = [
     icon: <CalenderIcon />,
     name: 'Calendar',
     path: AppPath.CALENDAR,
-    allowedRoles: [Role.ADMIN]
+    allowedRoles: [Role.SCHEDULAR_STAFF, Role.SKINCARE_SPECIALIST]
   },
   {
     icon: <UserCircleIcon />,
@@ -50,8 +50,8 @@ const navItems: NavItem[] = [
   {
     name: 'Forms',
     icon: <ListIcon />,
-    subItems: [{ name: 'Form Elements', path: AppPath.FORM_ELEMENTS, pro: false, allowedRoles: [Role.CONTENT_STAFF] }],
-    allowedRoles: [Role.CONTENT_STAFF]
+    subItems: [{ name: 'Form Elements', path: AppPath.FORM_ELEMENTS, pro: false, allowedRoles: [Role.ADMIN] }],
+    allowedRoles: [Role.ADMIN]
   },
   {
     name: 'Tables',
@@ -63,10 +63,10 @@ const navItems: NavItem[] = [
         name: 'Product',
         path: AppPath.BASIC_TABLES_PRODUCT,
         pro: false,
-        allowedRoles: [Role.ADMIN, Role.CONTENT_STAFF]
+        allowedRoles: [Role.ADMIN]
       }
     ],
-    allowedRoles: [Role.ADMIN, Role.CONTENT_STAFF, Role.PRODUCT_STAFF]
+    allowedRoles: [Role.ADMIN, Role.PRODUCT_STAFF]
   }
   // {
   //   name: 'Pages',

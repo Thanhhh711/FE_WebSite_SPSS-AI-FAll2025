@@ -31,10 +31,16 @@ export default function SignInForm() {
       navigate(AppPath.HOME)
     }
 
-    if (email === 'content@gmail.com' && password === '123') {
-      localStorage.setItem('role', Role.CONTENT_STAFF)
-      setUserRole(Role.CONTENT_STAFF)
-      navigate(AppPath.BASIC_TABLES_PRODUCT)
+    if (email === 'skincare@gmail.com' && password === '123') {
+      localStorage.setItem('role', Role.SKINCARE_SPECIALIST)
+      setUserRole(Role.SKINCARE_SPECIALIST)
+      navigate(AppPath.CALENDAR)
+    }
+
+    if (email === 'schedular@gmail.com' && password === '123') {
+      localStorage.setItem('role', Role.SCHEDULAR_STAFF)
+      setUserRole(Role.SCHEDULAR_STAFF)
+      navigate(AppPath.CALENDAR)
     }
 
     if (email === 'product@gmail.com' && password === '123') {
