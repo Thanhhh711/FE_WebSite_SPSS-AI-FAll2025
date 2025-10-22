@@ -10,6 +10,7 @@ import {
   BoxCubeIcon,
   CalenderIcon,
   ChevronDownIcon,
+  DocsIcon,
   GridIcon,
   HorizontaLDots,
   ListIcon,
@@ -47,12 +48,12 @@ const navItems: NavItem[] = [
     path: AppPath.PROFILE,
     allowedRoles: [Role.ADMIN]
   },
-  {
-    name: 'Forms',
-    icon: <ListIcon />,
-    subItems: [{ name: 'Form Elements', path: AppPath.FORM_ELEMENTS, pro: false, allowedRoles: [Role.ADMIN] }],
-    allowedRoles: [Role.ADMIN]
-  },
+  // {
+  //   name: 'Forms',
+  //   icon: <ListIcon />,
+  //   subItems: [{ name: 'Form Elements', path: AppPath.FORM_ELEMENTS, pro: false, allowedRoles: [Role.ADMIN] }],
+  //   allowedRoles: [Role.ADMIN]
+  // },
   {
     name: 'Tables',
     icon: <TableIcon />,
@@ -67,7 +68,22 @@ const navItems: NavItem[] = [
       }
     ],
     allowedRoles: [Role.ADMIN, Role.PRODUCT_STAFF]
+  },
+
+  {
+    name: 'Patients',
+    icon: <UserCircleIcon />,
+    path: AppPath.PATIENTS,
+    allowedRoles: [Role.SKINCARE_SPECIALIST]
+  },
+
+  {
+    name: 'Blank',
+    icon: <DocsIcon />,
+    path: AppPath.BLANK,
+    allowedRoles: [Role.ADMIN]
   }
+
   // {
   //   name: 'Pages',
   //   icon: <PageIcon />,

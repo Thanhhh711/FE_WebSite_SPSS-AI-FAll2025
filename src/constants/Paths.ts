@@ -31,6 +31,8 @@ export enum AppPath {
   CALENDAR = '/calendar',
   FORM_ELEMENTS = '/form-elements',
   BLANK = '/blank',
+  PATIENTS = '/patients',
+  PATIENT_DETAIL = '/patient-detail',
 
   // ==== ERROR ====
   NOT_FOUND = '*'

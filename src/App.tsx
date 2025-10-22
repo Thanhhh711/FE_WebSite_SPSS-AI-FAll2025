@@ -15,6 +15,8 @@ import FormElements from './pages/Forms/FormElements'
 import NotFound from './pages/OtherPage/NotFound'
 import BasicTables from './pages/Tables/BasicTables'
 import BasicTablesOrder from './pages/Tables/BasicTablesOrder'
+import BasicTablesPatients from './pages/Tables/BasicTablesPatients'
+import BasicTablesProduct from './pages/Tables/BasicTablesProduct'
 import Alerts from './pages/UiElements/Alerts'
 import Avatars from './pages/UiElements/Avatars'
 import Badges from './pages/UiElements/Badges'
@@ -22,7 +24,8 @@ import Buttons from './pages/UiElements/Buttons'
 import Images from './pages/UiElements/Images'
 import Videos from './pages/UiElements/Videos'
 import UserProfiles from './pages/UserProfiles'
-import BasicTableProduct from './components/tables/BasicTables/BasicTableProduct'
+import PatientDetail from './pages/Patients/PatientDetail'
+import ManageContent from './pages/Blank'
 
 export default function App() {
   // Tạm thời hard-code role (sau này có thể lấy từ localStorage hoặc API)
@@ -45,7 +48,7 @@ export default function App() {
             <Route index path={AppPath.HOME} element={<Home />} />
             {/* Tables */}
             <Route path={AppPath.BASIC_TABLES} element={<BasicTables />} />
-            <Route path={AppPath.BASIC_TABLES_PRODUCT} element={<BasicTableProduct />} />
+            <Route path={AppPath.BASIC_TABLES_PRODUCT} element={<BasicTablesProduct />} />
             {/* UI */}
             <Route path={AppPath.ALERTS} element={<Alerts />} />
             <Route path={AppPath.AVATARS} element={<Avatars />} />
@@ -62,9 +65,12 @@ export default function App() {
             <Route path={AppPath.PROFILE} element={<UserProfiles />} />
             {/* <Route path={AppPath.CALENDAR} element={<Calendar />} /> */}
             <Route path={AppPath.FORM_ELEMENTS} element={<FormElements />} />
+
+            {/* Content */}
+
+            <Route path={AppPath.BLANK} element={<ManageContent />} />
           </Route>
         </Route>
-
         {/* === SCHEDULAR STAFF AND SKINCARE SPECIALIST === */}
         <Route
           element={
@@ -75,19 +81,23 @@ export default function App() {
             <Route path={AppPath.CALENDAR} element={<Calendar />} />
           </Route>
         </Route>
-
+        {/* === Only SKINCARE SPECIALIST === */}
+        <Route element={<ProtectedRoute allowedRoles={[Role.SKINCARE_SPECIALIST]} userRole={userRole} />}>
+          <Route element={<AppLayout />}>
+            <Route path={AppPath.PATIENTS} element={<BasicTablesPatients />} />
+            <Route path={AppPath.PATIENT_DETAIL} element={<PatientDetail />} />
+          </Route>
+        </Route>
         {/* === SCHEDULAR STAFF AND SKINCARE SPECIALIST === */}
         <Route element={<ProtectedRoute allowedRoles={[Role.SKINCARE_SPECIALIST]} userRole={userRole} />}>
           <Route element={<AppLayout />}>{/* <Route path={AppPath.CALENDAR} element={<FormElements />} /> */}</Route>
         </Route>
-
         {/* === PRODUCT STAFF AND ADMIN ROUTES === */}
         <Route element={<ProtectedRoute allowedRoles={[Role.ADMIN, Role.PRODUCT_STAFF]} userRole={userRole} />}>
           <Route element={<AppLayout />}>
             <Route path={AppPath.BASIC_TABLES_ORDER} element={<BasicTablesOrder />} />
           </Route>
         </Route>
-
         {/* === 404 FALLBACK === */}
         <Route path={AppPath.NOT_FOUND} element={<NotFound />} />
       </Routes>
