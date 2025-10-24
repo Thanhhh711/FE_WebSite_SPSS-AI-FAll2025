@@ -14,6 +14,9 @@ export enum AppPath {
   BASIC_TABLES_ORDER = '/basic-tables-order',
   BASIC_TABLES_PRODUCT = '/basic-tables-product',
 
+  //PRODUCT
+  DETAIL_PRODUCT = '/product-detail',
+
   // ==== UI ELEMENTS ====
   ALERTS = '/alerts',
   AVATARS = '/avatars',

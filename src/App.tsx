@@ -26,6 +26,7 @@ import Videos from './pages/UiElements/Videos'
 import UserProfiles from './pages/UserProfiles'
 import PatientDetail from './pages/Patients/PatientDetail'
 import ManageContent from './pages/Blank'
+import ProductDetail from './pages/Product/ProductDetail'
 
 export default function App() {
   // Tạm thời hard-code role (sau này có thể lấy từ localStorage hoặc API)
@@ -49,6 +50,8 @@ export default function App() {
             {/* Tables */}
             <Route path={AppPath.BASIC_TABLES} element={<BasicTables />} />
             <Route path={AppPath.BASIC_TABLES_PRODUCT} element={<BasicTablesProduct />} />
+            <Route path={AppPath.DETAIL_PRODUCT} element={<ProductDetail />} />
+
             {/* UI */}
             <Route path={AppPath.ALERTS} element={<Alerts />} />
             <Route path={AppPath.AVATARS} element={<Avatars />} />
