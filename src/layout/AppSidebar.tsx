@@ -347,11 +347,11 @@ const AppSidebar: React.FC = () => {
         <Link to='/'>
           {isExpanded || isHovered || isMobileOpen ? (
             <>
-              <img className='dark:hidden' src='/images/logo/SPSS.svg' alt='Logo' width={50} height={40} />
-              <img className='hidden dark:block' src='/images/logo/SPSS.svg' alt='Logo' width={50} height={40} />
+              <img className='dark:hidden' src='/images/logo/SPSS.png' alt='Logo' width={50} height={40} />
+              <img className='hidden dark:block' src='/images/logo/SPSS.png' alt='Logo' width={50} height={40} />
             </>
           ) : (
-            <img src='/images/logo/SPSS.svg' alt='Logo' width={32} height={32} />
+            <img src='/images/logo/SPSS.png' alt='Logo' width={32} height={32} />
           )}
         </Link>
       </div>

@@ -187,7 +187,7 @@
 }
 
 @utility menu-item-active {
-  @apply bg-brand-50 text-green-700 dark:bg-brand-500/[0.12] dark:text-green-400;
+  @apply bg-brand-50 text-pink-700 dark:bg-brand-500/[0.12] dark:text-pink-400;
 }
 
 @utility menu-item-inactive {
@@ -199,7 +199,7 @@
 }
 
 @utility menu-item-icon-active {
-  @apply text-green-600 dark:text-green-500;
+  @apply text-pink-600 dark:text-pink-500;
 }
 
 @utility menu-item-icon-size {
@@ -217,7 +217,7 @@
 }
 
 @utility menu-item-arrow-active {
-  @apply rotate-180 text-green-500 dark:text-green-400;
+  @apply rotate-180 text-pink-500 dark:text-pink-400;
 }
 
 @utility menu-item-arrow-inactive {
@@ -229,7 +229,7 @@
 }
 
 @utility menu-dropdown-item-active {
-  @apply bg-brand-50 text-green-600 dark:bg-brand-500/[0.12] dark:text-green-500;
+  @apply bg-brand-50 text-pink-600 dark:bg-brand-500/[0.12] dark:text-pink-500;
 }
 
 @utility menu-dropdown-item-inactive {
