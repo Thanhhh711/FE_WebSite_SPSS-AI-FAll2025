@@ -1,18 +1,21 @@
 import { Route, BrowserRouter as Router, Routes } from 'react-router'
 import { ScrollToTop } from './components/common/ScrollToTop'
-import ProtectedRoute from './components/ProtectedRoute'
+
 import { AppPath } from './constants/Paths'
 import { Role } from './constants/Roles'
-import { useAuth } from './context/AuthContext'
+
 import AppLayout from './layout/AppLayout'
 import SignIn from './pages/AuthPages/SignIn'
 import SignUp from './pages/AuthPages/SignUp'
+import ManageContent from './pages/Blank'
 import Calendar from './pages/Calendar'
 import BarChart from './pages/Charts/BarChart'
 import LineChart from './pages/Charts/LineChart'
 import Home from './pages/Dashboard/Home'
 import FormElements from './pages/Forms/FormElements'
 import NotFound from './pages/OtherPage/NotFound'
+import PatientDetail from './pages/Patients/PatientDetail'
+import ProductDetail from './pages/Product/ProductDetail'
 import BasicTables from './pages/Tables/BasicTables'
 import BasicTablesOrder from './pages/Tables/BasicTablesOrder'
 import BasicTablesPatients from './pages/Tables/BasicTablesPatients'
@@ -24,16 +27,14 @@ import Buttons from './pages/UiElements/Buttons'
 import Images from './pages/UiElements/Images'
 import Videos from './pages/UiElements/Videos'
 import UserProfiles from './pages/UserProfiles'
-import PatientDetail from './pages/Patients/PatientDetail'
-import ManageContent from './pages/Blank'
-import ProductDetail from './pages/Product/ProductDetail'
+import ProtectedRoute from './components/ProtectedRoute'
+import { useContext } from 'react'
+import { AppContext } from './context/AuthContext'
 
 export default function App() {
-  // Tạm thời hard-code role (sau này có thể lấy từ localStorage hoặc API)
-  // const userRole: Role = Role.PRODUCT_STAFF // 'admin' | 'content-staff' | 'product-staff'
-  const { userRole } = useAuth()
+  const { profile } = useContext(AppContext)
 
-  console.log('useRole', userRole)
+  const userRole = profile?.role as Role
 
   return (
     <Router>
@@ -74,6 +75,7 @@ export default function App() {
             <Route path={AppPath.BLANK} element={<ManageContent />} />
           </Route>
         </Route>
+
         {/* === SCHEDULAR STAFF AND SKINCARE SPECIALIST === */}
         <Route
           element={
@@ -84,6 +86,7 @@ export default function App() {
             <Route path={AppPath.CALENDAR} element={<Calendar />} />
           </Route>
         </Route>
+
         {/* === Only SKINCARE SPECIALIST === */}
         <Route element={<ProtectedRoute allowedRoles={[Role.SKINCARE_SPECIALIST]} userRole={userRole} />}>
           <Route element={<AppLayout />}>

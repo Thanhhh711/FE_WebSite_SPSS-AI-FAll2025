@@ -1,40 +1,85 @@
 import { createContext, useState, useEffect, useContext } from 'react'
-import { Role } from '../constants/Roles'
+import { User } from '../types/user.type'
+import { getAccessTokenFormLS, getProfileFromLS, getRefreshTokenFormLS } from '../utils/auth'
 
-interface AuthContextType {
-  userRole: Role | null
-  setUserRole: (role: Role | null) => void
-  logout: () => void
+export interface AppContextInterface {
+  isAuthenticated: boolean
+  setIsAuthenticated: React.Dispatch<React.SetStateAction<boolean>>
+  profile: User | null
+  setProfile: React.Dispatch<React.SetStateAction<User | null>>
+  refreshToken: string
+  setRefreshToken: React.Dispatch<React.SetStateAction<string>>
+  reset: () => void
+  token: string
+  setToken: React.Dispatch<React.SetStateAction<string>>
 }
 
-const AuthContext = createContext<AuthContextType>({
-  userRole: null,
-  setUserRole: () => {},
-  logout: () => {}
+export const getInitialAppContext: () => AppContextInterface = () => ({
+  isAuthenticated: Boolean(getAccessTokenFormLS()),
+  setIsAuthenticated: () => null,
+  profile: getProfileFromLS(),
+  setProfile: () => null,
+  token: getAccessTokenFormLS() || '',
+  setToken: () => null,
+  refreshToken: getRefreshTokenFormLS() || '',
+  setRefreshToken: () => null,
+  reset: () => null
 })
 
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [userRole, setUserRole] = useState<Role | null>(() => {
-    const storedRole = localStorage.getItem('role')
-    return storedRole && Object.values(Role).includes(storedRole as Role) ? (storedRole as Role) : null
-  })
+const initialAppContext = getInitialAppContext()
 
+export const AppContext = createContext<AppContextInterface>(initialAppContext)
+
+export const AppProvider = ({
+  children,
+  defaultValue = initialAppContext
+}: {
+  children: React.ReactNode
+  defaultValue?: AppContextInterface
+}) => {
+  const [isAuthenticated, setIsAuthenticated] = useState(defaultValue.isAuthenticated)
+  const [profile, setProfile] = useState<User | null>(defaultValue.profile)
+  const [token, setToken] = useState<string>(defaultValue.token)
+  const [refreshToken, setRefreshToken] = useState<string>(defaultValue.refreshToken)
+
+  // Khi người dùng logout hay clear session, reset toàn bộ
+  const reset = () => {
+    setIsAuthenticated(false)
+    setProfile(null)
+    setToken('')
+    setRefreshToken('')
+    localStorage.clear()
+  }
+
+  // Optional: lắng nghe thay đổi localStorage để sync giữa các tab
   useEffect(() => {
     const handleStorage = () => {
-      const storedRole = localStorage.getItem('role')
-      setUserRole(storedRole ? (storedRole as Role) : null)
+      setIsAuthenticated(Boolean(getAccessTokenFormLS()))
+      setProfile(getProfileFromLS())
+      setRefreshToken(getRefreshTokenFormLS() || '')
     }
-    window.addEventListener('storage', handleStorage) // lắng nghhe có sự thay đổi trong storega không
+    window.addEventListener('storage', handleStorage)
     return () => window.removeEventListener('storage', handleStorage)
   }, [])
 
-  const logout = () => {
-    localStorage.removeItem('role')
-    setUserRole(null)
-  }
-
-  return <AuthContext.Provider value={{ userRole, setUserRole, logout }}>{children}</AuthContext.Provider>
+  return (
+    <AppContext.Provider
+      value={{
+        isAuthenticated,
+        setIsAuthenticated,
+        profile,
+        setProfile,
+        token,
+        setToken,
+        refreshToken,
+        setRefreshToken,
+        reset
+      }}
+    >
+      {children}
+    </AppContext.Provider>
+  )
 }
 
-// Custom hook giúp gọi nhanh
-export const useAuth = () => useContext(AuthContext)
+// Custom hook gọi nhanh
+export const useAppContext = () => useContext(AppContext)

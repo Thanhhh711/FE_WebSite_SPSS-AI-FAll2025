@@ -14,7 +14,7 @@ interface InputProps {
   step?: number
   disabled?: boolean
   success?: boolean
-  error?: boolean
+  error?: string
   hint?: string
 }
 

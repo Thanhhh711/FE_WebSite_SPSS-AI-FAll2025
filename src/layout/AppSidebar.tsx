@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router'
 
 // Assume these icons are imported from an icon library
@@ -20,6 +20,7 @@ import {
   TableIcon,
   UserCircleIcon
 } from '../icons'
+import { AppContext } from '../context/AuthContext'
 
 type NavItem = {
   name: string
@@ -165,7 +166,9 @@ const othersItems: NavItem[] = [
 ]
 
 const AppSidebar: React.FC = () => {
-  const userRole = (localStorage.getItem('role') as Role) || Role.ADMIN
+  const { profile } = useContext(AppContext)
+
+  const userRole = (profile?.role as Role) || Role.ADMIN
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar()
   const location = useLocation()
 

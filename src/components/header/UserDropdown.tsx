@@ -1,11 +1,23 @@
-import { useState } from 'react'
+import { useContext, useState } from 'react'
 import { DropdownItem } from '../ui/dropdown/DropdownItem'
 import { Dropdown } from '../ui/dropdown/Dropdown'
 import { Link, useNavigate } from 'react-router'
 import { AppPath } from '../../constants/Paths'
+import { getRefreshTokenFormLS } from '../../utils/auth'
+import { useMutation } from '@tanstack/react-query'
+import authApi from '../../api/auth.api'
+import { AppContext } from '../../context/AuthContext'
+import { toast } from 'react-toastify'
 
 export default function UserDropdown() {
   const [isOpen, setIsOpen] = useState(false)
+  const refresh_token = getRefreshTokenFormLS()
+  const { setIsAuthenticated, setProfile } = useContext(AppContext)
+
+  const logoutMutation = useMutation({
+    mutationFn: (body: { refreshToken: string }) => authApi.logoutAccount(body)
+  })
+
   const navigate = useNavigate()
   function toggleDropdown() {
     setIsOpen(!isOpen)
@@ -15,10 +27,23 @@ export default function UserDropdown() {
     setIsOpen(false)
   }
 
-  const handleSignOut = () => {
-    localStorage.removeItem('role')
-    navigate(AppPath.SIGN_IN)
+  const handleLogout = () => {
+    logoutMutation.mutate(
+      { refreshToken: refresh_token },
+      {
+        onSuccess: (data) => {
+          toast.success(data.data.message)
+          setProfile(null)
+          setIsAuthenticated(false)
+          navigate(AppPath.SIGN_IN)
+        },
+        onError: (error) => {
+          toast.error(error.message)
+        }
+      }
+    )
   }
+
   return (
     <div className='relative'>
       <button onClick={toggleDropdown} className='flex items-center text-gray-700 dropdown-toggle dark:text-gray-400'>
@@ -136,7 +161,7 @@ export default function UserDropdown() {
         </ul>
         <Link
           to='/signin'
-          onClick={handleSignOut}
+          onClick={handleLogout}
           className='flex items-center gap-3 px-3 py-2 mt-3 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300'
         >
           <svg

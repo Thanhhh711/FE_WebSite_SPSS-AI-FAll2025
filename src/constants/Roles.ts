@@ -1,5 +1,6 @@
 export enum Role {
-  ADMIN = 'admin',
+  ADMIN = 'Admin',
+  CUSTOMER = 'Customer',
   CONTENT_STAFF = 'content-staff',
   PRODUCT_STAFF = 'product-staff',
   SCHEDULAR_STAFF = 'schedular_staff',

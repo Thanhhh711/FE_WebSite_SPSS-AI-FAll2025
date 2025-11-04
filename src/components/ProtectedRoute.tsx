@@ -1,6 +1,8 @@
 import { Navigate, Outlet } from 'react-router'
 import { AppPath } from '../constants/Paths'
 import { Role } from '../constants/Roles'
+import { useContext } from 'react'
+import { AppContext } from '../context/AuthContext'
 
 interface ProtectedRouteProps {
   allowedRoles: Role[]
@@ -8,12 +10,65 @@ interface ProtectedRouteProps {
 }
 
 export default function ProtectedRoute({ allowedRoles, userRole }: ProtectedRouteProps) {
-  // Nếu chưa có role -> yêu cầu đăng nhập
+  const { isAuthenticated } = useContext(AppContext)
+
+  console.log('isAuthenticated', isAuthenticated)
+
+  if (!isAuthenticated) return <Navigate to={AppPath.SIGN_IN} replace />
+
   if (!userRole) return <Navigate to={AppPath.SIGN_IN} replace />
 
-  // Nếu role hợp lệ -> render nội dung
   if (allowedRoles.includes(userRole)) return <Outlet />
 
-  // Nếu role không hợp lệ -> báo lỗi
   return <Navigate to={AppPath.NOT_FOUND} replace />
 }
+
+// export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
+//   const { isAuthenticated, token, profile } = useContext(AppContext)
+
+//   // Nếu chưa đăng nhập → về trang đăng nhập
+//   if (!isAuthenticated || !token) {
+//     return <Navigate to={AppPath.SIGN_IN} replace />
+//   }
+
+//   // Nếu có yêu cầu role mà user không thuộc danh sách được phép
+//   if (allowedRoles && !allowedRoles.includes(profile?.role as Role)) {
+//     // Điều hướng riêng theo role
+//     switch (profile?.role) {
+//       case Role.ADMIN:
+//         return <Navigate to={AppPath.HOME} replace />
+//       case Role.PRODUCT_STAFF:
+//         return <Navigate to={AppPath.BASIC_TABLES_ORDER} replace />
+//       case Role.SKINCARE_SPECIALIST:
+//         return <Navigate to={AppPath.PATIENTS} replace />
+//       case Role.SCHEDULAR_STAFF:
+//         return <Navigate to={AppPath.CALENDAR} replace />
+//       default:
+//         return <Navigate to={AppPath.NOT_FOUND} replace />
+//     }
+//   }
+
+//   // Nếu hợp lệ → cho phép render nội dung con
+//   return <Outlet />
+// }
+
+// // chưa đăng nhập
+// export function RejectedRoute() {
+//   const { isAuthenticated, token, profile } = useContext(AppContext)
+
+//   if (!isAuthenticated || !token) return <Outlet />
+
+//   // Nếu đã đăng nhập thì điều hướng về dashboard tương ứng
+//   switch (profile?.role) {
+//     case Role.ADMIN:
+//       return <Navigate to={AppPath.HOME} replace />
+//     case Role.PRODUCT_STAFF:
+//       return <Navigate to={AppPath.BASIC_TABLES_ORDER} replace />
+//     case Role.SKINCARE_SPECIALIST:
+//       return <Navigate to={AppPath.PATIENTS} replace />
+//     case Role.SCHEDULAR_STAFF:
+//       return <Navigate to={AppPath.CALENDAR} replace />
+//     default:
+//       return <Navigate to={AppPath.NOT_FOUND} replace />
+//   }
+// }
