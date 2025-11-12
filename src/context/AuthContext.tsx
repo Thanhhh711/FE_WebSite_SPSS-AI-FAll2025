@@ -1,12 +1,12 @@
-import { createContext, useState, useEffect, useContext } from 'react'
-import { User } from '../types/user.type'
+import { createContext, useContext, useEffect, useState } from 'react'
+import { AuthUser } from '../types/user.type'
 import { getAccessTokenFormLS, getProfileFromLS, getRefreshTokenFormLS } from '../utils/auth'
 
 export interface AppContextInterface {
   isAuthenticated: boolean
   setIsAuthenticated: React.Dispatch<React.SetStateAction<boolean>>
-  profile: User | null
-  setProfile: React.Dispatch<React.SetStateAction<User | null>>
+  profile: AuthUser | null
+  setProfile: React.Dispatch<React.SetStateAction<AuthUser | null>>
   refreshToken: string
   setRefreshToken: React.Dispatch<React.SetStateAction<string>>
   reset: () => void
@@ -38,7 +38,7 @@ export const AppProvider = ({
   defaultValue?: AppContextInterface
 }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(defaultValue.isAuthenticated)
-  const [profile, setProfile] = useState<User | null>(defaultValue.profile)
+  const [profile, setProfile] = useState<AuthUser | null>(defaultValue.profile)
   const [token, setToken] = useState<string>(defaultValue.token)
   const [refreshToken, setRefreshToken] = useState<string>(defaultValue.refreshToken)
 

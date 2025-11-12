@@ -5,6 +5,7 @@ import { Link, useLocation } from 'react-router'
 // Assume these icons are imported from an icon library
 import { AppPath } from '../constants/Paths'
 import { Role } from '../constants/Roles'
+import { AppContext } from '../context/AuthContext'
 import { useSidebar } from '../context/SidebarContext'
 import {
   BoxCubeIcon,
@@ -13,14 +14,11 @@ import {
   DocsIcon,
   GridIcon,
   HorizontaLDots,
-  ListIcon,
-  PageIcon,
   PieChartIcon,
   PlugInIcon,
   TableIcon,
   UserCircleIcon
 } from '../icons'
-import { AppContext } from '../context/AuthContext'
 
 type NavItem = {
   name: string
@@ -41,7 +39,7 @@ const navItems: NavItem[] = [
     icon: <CalenderIcon />,
     name: 'Calendar',
     path: AppPath.CALENDAR,
-    allowedRoles: [Role.SCHEDULAR_STAFF, Role.SKINCARE_SPECIALIST]
+    allowedRoles: [Role.SCHEDULE_MANAGER, Role.BEAUTY_ADVISOR, Role.ADMIN]
   },
   {
     icon: <UserCircleIcon />,

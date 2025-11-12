@@ -4,5 +4,9 @@ export enum Role {
   CONTENT_STAFF = 'content-staff',
   PRODUCT_STAFF = 'product-staff',
   SCHEDULAR_STAFF = 'schedular_staff',
-  SKINCARE_SPECIALIST = 'skincare_specialist'
+  SKINCARE_SPECIALIST = 'skincare_specialist',
+
+  STORE_STAFF = 'StoreStaff',
+  BEAUTY_ADVISOR = 'BeautyAdvisor',
+  SCHEDULE_MANAGER = 'ScheduleManager'
 }

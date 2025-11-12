@@ -1,6 +1,10 @@
 // src/components/ActionModal.tsx
 
 import { MouseEvent, ReactNode, useEffect, useState } from 'react'
+import { Status, User } from '../types/user.type'
+import userApi from '../api/user.api'
+import { PaginaResponse } from '../types/auth.type'
+import { QueryObserverResult, RefetchOptions } from '@tanstack/react-query'
 
 // src/interface/Order.ts
 
@@ -77,45 +81,57 @@ export const Button = ({ children, onClick, className = '', color = 'primary', d
 // End Mock Components
 
 interface ActionModalProps {
+  refetch: (options?: RefetchOptions | undefined) => Promise<QueryObserverResult<PaginaResponse<User>, Error>>
   isOpen: boolean
   onClose: () => void
-  order: Order | null
-  onConfirm: (orderId: number, reason: string, isBanning: boolean) => void
+  user: User | null
+  onConfirm: (userId: string, reason: string, isBanning: boolean) => void
 }
 
-export default function ActionModal({ isOpen, onClose, order, onConfirm }: ActionModalProps) {
-  const [reasonInput, setReasonInput] = useState(order?.reason || '')
+export default function ActionModal({ isOpen, onClose, user, onConfirm, refetch }: ActionModalProps) {
+  const [reasonInput, setReasonInput] = useState(user?.banReason || '')
 
   // Cập nhật reasonInput khi prop order thay đổi (khi mở modal cho order khác)
   // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
     // Luôn kiểm tra order trước khi truy cập reason
-    if (order) {
-      setReasonInput(order.reason || '')
+    if (user) {
+      setReasonInput(user.banReason || '')
     }
-  }, [order]) // Hook này chạy mỗi khi prop 'order' thay đổi
+  }, [user]) // Hook này chạy mỗi khi prop 'order' thay đổi
 
-  if (!order) return null // ✅ chuyển xuống sau hook
+  if (!user) return null // ✅ chuyển xuống sau hook
 
-  const isBanning = !order.isBanned
+  const isBanning = user.status !== Status.UnActive
   const actionText = isBanning ? 'Ban' : 'Unban'
-  const statusText = order.isBanned ? 'Banned' : order.status
+  const statusText = user.status === Status.UnActive ? 'Banned' : user.status
 
-  const handleSubmit = () => {
-    // Chỉ cần lý do khi thực hiện Ban
+  const handleSubmit = async () => {
     if (isBanning && reasonInput.trim() === '') {
       alert('Vui lòng nhập lý do cấm.')
       return
     }
 
-    onConfirm(order.id, reasonInput.trim(), isBanning)
-    onClose() // Đóng modal sau khi xác nhận
+    try {
+      if (isBanning) {
+        await userApi.lockUser(user.userId, reasonInput.trim())
+        await refetch()
+      } else {
+        await userApi.unLockUser(user.userId)
+      }
+
+      onConfirm(user.userId, reasonInput.trim(), isBanning)
+      onClose()
+    } catch (error) {
+      console.error(error)
+      alert('Đã xảy ra lỗi khi cập nhật trạng thái người dùng.')
+    }
   }
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <h3 className='text-xl font-semibold mb-4 text-gray-900 dark:text-white'>
-        {actionText} Người: {order.user.name}
+        {actionText} Người: {user.userName}
       </h3>
       <p className='mb-4 text-gray-600 dark:text-gray-400'>
         Người dùng hiện tại có trạng thái **{statusText}**. Vui lòng cung cấp lý do để **{actionText.toLowerCase()}**
@@ -144,7 +160,7 @@ export default function ActionModal({ isOpen, onClose, order, onConfirm }: Actio
           color={isBanning ? 'danger' : 'success'}
           disabled={isBanning && reasonInput.trim() === ''} // Disable nếu Ban mà chưa có lý do
         >
-          {actionText} Order
+          {actionText} User
         </Button>
       </div>
     </Modal>
