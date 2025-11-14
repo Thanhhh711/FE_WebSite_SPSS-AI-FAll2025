@@ -41,12 +41,12 @@ const navItems: NavItem[] = [
     path: AppPath.CALENDAR,
     allowedRoles: [Role.SCHEDULE_MANAGER, Role.BEAUTY_ADVISOR, Role.ADMIN]
   },
-  {
-    icon: <UserCircleIcon />,
-    name: 'User Profile',
-    path: AppPath.PROFILE,
-    allowedRoles: [Role.ADMIN]
-  },
+  // {
+  //   icon: <UserCircleIcon />,
+  //   name: 'User Profile',
+  //   path: AppPath.PROFILE,
+  //   allowedRoles: [Role.ADMIN]
+  // },
   // {
   //   name: 'Forms',
   //   icon: <ListIcon />,
@@ -58,7 +58,7 @@ const navItems: NavItem[] = [
     icon: <TableIcon />,
     subItems: [
       { name: 'User', path: AppPath.BASIC_TABLES, pro: false, allowedRoles: [Role.ADMIN] },
-      { name: 'Order', path: AppPath.BASIC_TABLES_ORDER, pro: false, allowedRoles: [Role.ADMIN, Role.PRODUCT_STAFF] },
+      { name: 'Order', path: AppPath.BASIC_TABLES_ORDER, pro: false, allowedRoles: [Role.ADMIN, Role.STORE_STAFF] },
       {
         name: 'Product',
         path: AppPath.BASIC_TABLES_PRODUCT,
@@ -66,14 +66,14 @@ const navItems: NavItem[] = [
         allowedRoles: [Role.ADMIN]
       }
     ],
-    allowedRoles: [Role.ADMIN, Role.PRODUCT_STAFF]
+    allowedRoles: [Role.ADMIN]
   },
 
   {
     name: 'Patients',
     icon: <UserCircleIcon />,
     path: AppPath.PATIENTS,
-    allowedRoles: [Role.SKINCARE_SPECIALIST]
+    allowedRoles: [Role.BEAUTY_ADVISOR]
   },
 
   {
@@ -103,16 +103,16 @@ const othersItems: NavItem[] = [
         name: 'Line Chart',
         path: AppPath.LINE_CHART,
         pro: false,
-        allowedRoles: [Role.ADMIN, Role.CONTENT_STAFF, Role.PRODUCT_STAFF]
+        allowedRoles: [Role.ADMIN]
       },
       {
         name: 'Bar Chart',
         path: AppPath.BAR_CHART,
         pro: false,
-        allowedRoles: [Role.ADMIN, Role.CONTENT_STAFF, Role.PRODUCT_STAFF]
+        allowedRoles: [Role.ADMIN]
       }
     ],
-    allowedRoles: [Role.ADMIN, Role.CONTENT_STAFF, Role.PRODUCT_STAFF]
+    allowedRoles: [Role.ADMIN]
   },
   {
     icon: <BoxCubeIcon />,
@@ -122,35 +122,35 @@ const othersItems: NavItem[] = [
         name: 'Alerts',
         path: AppPath.ALERTS,
         pro: false,
-        allowedRoles: [Role.ADMIN, Role.CONTENT_STAFF, Role.PRODUCT_STAFF]
+        allowedRoles: [Role.ADMIN]
       },
       {
         name: 'Avatar',
         path: AppPath.AVATARS,
         pro: false,
-        allowedRoles: [Role.ADMIN, Role.CONTENT_STAFF, Role.PRODUCT_STAFF]
+        allowedRoles: [Role.ADMIN]
       },
-      { name: 'Badge', path: '/badge', pro: false, allowedRoles: [Role.ADMIN, Role.CONTENT_STAFF, Role.PRODUCT_STAFF] },
+      { name: 'Badge', path: '/badge', pro: false, allowedRoles: [Role.ADMIN] },
       {
         name: 'Buttons',
         path: AppPath.BUTTONS,
         pro: false,
-        allowedRoles: [Role.ADMIN, Role.CONTENT_STAFF, Role.PRODUCT_STAFF]
+        allowedRoles: [Role.ADMIN]
       },
       {
         name: 'Images',
         path: AppPath.IMAGES,
         pro: false,
-        allowedRoles: [Role.ADMIN, Role.CONTENT_STAFF, Role.PRODUCT_STAFF]
+        allowedRoles: [Role.ADMIN]
       },
       {
         name: 'Videos',
         path: AppPath.VIDEOS,
         pro: false,
-        allowedRoles: [Role.ADMIN, Role.CONTENT_STAFF, Role.PRODUCT_STAFF]
+        allowedRoles: [Role.ADMIN]
       }
     ],
-    allowedRoles: [Role.ADMIN, Role.CONTENT_STAFF, Role.PRODUCT_STAFF]
+    allowedRoles: [Role.ADMIN]
   },
   {
     icon: <PlugInIcon />,
@@ -159,7 +159,7 @@ const othersItems: NavItem[] = [
       { name: 'Sign In', path: AppPath.SIGN_IN, pro: false },
       { name: 'Sign Up', path: AppPath.SIGN_UP, pro: false }
     ],
-    allowedRoles: [Role.ADMIN, Role.CONTENT_STAFF, Role.PRODUCT_STAFF]
+    allowedRoles: [Role.ADMIN]
   }
 ]
 

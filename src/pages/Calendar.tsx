@@ -1,29 +1,88 @@
-import { useState, useRef, useEffect } from 'react'
-import FullCalendar from '@fullcalendar/react'
+import { DateSelectArg, EventClickArg, EventInput } from '@fullcalendar/core'
 import dayGridPlugin from '@fullcalendar/daygrid'
-import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin from '@fullcalendar/interaction'
-import { EventInput, DateSelectArg, EventClickArg } from '@fullcalendar/core'
-import { Modal } from '../components/ui/modal'
-import { useModal } from '../hooks/useModal'
+import FullCalendar from '@fullcalendar/react'
+import timeGridPlugin from '@fullcalendar/timegrid'
+import { useQuery } from '@tanstack/react-query'
+import { useEffect, useRef, useState } from 'react'
+import { appointmentApi } from '../api/appointment.api'
 import PageMeta from '../components/common/PageMeta'
+
+import { toast } from 'react-toastify'
+import userApi from '../api/user.api'
+import { useModal } from '../hooks/useModal'
+import { AppointmentResponse } from '../types/appoinment.type'
+import { useNavigate } from 'react-router'
+import { AppPath } from '../constants/Paths'
+import EventModalForm from '../components/CalendarModelDetail/AppointmentModal'
+import { APPOINTMENT_STATUS_MAP } from '../constants/AppointmentConstants'
 
 interface CalendarEvent extends EventInput {
   extendedProps: {
-    calendar: string
+    calendar: string // status color
+    room: string
+    location: string
+    price?: number
+    duration?: number
+    notes: string
+    userId: string
+    staffId: string
+    scheduleId: string
+    serviceId: string
+
+    status: number
+    sessionId: string
   }
 }
 
-const Calendar: React.FC = () => {
+const AppointmentCalendar: React.FC = () => {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null)
   const [eventTitle, setEventTitle] = useState('')
-  const [eventStartDate, setEventStartDate] = useState('')
-  const [eventEndDate, setEventEndDate] = useState('')
-  const [eventLevel, setEventLevel] = useState('')
+
+  const [eventRoom, setEventRoom] = useState('')
+  const [eventLocation, setEventLocation] = useState('')
   const [events, setEvents] = useState<CalendarEvent[]>([])
+  const [durationMinutes, setDurationMinutes] = useState<number>(0)
+  const [selectedServiceIdState, setSelectedServiceIdState] = useState('')
+  const [selectedScheduleIdState, setSelectedScheduleIdState] = useState('')
+  const [appointmentDate, setAppointmentDate] = useState('')
+  const [startDateTime, setStartDateTime] = useState('')
+  const [status, setStatus] = useState<number>(0)
+  const [sessionId, setSessionId] = useState('')
+  const [notes, setNotes] = useState('')
+  const navigate = useNavigate()
+
   const calendarRef = useRef<FullCalendar>(null)
   const { isOpen, openModal, closeModal } = useModal()
 
+  const selectedUserId = selectedEvent?.extendedProps.userId
+  const selectedStaffId = selectedEvent?.extendedProps.staffId
+
+  const { data: appointments } = useQuery<AppointmentResponse>({
+    queryKey: ['appointments'],
+    queryFn: async () => {
+      const res = await appointmentApi.getAppoinments()
+      return res.data
+    }
+  })
+
+  console.log('appoiment', appointments)
+
+  const { data: patientData, isLoading: isPatientLoading } = useQuery({
+    queryKey: ['patientName', selectedUserId],
+    queryFn: () => userApi.getUsersById(selectedUserId!),
+    enabled: isOpen && !!selectedUserId,
+    select: (data) => data.data.data.emailAddress
+  })
+
+  const { data: doctorData, isLoading: isDoctorLoading } = useQuery({
+    queryKey: ['doctorName', selectedStaffId],
+    queryFn: () => userApi.getUsersById(selectedStaffId!),
+    enabled: isOpen && !!selectedStaffId,
+    select: (data) => data.data.data.emailAddress
+  })
+
+  // Mapping màu sự kiện
   const calendarsEvents = {
     Danger: 'danger',
     Success: 'success',
@@ -32,85 +91,137 @@ const Calendar: React.FC = () => {
   }
 
   useEffect(() => {
-    // Initialize with some events
-    setEvents([
-      {
-        id: '1',
-        title: 'Event Conf.',
-        start: new Date().toISOString().split('T')[0],
-        extendedProps: { calendar: 'Danger' }
-      },
-      {
-        id: '2',
-        title: 'Meeting',
-        start: new Date(Date.now() + 86400000).toISOString().split('T')[0],
-        extendedProps: { calendar: 'Success' }
-      },
-      {
-        id: '3',
-        title: 'Workshop',
-        start: new Date(Date.now() + 172800000).toISOString().split('T')[0],
-        end: new Date(Date.now() + 259200000).toISOString().split('T')[0],
-        extendedProps: { calendar: 'Primary' }
+    if (!appointments) return
+
+    if (appointments.message) {
+      toast.success(appointments.message)
+    }
+
+    if (!appointments.data) return
+
+    const events = appointments.data.map((item) => {
+      // 1. Ánh xạ status code (0-6) sang thuộc tính hiển thị (calendar color name)
+      const statusMap = APPOINTMENT_STATUS_MAP[item.status as keyof typeof APPOINTMENT_STATUS_MAP]
+
+      // 2. Định nghĩa fallback nếu status code không tìm thấy
+      const defaultMap = { calendar: 'Danger', dotColor: 'bg-red-500' }
+
+      return {
+        id: item.id,
+        title: item.service?.name || 'Appointment',
+        start: item.startDateTime,
+        end: item.endDateTime,
+        extendedProps: {
+          // ✅ FIX: Lấy color name string (Primary/Success/Danger) từ MAP
+          calendar: statusMap ? statusMap.calendar : defaultMap.calendar,
+          room: item.schedule?.room?.roomName || '',
+          location: item.schedule?.room?.location || '',
+          price: item.service?.price,
+          duration: item.durationMinutes,
+          notes: item.notes || '',
+          userId: item.userId,
+          staffId: item.staffId,
+          scheduleId: item.schedule?.id, // Dùng ?. an toàn
+          serviceId: item.service?.id, // Dùng ?. an toàn
+          status: item.status,
+          sessionId: item.sessionId || ''
+        }
       }
-    ])
-  }, [])
+    })
+
+    setEvents(events as CalendarEvent[])
+  }, [appointments])
+
+  const resetModalFields = () => {
+    setEventTitle('')
+
+    setEventRoom('')
+    setEventLocation('')
+    setNotes('')
+    setSelectedEvent(null)
+
+    setSelectedServiceIdState('')
+    setSelectedScheduleIdState('')
+    setAppointmentDate('')
+    setStartDateTime('')
+    setStatus(0)
+    setSessionId('')
+  }
 
   const handleDateSelect = (selectInfo: DateSelectArg) => {
     resetModalFields()
-    setEventStartDate(selectInfo.startStr)
-    setEventEndDate(selectInfo.endStr || selectInfo.startStr)
+
+    const start = new Date(selectInfo.startStr)
+    setAppointmentDate(start.toISOString().split('T')[0]) // YYYY-MM-DD
+    setStartDateTime(start.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })) // HH:MM
+
     openModal()
   }
 
   const handleEventClick = (clickInfo: EventClickArg) => {
     const event = clickInfo.event
+    const extendedProps = event.extendedProps as CalendarEvent['extendedProps']
+
     setSelectedEvent(event as unknown as CalendarEvent)
     setEventTitle(event.title)
-    setEventStartDate(event.start?.toISOString().split('T')[0] || '')
-    setEventEndDate(event.end?.toISOString().split('T')[0] || '')
-    setEventLevel(event.extendedProps.calendar)
+
+    const start = event.start
+    if (start) {
+      setAppointmentDate(start.toISOString().split('T')[0])
+      setStartDateTime(start.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })) // HH:MM
+    }
+
+    setSelectedServiceIdState(extendedProps.serviceId || '')
+    setSelectedScheduleIdState(extendedProps.scheduleId || '')
+    setStatus(extendedProps.status || 0)
+    setSessionId(extendedProps.sessionId || '')
+
+    setEventRoom(extendedProps.room)
+    setEventLocation(extendedProps.location)
+    setNotes(extendedProps.notes)
+
     openModal()
+  }
+
+  const handleNavigateToDetail = (id: string) => {
+    closeModal()
+    if (id) {
+      navigate(`${AppPath.PROFILE}/${id}`)
+    }
   }
 
   const handleAddOrUpdateEvent = () => {
     if (selectedEvent) {
-      // Update existing event
-      setEvents((prevEvents) =>
-        prevEvents.map((event) =>
-          event.id === selectedEvent.id
-            ? {
-                ...event,
-                title: eventTitle,
-                start: eventStartDate,
-                end: eventEndDate,
-                extendedProps: { calendar: eventLevel }
-              }
-            : event
-        )
-      )
-    } else {
-      // Add new event
-      const newEvent: CalendarEvent = {
-        id: Date.now().toString(),
-        title: eventTitle,
-        start: eventStartDate,
-        end: eventEndDate,
-        allDay: true,
-        extendedProps: { calendar: eventLevel }
+      const logPayload = {
+        userId: selectedUserId, // State patientId (tương đương selectedUserId)
+        staffId: selectedStaffId, // State doctorId (tương đương selectedStaffId)
+        appointmentDate,
+        startDateTime,
+        durationMinutes,
+        status,
+        serviceId: selectedServiceIdState, // State selectedServiceId
+        scheduleId: selectedScheduleIdState, // State selectedScheduleId
+        sessionId, // State sessionId
+        notes // State notes
       }
-      setEvents((prevEvents) => [...prevEvents, newEvent])
+
+      // Logic gọi API CẬP NHẬT
+      console.log('Cập nhật Event với Payload:', logPayload)
+    } else {
+      console.log('Tạo Event mới với Payload:', {
+        selectedServiceIdState,
+        appointmentDate,
+        startDateTime,
+        status,
+        sessionId,
+        notes,
+        eventRoom,
+        eventLocation
+      })
     }
+
     closeModal()
     resetModalFields()
-  }
-
-  const resetModalFields = () => {
-    setEventTitle('')
-    setEventStartDate('')
-    setEventEndDate('')
-    setEventLevel('')
-    setSelectedEvent(null)
   }
 
   return (
@@ -119,7 +230,7 @@ const Calendar: React.FC = () => {
         title='React.js Calendar Dashboard | TailAdmin - Next.js Admin Dashboard Template'
         description='This is React.js Calendar Dashboard page for TailAdmin - React.js Tailwind CSS Admin Dashboard Template'
       />
-      <div className='rounded-2xl border  border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]'>
+      <div className='rounded-2xl border  border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]'>
         <div className='custom-calendar'>
           <FullCalendar
             ref={calendarRef}
@@ -134,7 +245,60 @@ const Calendar: React.FC = () => {
             selectable={true}
             select={handleDateSelect}
             eventClick={handleEventClick}
-            eventContent={renderEventContent}
+            eventContent={(eventInfo) => {
+              const statusCode = eventInfo.event.extendedProps.status as keyof typeof APPOINTMENT_STATUS_MAP
+
+              // Lấy map màu từ code status
+              const statusMap = APPOINTMENT_STATUS_MAP[statusCode] || APPOINTMENT_STATUS_MAP[0] // Fallback Pending
+
+              // Lấy color name string (Primary, Success, Danger)
+              const color = statusMap.calendar.toLowerCase()
+              // Lấy dot color class (bg-...)
+              // const dotColorClass = statusMap.dotColor
+
+              // ... (logic colorMap và dotColorMap, bạn có thể giữ nguyên hoặc đơn giản hóa)
+              const colorMap: { [key: string]: string } = {
+                danger: 'bg-danger-500/10 border-danger-500',
+                success: 'bg-success-500/10 border-success-500',
+                primary: 'bg-primary-500/10 border-primary-500',
+                warning: 'bg-warning-500/10 border-warning-500'
+              }
+              return (
+                <div
+                  className={`
+                  flex items-center gap-1 p-1 rounded-md border-l-4
+                  ${colorMap[color] || 'bg-gray-500/10 border-gray-500'}
+                  hover:scale-105 hover:shadow-md transition duration-150
+                  min-w-0
+                `}
+                >
+                  <span className='fc-event-time text-xs font-semibold text-gray-700 dark:text-gray-200'>
+                    {eventInfo.timeText}
+                  </span>
+
+                  <span
+                    className='fc-event-title text-xs font-medium truncate flex-1 min-w-0'
+                    title={eventInfo.event.title}
+                  >
+                    {eventInfo.event.title}
+                  </span>
+                </div>
+              )
+            }}
+            moreLinkContent={(args) => (
+              <span
+                className='
+                inline-block
+                bg-indigo-600 text-white text-xs font-semibold
+                px-2 py-0.5 rounded-md
+                hover:bg-indigo-700 transition duration-150
+              '
+              >
+                +{args.num} more
+              </span>
+            )}
+            dayMaxEventRows={1}
+            dayMaxEvents={true}
             customButtons={{
               addEventButton: {
                 text: 'Add Event +',
@@ -143,128 +307,44 @@ const Calendar: React.FC = () => {
             }}
           />
         </div>
-        <Modal isOpen={isOpen} onClose={closeModal} className='max-w-[700px] p-6 lg:p-10'>
-          <div className='flex flex-col px-2 overflow-y-auto custom-scrollbar'>
-            <div>
-              <h5 className='mb-2 font-semibold text-gray-800 modal-title text-theme-xl dark:text-white/90 lg:text-2xl'>
-                {selectedEvent ? 'Edit Event' : 'Add Event'}
-              </h5>
-              <p className='text-sm text-gray-500 dark:text-gray-400'>
-                Plan your next big moment: schedule or edit an event to stay on track
-              </p>
-            </div>
-            <div className='mt-8'>
-              <div>
-                <div>
-                  <label className='mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400'>
-                    Event Title
-                  </label>
-                  <input
-                    id='event-title'
-                    type='text'
-                    value={eventTitle}
-                    onChange={(e) => setEventTitle(e.target.value)}
-                    className='dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800'
-                  />
-                </div>
-              </div>
-              <div className='mt-6'>
-                <label className='block mb-4 text-sm font-medium text-gray-700 dark:text-gray-400'>Event Color</label>
-                <div className='flex flex-wrap items-center gap-4 sm:gap-5'>
-                  {Object.entries(calendarsEvents).map(([key, value]) => (
-                    <div key={key} className='n-chk'>
-                      <div className={`form-check form-check-${value} form-check-inline`}>
-                        <label
-                          className='flex items-center text-sm text-gray-700 form-check-label dark:text-gray-400'
-                          htmlFor={`modal${key}`}
-                        >
-                          <span className='relative'>
-                            <input
-                              className='sr-only form-check-input'
-                              type='radio'
-                              name='event-level'
-                              value={key}
-                              id={`modal${key}`}
-                              checked={eventLevel === key}
-                              onChange={() => setEventLevel(key)}
-                            />
-                            <span className='flex items-center justify-center w-5 h-5 mr-2 border border-gray-300 rounded-full box dark:border-gray-700'>
-                              <span
-                                className={`h-2 w-2 rounded-full bg-white ${eventLevel === key ? 'block' : 'hidden'}`}
-                              ></span>
-                            </span>
-                          </span>
-                          {key}
-                        </label>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
 
-              <div className='mt-6'>
-                <label className='mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400'>
-                  Enter Start Date
-                </label>
-                <div className='relative'>
-                  <input
-                    id='event-start-date'
-                    type='date'
-                    value={eventStartDate}
-                    onChange={(e) => setEventStartDate(e.target.value)}
-                    className='dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800'
-                  />
-                </div>
-              </div>
-
-              <div className='mt-6'>
-                <label className='mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400'>
-                  Enter End Date
-                </label>
-                <div className='relative'>
-                  <input
-                    id='event-end-date'
-                    type='date'
-                    value={eventEndDate}
-                    onChange={(e) => setEventEndDate(e.target.value)}
-                    className='dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800'
-                  />
-                </div>
-              </div>
-            </div>
-            <div className='flex items-center gap-3 mt-6 modal-footer sm:justify-end'>
-              <button
-                onClick={closeModal}
-                type='button'
-                className='flex w-full justify-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] sm:w-auto'
-              >
-                Close
-              </button>
-              <button
-                onClick={handleAddOrUpdateEvent}
-                type='button'
-                className='btn btn-success btn-update-event flex w-full justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-600 sm:w-auto'
-              >
-                {selectedEvent ? 'Update Changes' : 'Add Event'}
-              </button>
-            </div>
-          </div>
-        </Modal>
+        <EventModalForm
+          isOpen={isOpen}
+          onClose={closeModal}
+          selectedEvent={selectedEvent}
+          eventTitle={eventTitle}
+          setEventTitle={setEventTitle}
+          eventRoom={eventRoom}
+          setEventRoom={setEventRoom}
+          eventLocation={eventLocation}
+          setEventLocation={setEventLocation}
+          notes={notes}
+          setNotes={setNotes}
+          calendarsEvents={calendarsEvents}
+          selectedServiceId={selectedServiceIdState}
+          setSelectedServiceId={setSelectedServiceIdState}
+          selectedScheduleId={selectedScheduleIdState}
+          setSelectedScheduleId={setSelectedScheduleIdState}
+          appointmentDate={appointmentDate}
+          setAppointmentDate={setAppointmentDate}
+          startDateTime={startDateTime}
+          setStartDateTime={setStartDateTime}
+          status={status}
+          setStatus={setStatus}
+          sessionId={sessionId}
+          setSessionId={setSessionId}
+          setDurationMinutes={setDurationMinutes}
+          // --- ACTION & NAVIGATION ---
+          onSave={handleAddOrUpdateEvent}
+          patientName={isPatientLoading ? 'Đang tải...' : patientData || 'Bệnh nhân (N/A)'}
+          patientId={selectedUserId || ''}
+          doctorName={isDoctorLoading ? 'Đang tải...' : doctorData || 'Bác sĩ (N/A)'}
+          doctorId={selectedStaffId || ''}
+          onNavigate={(id) => handleNavigateToDetail(id)}
+        />
       </div>
     </>
   )
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const renderEventContent = (eventInfo: any) => {
-  const colorClass = `fc-bg-${eventInfo.event.extendedProps.calendar.toLowerCase()}`
-  return (
-    <div className={`event-fc-color flex fc-event-main ${colorClass} p-1 rounded-sm`}>
-      <div className='fc-daygrid-event-dot'></div>
-      <div className='fc-event-time'>{eventInfo.timeText}</div>
-      <div className='fc-event-title'>{eventInfo.event.title}</div>
-    </div>
-  )
-}
-
-export default Calendar
+export default AppointmentCalendar

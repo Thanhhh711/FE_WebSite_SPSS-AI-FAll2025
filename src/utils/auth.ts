@@ -1,6 +1,6 @@
 // import { User } from '../types/user.type'
 
-import { User } from '../types/user.type'
+import { AuthUser } from '../types/user.type'
 
 // do là token hết hạn chúng ta không nên chơi reload trang chún ta dùng cách này
 export const LocalStrorageEventTarget = new EventTarget()
@@ -46,6 +46,6 @@ export const getProfileFromLS = () => {
   return result ? JSON.parse(result) : null
 }
 
-export const setProfileToLS = (profile: User) => {
+export const setProfileToLS = (profile: AuthUser) => {
   localStorage.setItem('profile', JSON.stringify(profile))
 }

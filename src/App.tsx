@@ -4,6 +4,9 @@ import { ScrollToTop } from './components/common/ScrollToTop'
 import { AppPath } from './constants/Paths'
 import { Role } from './constants/Roles'
 
+import { useContext } from 'react'
+
+import { AppContext } from './context/AuthContext'
 import AppLayout from './layout/AppLayout'
 import SignIn from './pages/AuthPages/SignIn'
 import SignUp from './pages/AuthPages/SignUp'
@@ -27,14 +30,14 @@ import Buttons from './pages/UiElements/Buttons'
 import Images from './pages/UiElements/Images'
 import Videos from './pages/UiElements/Videos'
 import UserProfiles from './pages/UserProfiles'
-import ProtectedRoute from './components/ProtectedRoute'
-import { useContext } from 'react'
-import { AppContext } from './context/AuthContext'
+import { ProtectedRoute } from './components/ProtectedRoute'
 
 export default function App() {
   const { profile } = useContext(AppContext)
 
-  const userRole = profile?.role as unknown as Role
+  const userRole = profile?.role.replace('_', '').toLowerCase()
+
+  console.log('userRole', userRole)
 
   return (
     <Router>
@@ -73,14 +76,17 @@ export default function App() {
             {/* Content */}
 
             <Route path={AppPath.BLANK} element={<ManageContent />} />
-            {/* Canlendar */}
-            <Route path={AppPath.CALENDAR} element={<Calendar />} />
           </Route>
         </Route>
 
         {/* === SCHEDULAR STAFF AND SKINCARE SPECIALIST === */}
         <Route
-          element={<ProtectedRoute allowedRoles={[Role.SCHEDULE_MANAGER, Role.BEAUTY_ADVISOR]} userRole={userRole} />}
+          element={
+            <ProtectedRoute
+              allowedRoles={[Role.ADMIN, Role.SCHEDULE_MANAGER, Role.BEAUTY_ADVISOR]}
+              userRole={userRole}
+            />
+          }
         >
           <Route element={<AppLayout />}>
             <Route path={AppPath.CALENDAR} element={<Calendar />} />
@@ -94,12 +100,9 @@ export default function App() {
             <Route path={AppPath.PATIENT_DETAIL} element={<PatientDetail />} />
           </Route>
         </Route>
-        {/* === SCHEDULAR STAFF AND SKINCARE SPECIALIST === */}
-        <Route element={<ProtectedRoute allowedRoles={[Role.BEAUTY_ADVISOR]} userRole={userRole} />}>
-          <Route element={<AppLayout />}>{/* <Route path={AppPath.CALENDAR} element={<FormElements />} /> */}</Route>
-        </Route>
+
         {/* === PRODUCT STAFF AND ADMIN ROUTES === */}
-        <Route element={<ProtectedRoute allowedRoles={[Role.ADMIN, Role.PRODUCT_STAFF]} userRole={userRole} />}>
+        <Route element={<ProtectedRoute allowedRoles={[Role.ADMIN, Role.STORE_STAFF]} userRole={userRole} />}>
           <Route element={<AppLayout />}>
             <Route path={AppPath.BASIC_TABLES_ORDER} element={<BasicTablesOrder />} />
           </Route>

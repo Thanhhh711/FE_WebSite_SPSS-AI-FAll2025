@@ -3,10 +3,10 @@ import { useContext, useState } from 'react'
 import { Link, useNavigate } from 'react-router' // Đã sửa: dùng 'react-router-dom'
 import { toast } from 'react-toastify'
 import authApi from '../../api/auth.api'
-import { AppPath } from '../../constants/Paths'
+import { roleRedirectPath } from '../../constants/Roles'
 import { AppContext } from '../../context/AuthContext'
 import { EyeCloseIcon, EyeIcon } from '../../icons'
-import { User } from '../../types/user.type'
+import { AuthUser } from '../../types/user.type'
 import { setProfileToLS } from '../../utils/auth'
 import Label from '../form/Label'
 import Checkbox from '../form/input/Checkbox'
@@ -21,7 +21,7 @@ interface FormData {
 export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false)
   const [isChecked, setIsChecked] = useState(false)
-  const { setIsAuthenticated } = useContext(AppContext)
+  const { setIsAuthenticated, setProfile } = useContext(AppContext)
 
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({})
   const navigate = useNavigate()
@@ -82,9 +82,13 @@ export default function SignInForm() {
         onSuccess: (data) => {
           toast.success(data.data.message)
 
-          setProfileToLS(data.data.data.authUserDto as User)
+          setProfileToLS(data.data.data.authUserDto as AuthUser)
+          setProfile(data.data.data.authUserDto as AuthUser)
           setIsAuthenticated(true)
-          navigate(AppPath.HOME)
+          const redirectPath = roleRedirectPath(data.data.data.authUserDto.role)
+
+          // 3. Navigate sau khi profile đã set
+          navigate(redirectPath)
         },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onError: (error) => {

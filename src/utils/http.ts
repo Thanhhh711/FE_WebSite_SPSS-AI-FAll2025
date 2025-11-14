@@ -60,7 +60,8 @@ class Http {
           //   setProfileToLS(data.result.user)
         } else if (url === URL_LOGOUT) {
           console.log('đây')
-
+          this.accessToken = ''
+          this.refreshToken = ''
           clearLS()
           // this.navigate(path.home)
         }

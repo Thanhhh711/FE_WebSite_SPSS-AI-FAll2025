@@ -206,7 +206,7 @@ const getStatusDisplay = (status: string) => {
 }
 
 // Thêm vai trò người dùng
-const USER_ROLES = [Role.PRODUCT_STAFF, 'Viewer', Role.ADMIN]
+const USER_ROLES = [Role.STORE_STAFF, 'Viewer', Role.ADMIN]
 
 export default function BasicTableOrder() {
   const [orders, setOrders] = useState<Order[]>(initialTableData)

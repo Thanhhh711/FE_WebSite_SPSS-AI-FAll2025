@@ -1,26 +1,17 @@
 import { Navigate, Outlet } from 'react-router'
 import { AppPath } from '../constants/Paths'
 import { Role } from '../constants/Roles'
-import { useContext } from 'react'
-import { AppContext } from '../context/AuthContext'
 
-interface ProtectedRouteProps {
-  allowedRoles: Role[]
-  userRole: Role | null
-}
+// interface ProtectedRouteProps {
+//   allowedRoles: Role[]
+//   userRole?: Role
+// }
 
-export default function ProtectedRoute({ allowedRoles, userRole }: ProtectedRouteProps) {
-  const { isAuthenticated } = useContext(AppContext)
+export const ProtectedRoute = ({ allowedRoles, userRole }: { allowedRoles: Role[]; userRole?: string | undefined }) => {
+  if (!userRole) return <Navigate to={AppPath.SIGN_IN} /> // chưa login
+  if (!allowedRoles.some((r) => r.toLowerCase() === userRole)) return <Navigate to={AppPath.NOT_FOUND} />
 
-  console.log('isAuthenticated', isAuthenticated)
-
-  if (!isAuthenticated) return <Navigate to={AppPath.SIGN_IN} replace />
-
-  if (!userRole) return <Navigate to={AppPath.SIGN_IN} replace />
-
-  if (allowedRoles.includes(userRole)) return <Outlet />
-
-  return <Navigate to={AppPath.NOT_FOUND} replace />
+  return <Outlet />
 }
 
 // export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {

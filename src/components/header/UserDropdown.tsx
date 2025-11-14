@@ -11,7 +11,7 @@ import { Dropdown } from '../ui/dropdown/Dropdown'
 export default function UserDropdown() {
   const [isOpen, setIsOpen] = useState(false)
   const refresh_token = getRefreshTokenFormLS()
-  const { setIsAuthenticated, setProfile, profile } = useContext(AppContext)
+  const { reset, profile } = useContext(AppContext)
 
   const logoutMutation = useMutation({
     mutationFn: (body: { refreshToken: string }) => authApi.logoutAccount(body)
@@ -32,8 +32,7 @@ export default function UserDropdown() {
       {
         onSuccess: (data) => {
           toast.success(data.data.message)
-          setProfile(null)
-          setIsAuthenticated(false)
+          reset()
           navigate(AppPath.SIGN_IN)
         },
         onError: (error) => {
@@ -47,7 +46,7 @@ export default function UserDropdown() {
     <div className='relative'>
       <button onClick={toggleDropdown} className='flex items-center text-gray-700 dropdown-toggle dark:text-gray-400'>
         <span className='mr-3 overflow-hidden rounded-full h-11 w-11'>
-          <img src='/images/user/owner.jpg' alt='User' />
+          <img src={profile?.avatarUrl} alt='User' />
         </span>
 
         <span className='block mr-1 font-medium text-theme-sm'>{profile?.userName}</span>

@@ -6,6 +6,7 @@ export interface AuthUser {
   userName: string
   emailAddress: string
   role: Role
+  avatarUrl: string
 }
 
 // AuthUser
