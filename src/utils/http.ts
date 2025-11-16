@@ -4,6 +4,7 @@ import config from '../constants/config'
 import { AuthResponse } from '../types/auth.type'
 import { URL_LOGIN, URL_LOGOUT } from '../api/auth.api'
 import { HttpStatusCode } from '../constants/HttpStatusCode.enum'
+import { toast } from 'react-toastify'
 
 // import { path } from '../constants/path'
 // import { useNavigate } from 'react-router-dom'
@@ -74,7 +75,7 @@ class Http {
           console.log(error.response)
 
           const message = data?.message || error.message
-
+          toast.error(message)
           console.log(message)
         }
         if (error.response?.status === HttpStatusCode.Unauthorized) {

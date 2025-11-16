@@ -7,6 +7,12 @@ import { APPOINTMENT_STATUS_LIST } from '../../constants/AppointmentConstants'
 import { scheduleApi } from '../../api/schedulars.api'
 import { ScheduleWork, Service } from '../../types/appoinment.type'
 import { serviceApi } from '../../api/services.api'
+import { PaginaResponse, PagingData } from '../../types/auth.type'
+import { User } from '../../types/user.type'
+import { SuccessResponse } from '../../utils/utils.type'
+import userApi from '../../api/user.api'
+import { Role } from '../../constants/Roles'
+import { WorkScheduleStatus } from '../../constants/SchedularConstants'
 // GIẢ ĐỊNH: Import API từ các file liên quan (serviceApi, scheduleApi)
 // Bạn cần đảm bảo các import này tồn tại trong môi trường của bạn
 // import { serviceApi } from '../api/services.api'
@@ -89,6 +95,7 @@ interface EventModalFormProps {
   onClose: () => void
   selectedEvent: any | null
   onSave: () => void
+  onDeleted: () => void
   calendarsEvents: { [key: string]: any }
   setDurationMinutes: React.Dispatch<React.SetStateAction<number>>
   // State/Setters cho API Payload Fields
@@ -114,12 +121,15 @@ interface EventModalFormProps {
   setEventRoom: (room: string) => void
   eventLocation: string
   setEventLocation: (location: string) => void
-
+  pagingData: User[]
   // Navigation & Display Info
   patientName: string
   patientId: string
+  setPatientId: (id: string) => void
+
   doctorName: string
   doctorId: string
+  setDoctorId: (id: string) => void
   onNavigate: (id: string) => void
 }
 
@@ -139,6 +149,7 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
   setDurationMinutes,
   // State/Setters còn lại
   selectedServiceId,
+  pagingData,
   setSelectedServiceId,
   selectedScheduleId,
   setSelectedScheduleId,
@@ -152,14 +163,15 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
   setSessionId,
   eventTitle,
   setEventTitle,
+  setPatientId,
   eventRoom,
   setEventRoom,
   eventLocation,
+  setDoctorId,
+  onDeleted,
   setEventLocation
 }) => {
   const isEditing = !!selectedEvent
-
-  // --- GỌI API NỘI BỘ BẰNG useQuery (Để lấy dữ liệu Service và Slot) ---
 
   // 1. Fetch Danh sách Service
   const { data: servicesData, isLoading: isServicesLoading } = useQuery({
@@ -169,22 +181,23 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
     enabled: isOpen
   })
 
-  console.log('ServicesData', servicesData?.data.data)
-
   const allServices: Service[] = servicesData?.data.data || []
 
   // 2. Fetch Danh sách Schedule Slots
   const { data: schedulesData, isLoading: isSlotsLoading } = useQuery({
-    queryKey: ['allSchedules', appointmentDate, selectedServiceId],
+    queryKey: ['allSchedules', appointmentDate, selectedServiceId, doctorId],
+
     queryFn: () => scheduleApi.getScheduleByIdBeautyAdvisor(doctorId),
+
     staleTime: 1000 * 60,
-    enabled: isOpen && !!appointmentDate && !!selectedServiceId
+
+    enabled: isOpen && !!appointmentDate && !!selectedServiceId && !!doctorId
   })
 
-  console.log('schedulesData', schedulesData?.data.data)
-
   const allSchedules: ScheduleWork[] = schedulesData?.data.data
-    ? schedulesData.data.data.filter((schedule) => schedule.appointments.length === 0)
+    ? schedulesData.data.data.filter(
+        (schedule) => schedule.appointments.length === 0 && schedule.status !== WorkScheduleStatus.Booked
+      )
     : []
 
   const selectedService = useMemo(() => {
@@ -208,12 +221,21 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
 
   // Hàm setter cho Schedule Slot
   const handleScheduleChange = (id: string) => {
+    console.log('id', id)
+
+    setSelectedScheduleId(id)
+
+    // 1. Xử lý trường hợp chọn lại option mặc định (Clear)
+    if (!id) {
+      setEventRoom('')
+      setEventLocation('')
+      // Bạn cũng nên clear các state khác nếu cần thiết (ví dụ: startDateTime)
+      return
+    }
     // 1. Tìm schedule
     const schedule = allSchedules.find((s) => s.id === id)
 
     if (schedule) {
-      console.log('schedule', schedule.startTime)
-
       // 2. Chuyển đổi thời gian
       const start = new Date(schedule.startTime)
 
@@ -223,11 +245,9 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
         `${start.getHours().toString().padStart(2, '0')}:${start.getMinutes().toString().padStart(2, '0')}`
       )
 
-      // ✅ FIX: SỬ DỤNG OPTIONAL CHAINING (?. ) ĐỂ TRUY CẬP AN TOÀN
       setEventRoom(schedule.room?.roomName || 'N/A')
       setEventLocation(schedule.room?.location || 'N/A')
     }
-    setSelectedScheduleId(id)
   }
 
   // --- LOGIC MAPPING VÀ UI CÒN LẠI ---
@@ -246,10 +266,6 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
     30: 'bg-red-500'
   }
 
-  const getStatusColor = (num: number) => {
-    return dotColorMap[num] || 'bg-gray-500'
-  }
-
   const IconPlaceholder = ({ color }: { color: string }) => <div className={`w-4 h-4 rounded-full ${color}`}></div>
 
   return (
@@ -259,10 +275,10 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
         <div className='flex items-center justify-between p-6 border-b border-gray-100 dark:border-gray-800'>
           <div>
             <h5 className='mb-1 font-bold text-gray-800 modal-title text-xl lg:text-2xl dark:text-white'>
-              {isEditing ? 'Chỉnh Sửa Lịch Hẹn' : 'Thêm Lịch Hẹn Mới'}
+              {isEditing ? 'Edit Appointment' : 'Add New Appointment'}
             </h5>
             <p className='text-sm text-gray-500 dark:text-gray-400'>
-              Quản lý chi tiết, dịch vụ và lịch trình cuộc hẹn.
+              Manage appointment details, services, and schedules.
             </p>
           </div>
           <button onClick={onClose} className='p-2 text-gray-400 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800'>
@@ -279,13 +295,12 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
         >
           {/* 1. SECTION: THÔNG TIN CHỦ THỂ & DỊCH VỤ */}
           <div className='p-5 border border-gray-200 rounded-lg dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50'>
-            <h6 className='mb-4 text-lg font-semibold text-gray-700 dark:text-white'>Thông tin chính</h6>
-
+            <h6 className='mb-4 text-lg font-semibold text-gray-700 dark:text-white'> Main Information</h6>
             {/* Service Selection */}
             <div className='mb-6'>
               <label className='flex items-center mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-400'>
                 <IconPlaceholder color='bg-blue-500' />
-                <span className='ml-2'>Dịch vụ (*serviceId)</span>
+                <span className='ml-2'>Service</span>
               </label>
               <select
                 value={selectedServiceId}
@@ -293,7 +308,7 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
                 className='h-11 w-full rounded-lg border border-gray-300 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm text-gray-800 dark:text-white/90 focus:border-brand-500 focus:ring-1 focus:ring-brand-500'
                 disabled={isServicesLoading}
               >
-                <option value=''>{isServicesLoading ? 'Đang tải Dịch vụ...' : 'Chọn Dịch vụ'}</option>
+                <option value=''>{isServicesLoading ? 'Loading services...' : 'Select a service'}</option>
                 {allServices.map((service) => (
                   <option key={service.id} value={service.id}>
                     {service.name} ({service.durationMinutes} phút)
@@ -302,48 +317,118 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
               </select>
             </div>
 
-            {/* Tên Bác sĩ và Bệnh nhân */}
             <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
               {/* Tên Bác sĩ */}
-              <div>
-                <label className='mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400'>Bác sĩ</label>
-                <p
-                  onClick={() => doctorId && onNavigate(doctorId)}
-                  className={`h-11 w-full rounded-lg border border-brand-300 bg-brand-50/50 dark:bg-brand-900/50 px-4 py-2.5 text-sm font-semibold text-brand-700 dark:text-brand-300 transition duration-150 flex items-center ${
-                    doctorId ? 'cursor-pointer hover:bg-brand-100 dark:hover:bg-brand-900' : 'cursor-default'
-                  }`}
-                  title={`Xem chi tiết Bác sĩ ${doctorName}`}
+
+              <label className='mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400'>Beaty Advisor</label>
+              {doctorId ? (
+                // TRƯỜNG HỢP CÓ ID: Hiển thị Read-Only CÓ NÚT XÓA (FIXED)
+                (() => {
+                  const currentDoctor = pagingData?.find((u) => u.userId === doctorId)
+                  const displayedDoctorName = currentDoctor?.firstName || currentDoctor?.emailAddress || doctorName
+
+                  return (
+                    <div
+                      className={`h-11 w-full rounded-lg border border-brand-300 bg-brand-50/50 dark:bg-brand-900/50 px-4 py-2.5 text-sm font-semibold text-brand-700 dark:text-brand-300 transition duration-150 flex items-center justify-between`}
+                    >
+                      <div className='flex items-center flex-grow cursor-default'>
+                        <IconPlaceholder color='bg-brand-500' />
+                        <span className='ml-2 truncate' title={displayedDoctorName}>
+                          {displayedDoctorName || 'N/A'}
+                        </span>
+                      </div>
+
+                      <button
+                        onClick={() => setDoctorId('')}
+                        type='button'
+                        className='ml-2 text-brand-500 hover:text-brand-700 dark:hover:text-brand-300'
+                        title='Re-select Beaty Advisor'
+                      >
+                        <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                          <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M6 18L18 6M6 6l12 12' />
+                        </svg>
+                      </button>
+                    </div>
+                  )
+                })()
+              ) : (
+                <select
+                  className='h-11 w-full rounded-lg border border-brand-300 bg-brand-50/50 dark:bg-brand-900/50 px-4 py-2.5 text-sm text-brand-700 dark:text-brand-300 focus:border-brand-500 focus:ring-1 focus:ring-brand-500'
+                  value={doctorId}
+                  onChange={(e) => setDoctorId(e.target.value)}
                 >
-                  <IconPlaceholder color='bg-brand-500' />
-                  <span className='ml-2'>{doctorName || 'N/A'}</span>
-                </p>
-              </div>
-              {/* Tên Bệnh nhân */}
-              <div>
-                <label className='mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400'>Bệnh nhân</label>
-                <p
-                  onClick={() => patientId && onNavigate(patientId)}
-                  className={`h-11 w-full rounded-lg border border-indigo-300 bg-indigo-50/50 dark:bg-indigo-900/50 px-4 py-2.5 text-sm font-semibold text-indigo-700 dark:text-indigo-300 transition duration-150 flex items-center ${
-                    patientId ? 'cursor-pointer hover:bg-indigo-100 dark:hover:bg-indigo-900' : 'cursor-default'
-                  }`}
-                  title={`Xem chi tiết Bệnh nhân ${patientName}`}
+                  <option value=''>--Choose Beaty Advisor--</option>
+                  {pagingData
+                    ?.filter((u) => u.roleName === Role.BEAUTY_ADVISOR)
+                    .map((u) => (
+                      <option key={u.userId} value={u.userId}>
+                        {u.emailAddress}
+                      </option>
+                    ))}
+                </select>
+              )}
+            </div>
+            {/* Tên Bệnh nhân */}
+            <div>
+              <label className='mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400'>Customer</label>
+              {patientId ? (
+                (() => {
+                  const currentPatient = pagingData?.find((u) => u.userId === patientId)
+                  const displayedPatientName = currentPatient?.firstName || currentPatient?.emailAddress || patientName
+
+                  return (
+                    <div
+                      className={`h-11 w-full rounded-lg border border-indigo-300 bg-indigo-50/50 dark:bg-indigo-900/50 px-4 py-2.5 text-sm font-semibold text-indigo-700 dark:text-indigo-300 transition duration-150 flex items-center justify-between`}
+                    >
+                      <div className='flex items-center flex-grow cursor-default'>
+                        <IconPlaceholder color='bg-indigo-500' />
+                        <span className='ml-2 truncate' title={displayedPatientName}>
+                          {displayedPatientName || 'N/A'}
+                        </span>
+                      </div>
+
+                      <button
+                        onClick={() => setPatientId('')}
+                        type='button'
+                        className='ml-2 text-indigo-500 hover:text-indigo-700 dark:hover:text-indigo-300'
+                        title='Re-select Customer'
+                      >
+                        <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                          <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M6 18L18 6M6 6l12 12' />
+                        </svg>
+                      </button>
+                    </div>
+                  )
+                })()
+              ) : (
+                // TRƯỜNG HỢP KHÔNG CÓ ID: Cho phép chọn Bệnh nhân (Giữ nguyên)
+                <select
+                  className='h-11 w-full rounded-lg border border-indigo-300 bg-indigo-50/50 dark:bg-indigo-900/50 px-4 py-2.5 text-sm text-indigo-700 dark:text-indigo-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500'
+                  value={patientId}
+                  onChange={(e) => setPatientId(e.target.value)}
                 >
-                  <IconPlaceholder color='bg-indigo-500' />
-                  <span className='ml-2'>{patientName || 'N/A'}</span>
-                </p>
-              </div>
+                  <option value=''>-- Select Customer--</option>
+                  {pagingData
+                    ?.filter((u) => u.roleName === Role.CUSTOMER)
+                    .map((u) => (
+                      <option key={u.userId} value={u.userId}>
+                        {u.emailAddress}
+                      </option>
+                    ))}
+                </select>
+              )}
             </div>
           </div>
 
           {/* 2. SECTION: LỊCH TRÌNH (DATE, TIME, SCHEDULE, DURATION) */}
           <div className='p-5 border border-gray-200 rounded-lg dark:border-gray-700'>
-            <h6 className='mb-4 text-lg font-semibold text-gray-700 dark:text-white'>Lịch trình & Thời gian</h6>
+            <h6 className='mb-4 text-lg font-semibold text-gray-700 dark:text-white'>Schedule & Time</h6>
 
             {/* Schedule Slot Selection */}
             <div className='mb-6'>
               <label className='flex items-center mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-400'>
                 <IconPlaceholder color='bg-orange-500' />
-                <span className='ml-2'>Khung giờ/Slot </span>
+                <span className='ml-2'>Time Slot</span>
               </label>
               <select
                 value={selectedScheduleId}
@@ -353,12 +438,12 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
               >
                 <option value=''>
                   {isSlotsLoading
-                    ? 'Đang tải Slots...'
+                    ? 'Loading slots...'
                     : !selectedServiceId || !appointmentDate
-                      ? 'Chọn Dịch vụ & Ngày'
+                      ? 'Select service & date'
                       : allSchedules.length === 0
-                        ? 'Không có Slot khả dụng'
-                        : 'Chọn Slot'}
+                        ? 'No available slots'
+                        : 'Select a slot'}
                 </option>
                 {allSchedules.map((schedule) => {
                   const startTime = schedule.startTime
@@ -381,7 +466,9 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
             <div className='grid grid-cols-2 gap-4 sm:grid-cols-3'>
               {/* Ngày (*appointmentDate) */}
               <div>
-                <label className='mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400'>Ngày Hẹn</label>
+                <label className='mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400'>
+                  Appointment Date
+                </label>
                 <input
                   type='date'
                   value={appointmentDate}
@@ -391,7 +478,7 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
               </div>
               {/* Giờ Bắt đầu (*startDateTime) */}
               <div>
-                <label className='mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400'>Giờ Bắt đầu</label>
+                <label className='mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400'>Start Time</label>
                 <input
                   type='time'
                   value={startDateTime}
@@ -402,7 +489,7 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
               {/* Thời lượng (Tính toán nội bộ) */}
               <div>
                 <label className='mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400'>
-                  Thời lượng (phút)
+                  Duration (minutes)
                 </label>
                 <input
                   type='number'
@@ -415,11 +502,10 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
           </div>
 
           {/* TRẠNG THÁI (Status: *status) */}
-          {/* 3. SECTION: TRẠNG THÁI (STATUS) */}
-          <div className='p-5 border border-gray-200 rounded-lg dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50'>
-            <h6 className='mb-4 text-lg font-semibold text-gray-700 dark:text-white'>Trạng thái cuộc hẹn (*status)</h6>
 
-            {/* ✅ FIX: Sử dụng Grid để phân bố gọn gàng hơn ✅ */}
+          <div className='p-5 border border-gray-200 rounded-lg dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50'>
+            <h6 className='mb-4 text-lg font-semibold text-gray-700 dark:text-white'>Appointment Status </h6>
+
             <div className='grid grid-cols-2 sm:grid-cols-3 gap-2'>
               {APPOINTMENT_STATUS_LIST.map((s) => (
                 <label
@@ -462,9 +548,7 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
             <div className='p-5 border border-gray-200 rounded-lg dark:border-gray-700'>
               <h6 className='mb-4 text-base font-semibold text-gray-700 dark:text-white'>Session ID</h6>
               <div className=''>
-                <label className='mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400'>
-                  Session ID (Tùy chọn)
-                </label>
+                <label className='mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400'>Session ID</label>
                 <input
                   type='text'
                   value={sessionId}
@@ -478,37 +562,37 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
 
           {/* 4. SECTION: PHÒNG, GIÁ VÀ GHI CHÚ */}
           <div className='p-5 border border-gray-200 rounded-lg dark:border-gray-700'>
-            <h6 className='mb-4 text-lg font-semibold text-gray-700 dark:text-white'>Phòng & Ghi chú</h6>
+            <h6 className='mb-4 text-lg font-semibold text-gray-700 dark:text-white'>Room & Notes</h6>
 
             <div className='grid grid-cols-1 gap-4 sm:grid-cols-3 mb-6'>
               {/* Tên Phòng */}
               <div className=''>
-                <label className='mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400'>Tên Phòng</label>
+                <label className='mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400'>Room Name</label>
                 <input
                   type='text'
                   value={eventRoom}
                   onChange={(e) => setEventRoom(e.target.value)}
                   className='h-10 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-800 dark:text-white/90 focus:border-brand-500'
-                  placeholder='Ví dụ: Room A1'
+                  placeholder='e.g.: Room A1'
                 />
               </div>
 
               {/* Khu vực/Tầng */}
               <div className=''>
-                <label className='mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400'>
-                  Khu vực/Tầng
-                </label>
+                <label className='mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400'>Area/Floor</label>
                 <input
                   type='text'
                   value={eventLocation}
                   onChange={(e) => setEventLocation(e.target.value)}
                   className='h-10 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-800 dark:text-white/90 focus:border-brand-500'
-                  placeholder='Ví dụ: Tầng 3, Khu D'
+                  placeholder='e.g.: 3rd Floor, Zone D'
                 />
               </div>
               {/* Giá (Chỉ đọc) */}
               <div>
-                <label className='mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400'>Giá Dịch vụ</label>
+                <label className='mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400'>
+                  Service Price
+                </label>
                 <input
                   type='text'
                   value={servicePrice !== undefined ? `${servicePrice.toLocaleString('vi-VN')} VND` : 'N/A'}
@@ -524,26 +608,36 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               className='w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm text-gray-800 dark:text-white/90 placeholder:text-gray-400 focus:border-brand-500 focus:ring-1 focus:ring-brand-500'
-              placeholder='Thêm ghi chú đặc biệt cho cuộc hẹn này...'
+              placeholder='Add special notes for this appointment...'
             />
           </div>
         </div>
 
         {/* FOOTER */}
         <div className='flex items-center gap-3 p-6 border-t border-gray-100 dark:border-gray-800 modal-footer sm:justify-end'>
+          {isEditing && (
+            <button
+              onClick={onDeleted}
+              type='button'
+              // Sử dụng màu đỏ để biểu thị hành động hủy (Danger)
+              className='flex w-full justify-center rounded-lg border border-red-300 bg-white px-4 py-2.5 text-sm font-medium text-red-700 hover:bg-red-50 dark:border-red-700 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-red-900/[0.03] sm:w-auto'
+            >
+              Delete Appointment
+            </button>
+          )}
           <button
             onClick={onClose}
             type='button'
             className='flex w-full justify-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] sm:w-auto'
           >
-            Đóng
+            Close
           </button>
           <button
             onClick={onSave}
             type='button'
             className='btn btn-success flex w-full justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white shadow-brand-xs hover:bg-brand-600 sm:w-auto'
           >
-            {isEditing ? 'Cập Nhật Lịch Hẹn' : 'Thêm Lịch Hẹn'}
+            {isEditing ? 'Update Appointment' : 'Add Appointment'}
           </button>
         </div>
       </div>

@@ -1,21 +1,25 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { DateSelectArg, EventClickArg, EventInput } from '@fullcalendar/core'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import interactionPlugin from '@fullcalendar/interaction'
 import FullCalendar from '@fullcalendar/react'
 import timeGridPlugin from '@fullcalendar/timegrid'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import { appointmentApi } from '../api/appointment.api'
 import PageMeta from '../components/common/PageMeta'
 
+import { useNavigate } from 'react-router'
 import { toast } from 'react-toastify'
 import userApi from '../api/user.api'
-import { useModal } from '../hooks/useModal'
-import { AppointmentResponse } from '../types/appoinment.type'
-import { useNavigate } from 'react-router'
-import { AppPath } from '../constants/Paths'
 import EventModalForm from '../components/CalendarModelDetail/AppointmentModal'
+import ConfirmModal from '../components/CalendarModelDetail/ConfirmModal'
 import { APPOINTMENT_STATUS_MAP } from '../constants/AppointmentConstants'
+import { AppPath } from '../constants/Paths'
+import { useModal } from '../hooks/useModal'
+import { AppointmentForm, AppointmentResponse } from '../types/appoinment.type'
+import { PaginaResponse } from '../types/auth.type'
+import { User } from '../types/user.type'
 
 interface CalendarEvent extends EventInput {
   extendedProps: {
@@ -50,7 +54,10 @@ const AppointmentCalendar: React.FC = () => {
   const [status, setStatus] = useState<number>(0)
   const [sessionId, setSessionId] = useState('')
   const [notes, setNotes] = useState('')
+  const [doctorId, setDoctorId] = useState('')
+  const [patientIdState, setPatientIdState] = useState('')
   const navigate = useNavigate()
+  const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false)
 
   const calendarRef = useRef<FullCalendar>(null)
   const { isOpen, openModal, closeModal } = useModal()
@@ -58,7 +65,15 @@ const AppointmentCalendar: React.FC = () => {
   const selectedUserId = selectedEvent?.extendedProps.userId
   const selectedStaffId = selectedEvent?.extendedProps.staffId
 
-  const { data: appointments } = useQuery<AppointmentResponse>({
+  const AppoinmentMutation = useMutation({
+    mutationFn: (body: AppointmentForm) => appointmentApi.createAppoinments(body)
+  })
+
+  const AppoinmentUpdateMutation = useMutation({
+    mutationFn: ({ id, body }: { id: string; body: AppointmentForm }) => appointmentApi.updateAppoinments(id, body)
+  })
+
+  const { data: appointments, refetch } = useQuery<AppointmentResponse>({
     queryKey: ['appointments'],
     queryFn: async () => {
       const res = await appointmentApi.getAppoinments()
@@ -66,7 +81,14 @@ const AppointmentCalendar: React.FC = () => {
     }
   })
 
-  console.log('appoiment', appointments)
+  const { data: pagingData } = useQuery<PaginaResponse<User>>({
+    queryKey: ['users'],
+    queryFn: async () => {
+      const res = await userApi.getUsers()
+      console.log('resQuery', res.data.data.items)
+      return res.data // Trả về data bên trong
+    }
+  })
 
   const { data: patientData, isLoading: isPatientLoading } = useQuery({
     queryKey: ['patientName', selectedUserId],
@@ -132,6 +154,25 @@ const AppointmentCalendar: React.FC = () => {
     setEvents(events as CalendarEvent[])
   }, [appointments])
 
+  const handleDeleteEvent = () => {
+    if (!selectedEvent) return
+    // Mở popup xác nhận
+    setIsConfirmDeleteOpen(true)
+  }
+
+  const confirmDeleteAction = async () => {
+    if (!selectedEvent) return
+
+    const res = await appointmentApi.deleteAppoiment(selectedEvent.id as string)
+
+    refetch()
+    toast.success(res.data.message)
+
+    setIsConfirmDeleteOpen(false)
+    closeModal()
+    resetModalFields()
+  }
+
   const resetModalFields = () => {
     setEventTitle('')
 
@@ -146,6 +187,8 @@ const AppointmentCalendar: React.FC = () => {
     setStartDateTime('')
     setStatus(0)
     setSessionId('')
+    setDoctorId('')
+    setPatientIdState('')
   }
 
   const handleDateSelect = (selectInfo: DateSelectArg) => {
@@ -176,6 +219,9 @@ const AppointmentCalendar: React.FC = () => {
     setStatus(extendedProps.status || 0)
     setSessionId(extendedProps.sessionId || '')
 
+    setDoctorId(extendedProps.staffId || '')
+    setPatientIdState(extendedProps.userId || '')
+
     setEventRoom(extendedProps.room)
     setEventLocation(extendedProps.location)
     setNotes(extendedProps.notes)
@@ -191,33 +237,55 @@ const AppointmentCalendar: React.FC = () => {
   }
 
   const handleAddOrUpdateEvent = () => {
-    if (selectedEvent) {
-      const logPayload = {
-        userId: selectedUserId, // State patientId (tương đương selectedUserId)
-        staffId: selectedStaffId, // State doctorId (tương đương selectedStaffId)
-        appointmentDate,
-        startDateTime,
-        durationMinutes,
-        status,
-        serviceId: selectedServiceIdState, // State selectedServiceId
-        scheduleId: selectedScheduleIdState, // State selectedScheduleId
-        sessionId, // State sessionId
-        notes // State notes
-      }
+    const [hours, minutes] = startDateTime.split(':').map(Number)
+    const date = new Date(appointmentDate)
+    date.setHours(hours, minutes, 0, 0)
 
+    const payload = {
+      userId: patientIdState,
+      staffId: doctorId,
+      appointmentDate,
+      startDateTime: date.toISOString(),
+      durationMinutes,
+      status,
+      serviceId: selectedServiceIdState,
+      scheduleId: selectedScheduleIdState,
+      sessionId: sessionId || null,
+      notes
+    }
+
+    if (selectedEvent) {
       // Logic gọi API CẬP NHẬT
-      console.log('Cập nhật Event với Payload:', logPayload)
+
+      AppoinmentUpdateMutation.mutate(
+        { id: selectedEvent.id as string, body: payload },
+        {
+          onSuccess: (data) => {
+            refetch()
+            resetModalFields()
+            toast.success(data.data.message)
+          }
+        }
+      )
+
+      console.log('Cập nhật Event với Payload:', payload)
     } else {
-      console.log('Tạo Event mới với Payload:', {
-        selectedServiceIdState,
-        appointmentDate,
-        startDateTime,
-        status,
-        sessionId,
-        notes,
-        eventRoom,
-        eventLocation
+      console.log('create', payload)
+
+      AppoinmentMutation.mutate(payload, {
+        onSuccess: (data) => {
+          refetch()
+          resetModalFields()
+          toast.success(data.data.message)
+        },
+        onError: (error: any) => {
+          console.log('er', error)
+
+          toast.error(error.data.res)
+        }
       })
+      // Logic TẠO MỚI
+      console.log('Tạo Event với Payload:', payload)
     }
 
     closeModal()
@@ -248,15 +316,10 @@ const AppointmentCalendar: React.FC = () => {
             eventContent={(eventInfo) => {
               const statusCode = eventInfo.event.extendedProps.status as keyof typeof APPOINTMENT_STATUS_MAP
 
-              // Lấy map màu từ code status
-              const statusMap = APPOINTMENT_STATUS_MAP[statusCode] || APPOINTMENT_STATUS_MAP[0] // Fallback Pending
+              const statusMap = APPOINTMENT_STATUS_MAP[statusCode] || APPOINTMENT_STATUS_MAP[0]
 
-              // Lấy color name string (Primary, Success, Danger)
               const color = statusMap.calendar.toLowerCase()
-              // Lấy dot color class (bg-...)
-              // const dotColorClass = statusMap.dotColor
 
-              // ... (logic colorMap và dotColorMap, bạn có thể giữ nguyên hoặc đơn giản hóa)
               const colorMap: { [key: string]: string } = {
                 danger: 'bg-danger-500/10 border-danger-500',
                 success: 'bg-success-500/10 border-success-500',
@@ -334,13 +397,25 @@ const AppointmentCalendar: React.FC = () => {
           sessionId={sessionId}
           setSessionId={setSessionId}
           setDurationMinutes={setDurationMinutes}
-          // --- ACTION & NAVIGATION ---
+          pagingData={pagingData?.data.items || []}
           onSave={handleAddOrUpdateEvent}
+          onDeleted={handleDeleteEvent}
           patientName={isPatientLoading ? 'Đang tải...' : patientData || 'Bệnh nhân (N/A)'}
-          patientId={selectedUserId || ''}
+          patientId={selectedUserId || patientIdState}
+          setPatientId={setPatientIdState}
+          setDoctorId={setDoctorId}
           doctorName={isDoctorLoading ? 'Đang tải...' : doctorData || 'Bác sĩ (N/A)'}
-          doctorId={selectedStaffId || ''}
+          doctorId={selectedStaffId || doctorId}
           onNavigate={(id) => handleNavigateToDetail(id)}
+        />
+
+        <ConfirmModal
+          isOpen={isConfirmDeleteOpen}
+          onClose={() => setIsConfirmDeleteOpen(false)}
+          onConfirm={confirmDeleteAction} // Khi người dùng xác nhận, gọi hàm xóa API
+          title='Confirm Delete Appointment'
+          // Sử dụng eventTitle để làm message
+          message={`Are you sure you want to delete the appointment "${eventTitle}"? This action cannot be undone.`}
         />
       </div>
     </>

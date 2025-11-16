@@ -1,3 +1,4 @@
+import { WorkScheduleStatus } from '../constants/SchedularConstants'
 import { SuccessResponse } from '../utils/utils.type'
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -29,7 +30,7 @@ export interface Schedule {
   shiftDate: string
   startTime: string
   endTime: string
-  slotIndex: number
+  slotIndex: WorkScheduleStatus
   status: number
   registrationId: string
   roomId: string
@@ -73,7 +74,7 @@ export interface ScheduleWork {
   endTime: string
 
   slotIndex: number
-  status: number
+  status: WorkScheduleStatus
   createdAt: string
   updatedAt: string
   registrationId: string
@@ -85,3 +86,16 @@ export interface ScheduleWork {
 }
 
 export type AppointmentResponse = SuccessResponse<Appointment[]>
+
+export interface AppointmentForm {
+  userId: string
+  staffId: string
+  appointmentDate: string // ISO string
+  startDateTime: string // ISO string
+  durationMinutes: number
+  status: number
+  serviceId: string
+  scheduleId: string
+  sessionId: string | null
+  notes: string
+}
