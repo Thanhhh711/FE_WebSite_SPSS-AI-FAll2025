@@ -5,6 +5,8 @@ import React from 'react'
 import userApi from '../../api/user.api'
 
 export default function StaffEmailLookup({ staffId }: { staffId: string }) {
+  console.log('Staff Id', staffId)
+
   const { data: staffEmail, isLoading } = useQuery({
     queryKey: ['staffEmail', staffId],
     // Dùng staffId để fetch thông tin nhân viên

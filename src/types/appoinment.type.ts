@@ -1,5 +1,6 @@
 import { WorkScheduleStatus } from '../constants/SchedularConstants'
 import { SuccessResponse } from '../utils/utils.type'
+import { Room } from './room.type'
 import { Service } from './service.type'
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -37,20 +38,6 @@ export interface Schedule {
   roomId: string
   notes: string
   room: Room
-}
-
-export interface Room {
-  id: string
-  roomName: string
-  location: string
-  floorNumber: number
-  capacity: number
-  isDeleted: boolean
-  createdBy: string
-  createdTime: string // ISO datetime
-  lastUpdatedBy: string | null
-  lastUpdatedTime: string | null
-  deletedTime: string
 }
 
 export interface ScheduleWork {

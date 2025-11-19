@@ -20,9 +20,15 @@ import NotFound from './pages/OtherPage/NotFound'
 import PatientDetail from './pages/Patients/PatientDetail'
 import ProductDetail from './pages/Product/ProductDetail'
 // import BasicTables from './pages/Tables/BasicTables'
+import { ProtectedRoute } from './components/ProtectedRoute'
+import BasicTableRegistration from './components/tables/BasicTables/BasicTableRegistration'
 import BasicTablesOrder from './pages/Tables/BasicTablesOrder'
 import BasicTablesPatients from './pages/Tables/BasicTablesPatients'
 import BasicTablesProduct from './pages/Tables/BasicTablesProduct'
+import BasicTablesRoom from './pages/Tables/BasicTablesRoom'
+import BasicTablesService from './pages/Tables/BasicTablesService'
+import BasicTablesSlot from './pages/Tables/BasicTablesSlot'
+import BasicTablesTemplate from './pages/Tables/BasicTablesTemplate'
 import Alerts from './pages/UiElements/Alerts'
 import Avatars from './pages/UiElements/Avatars'
 import Badges from './pages/UiElements/Badges'
@@ -30,9 +36,6 @@ import Buttons from './pages/UiElements/Buttons'
 import Images from './pages/UiElements/Images'
 import Videos from './pages/UiElements/Videos'
 import UserProfiles from './pages/UserProfiles'
-import { ProtectedRoute } from './components/ProtectedRoute'
-import BasicTablesService from './pages/Tables/BasicTablesService'
-import BasicTableRegistration from './components/tables/BasicTables/BasicTableRegistration'
 
 const BasicTables = lazy(() => import('./pages/Tables/BasicTables'))
 
@@ -60,6 +63,9 @@ export default function App() {
             <Route path={AppPath.BASIC_TABLES_PRODUCT} element={<BasicTablesProduct />} />
             <Route path={AppPath.BASIC_TABLES_SERVICE} element={<BasicTablesService />} />
             <Route path={AppPath.DETAIL_PRODUCT} element={<ProductDetail />} />
+            <Route path={AppPath.BASIC_TABLES_ROOM} element={<BasicTablesRoom />} />
+            <Route path={AppPath.BASIC_TABLES_SLOT} element={<BasicTablesSlot />} />
+            <Route path={AppPath.BASIC_TABLES_TEMPLATE} element={<BasicTablesTemplate />} />
 
             {/* UI */}
             <Route path={AppPath.ALERTS} element={<Alerts />} />

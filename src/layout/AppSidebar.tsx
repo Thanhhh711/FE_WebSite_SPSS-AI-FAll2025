@@ -61,6 +61,25 @@ const navItems: NavItem[] = [
 
         path: AppPath.BASIC_TABLES_REGISTRATION,
         allowedRoles: [Role.BEAUTY_ADVISOR, Role.ADMIN]
+      },
+      {
+        name: 'Room',
+
+        path: AppPath.BASIC_TABLES_ROOM,
+        allowedRoles: [Role.SCHEDULE_MANAGER, Role.ADMIN]
+      },
+
+      {
+        name: 'Slot',
+
+        path: AppPath.BASIC_TABLES_SLOT,
+        allowedRoles: [Role.SCHEDULE_MANAGER, Role.ADMIN]
+      },
+      {
+        name: 'Template',
+
+        path: AppPath.BASIC_TABLES_TEMPLATE,
+        allowedRoles: [Role.SCHEDULE_MANAGER, Role.ADMIN]
       }
     ],
     allowedRoles: [Role.ADMIN]

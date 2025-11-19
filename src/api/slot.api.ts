@@ -6,9 +6,6 @@ const SLOTS = 'slots'
 export const slotApi = {
   getSlots: () => http.get<SuccessResponse<Slot[]>>(`${SLOTS}`),
 
-  // getRegistrationByBeautyAdvisorId: (beautyAdvisorId: string) =>
-  //   http.get<SuccessResponse<Registration[]>>(`${REGISTRATIONS}/staff/${beautyAdvisorId}`),
-
   getSlotById: (slotID: string) => http.get<SuccessResponse<Slot>>(`${SLOTS}/registrations/${slotID}`),
 
   createSlot: (body: SlotForm) => http.post<SuccessResponse<Slot>>(`${SLOTS}`, body),
