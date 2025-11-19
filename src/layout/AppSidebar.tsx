@@ -41,29 +41,26 @@ const navItems: NavItem[] = [
     path: AppPath.CALENDAR,
     allowedRoles: [Role.SCHEDULE_MANAGER, Role.BEAUTY_ADVISOR, Role.ADMIN]
   },
-  // {
-  //   icon: <UserCircleIcon />,
-  //   name: 'User Profile',
-  //   path: AppPath.PROFILE,
-  //   allowedRoles: [Role.ADMIN]
-  // },
-  // {
-  //   name: 'Forms',
-  //   icon: <ListIcon />,
-  //   subItems: [{ name: 'Form Elements', path: AppPath.FORM_ELEMENTS, pro: false, allowedRoles: [Role.ADMIN] }],
-  //   allowedRoles: [Role.ADMIN]
-  // },
+
   {
     name: 'Tables',
     icon: <TableIcon />,
     subItems: [
       { name: 'User', path: AppPath.BASIC_TABLES, pro: false, allowedRoles: [Role.ADMIN] },
+
       { name: 'Order', path: AppPath.BASIC_TABLES_ORDER, pro: false, allowedRoles: [Role.ADMIN, Role.STORE_STAFF] },
       {
         name: 'Product',
         path: AppPath.BASIC_TABLES_PRODUCT,
         pro: false,
         allowedRoles: [Role.ADMIN]
+      },
+      { name: 'Service', path: AppPath.BASIC_TABLES_SERVICE, pro: false, allowedRoles: [Role.ADMIN] },
+      {
+        name: 'Registration',
+
+        path: AppPath.BASIC_TABLES_REGISTRATION,
+        allowedRoles: [Role.BEAUTY_ADVISOR, Role.ADMIN]
       }
     ],
     allowedRoles: [Role.ADMIN]
@@ -73,6 +70,13 @@ const navItems: NavItem[] = [
     name: 'Patients',
     icon: <UserCircleIcon />,
     path: AppPath.PATIENTS,
+    allowedRoles: [Role.BEAUTY_ADVISOR]
+  },
+
+  {
+    name: 'Registration',
+    icon: <UserCircleIcon />,
+    path: AppPath.BASIC_TABLES_REGISTRATION,
     allowedRoles: [Role.BEAUTY_ADVISOR]
   },
 

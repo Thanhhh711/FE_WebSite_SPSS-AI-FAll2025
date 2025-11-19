@@ -1,10 +1,14 @@
-import { AppointmentForm, AppointmentResponse } from '../types/appoinment.type'
+import { Appointment, AppointmentForm, AppointmentResponse } from '../types/appoinment.type'
 import http from '../utils/http'
+import { SuccessResponse } from '../utils/utils.type'
 
 const APPOINTMENTS = '/appointments'
 
 export const appointmentApi = {
   getAppoinments: () => http.get<AppointmentResponse>(`${APPOINTMENTS}`),
+
+  getAppoinmentByBeatyAdvisorId: (BeatyAdvisorId: string) =>
+    http.get<SuccessResponse<Appointment[]>>(`${APPOINTMENTS}/staff/${BeatyAdvisorId}`),
 
   createAppoinments: (body: AppointmentForm) => http.post<AppointmentResponse>(`${APPOINTMENTS}`, body),
 

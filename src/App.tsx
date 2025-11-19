@@ -4,7 +4,7 @@ import { ScrollToTop } from './components/common/ScrollToTop'
 import { AppPath } from './constants/Paths'
 import { Role } from './constants/Roles'
 
-import { useContext } from 'react'
+import { lazy, useContext } from 'react'
 
 import { AppContext } from './context/AuthContext'
 import AppLayout from './layout/AppLayout'
@@ -19,7 +19,7 @@ import FormElements from './pages/Forms/FormElements'
 import NotFound from './pages/OtherPage/NotFound'
 import PatientDetail from './pages/Patients/PatientDetail'
 import ProductDetail from './pages/Product/ProductDetail'
-import BasicTables from './pages/Tables/BasicTables'
+// import BasicTables from './pages/Tables/BasicTables'
 import BasicTablesOrder from './pages/Tables/BasicTablesOrder'
 import BasicTablesPatients from './pages/Tables/BasicTablesPatients'
 import BasicTablesProduct from './pages/Tables/BasicTablesProduct'
@@ -31,6 +31,10 @@ import Images from './pages/UiElements/Images'
 import Videos from './pages/UiElements/Videos'
 import UserProfiles from './pages/UserProfiles'
 import { ProtectedRoute } from './components/ProtectedRoute'
+import BasicTablesService from './pages/Tables/BasicTablesService'
+import BasicTableRegistration from './components/tables/BasicTables/BasicTableRegistration'
+
+const BasicTables = lazy(() => import('./pages/Tables/BasicTables'))
 
 export default function App() {
   const { profile } = useContext(AppContext)
@@ -54,6 +58,7 @@ export default function App() {
             {/* Tables */}
             <Route path={AppPath.BASIC_TABLES} element={<BasicTables />} />
             <Route path={AppPath.BASIC_TABLES_PRODUCT} element={<BasicTablesProduct />} />
+            <Route path={AppPath.BASIC_TABLES_SERVICE} element={<BasicTablesService />} />
             <Route path={AppPath.DETAIL_PRODUCT} element={<ProductDetail />} />
 
             {/* UI */}
@@ -63,18 +68,14 @@ export default function App() {
             <Route path={AppPath.BUTTONS} element={<Buttons />} />
             <Route path={AppPath.IMAGES} element={<Images />} />
             <Route path={AppPath.VIDEOS} element={<Videos />} />
-
             {/* Charts */}
             <Route path={AppPath.LINE_CHART} element={<LineChart />} />
             <Route path={AppPath.BAR_CHART} element={<BarChart />} />
-
             {/* Others */}
             <Route path={`${AppPath.PROFILE}/:id`} element={<UserProfiles />} />
             {/* <Route path={AppPath.CALENDAR} element={<Calendar />} /> */}
             <Route path={AppPath.FORM_ELEMENTS} element={<FormElements />} />
-
             {/* Content */}
-
             <Route path={AppPath.BLANK} element={<ManageContent />} />
           </Route>
         </Route>
@@ -98,6 +99,14 @@ export default function App() {
           <Route element={<AppLayout />}>
             <Route path={AppPath.PATIENTS} element={<BasicTablesPatients />} />
             <Route path={AppPath.PATIENT_DETAIL} element={<PatientDetail />} />
+            {/* <Route path={AppPath.BASIC_TABLES_REGISTRATION} element={<BasicTableRegistration />} /> */}
+          </Route>
+        </Route>
+
+        {/* === Only SKINCARE SPECIALIST AND ADMIN === */}
+        <Route element={<ProtectedRoute allowedRoles={[Role.BEAUTY_ADVISOR, Role.ADMIN]} userRole={userRole} />}>
+          <Route element={<AppLayout />}>
+            <Route path={AppPath.BASIC_TABLES_REGISTRATION} element={<BasicTableRegistration />} />
           </Route>
         </Route>
 

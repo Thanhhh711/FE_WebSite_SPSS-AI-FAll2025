@@ -13,6 +13,8 @@ export enum AppPath {
   BASIC_TABLES = '/basic-tables',
   BASIC_TABLES_ORDER = '/basic-tables-order',
   BASIC_TABLES_PRODUCT = '/basic-tables-product',
+  BASIC_TABLES_SERVICE = '/basic-tables-service',
+  BASIC_TABLES_REGISTRATION = '/basic-tables-registration',
 
   //PRODUCT
   DETAIL_PRODUCT = '/product-detail',

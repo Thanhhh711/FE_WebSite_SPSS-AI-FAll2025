@@ -11,6 +11,8 @@ import { PaginaResponse } from '../../../types/auth.type'
 import { useNavigate } from 'react-router'
 import { AppPath } from '../../../constants/Paths'
 import { toast } from 'react-toastify'
+import { useAppContext } from '../../../context/AuthContext'
+import { Role } from '../../../constants/Roles'
 
 // Dùng mock Button cho Action Cell
 
@@ -123,6 +125,10 @@ const getStatusColor = (status: string, isDeleted: boolean) => {
 // Đảm bảo import các component UI và types cần thiết
 
 export default function BasicTableOne() {
+  const { profile } = useAppContext()
+
+  const isAdmin = profile?.role === Role.ADMIN
+
   const [tableData, setTableData] = useState<User[]>([])
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [modalData, setModalData] = useState<User | null>(null)
@@ -137,7 +143,11 @@ export default function BasicTableOne() {
       const res = await userApi.getUsers()
       console.log('resQuery', res.data.data.items)
       return res.data // Trả về data bên trong
-    }
+    },
+    enabled: isAdmin && !!profile,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    retry: false
   })
 
   useEffect(() => {
@@ -165,6 +175,8 @@ export default function BasicTableOne() {
     const lastPageIndex = firstPageIndex + itemsPerPage
     return tableData.slice(firstPageIndex, lastPageIndex)
   }, [currentPage, tableData])
+
+  if (!isAdmin) return null
 
   // Mở modal và thiết lập dữ liệu cho order được chọn
   const handleActionClick = async (user: User) => {
@@ -360,7 +372,7 @@ export default function BasicTableOne() {
                     {/* Nút Ban/Unban (Action Chính) */}
                     <Button
                       onClick={() => handleActionClick(user)}
-                      color={user.status === Status.Active ? 'success' : 'danger'}
+                      color={user.status === Status.UnActive ? 'success' : 'danger'}
                       className='text-sm font-semibold'
                     >
                       {user.status === Status.UnActive ? 'Unban' : 'Ban'}

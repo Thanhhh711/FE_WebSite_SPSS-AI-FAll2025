@@ -16,6 +16,8 @@ import EventModalForm from '../components/CalendarModelDetail/AppointmentModal'
 import ConfirmModal from '../components/CalendarModelDetail/ConfirmModal'
 import { APPOINTMENT_STATUS_MAP } from '../constants/AppointmentConstants'
 import { AppPath } from '../constants/Paths'
+import { Role } from '../constants/Roles'
+import { useAppContext } from '../context/AuthContext'
 import { useModal } from '../hooks/useModal'
 import { AppointmentForm, AppointmentResponse } from '../types/appoinment.type'
 import { PaginaResponse } from '../types/auth.type'
@@ -40,6 +42,10 @@ interface CalendarEvent extends EventInput {
 }
 
 const AppointmentCalendar: React.FC = () => {
+  const { profile } = useAppContext()
+  const isBeautyAdvisor = profile?.role === Role.BEAUTY_ADVISOR
+  const isAdmin = profile?.role === Role.ADMIN
+
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null)
   const [eventTitle, setEventTitle] = useState('')
 
@@ -65,6 +71,28 @@ const AppointmentCalendar: React.FC = () => {
   const selectedUserId = selectedEvent?.extendedProps.userId
   const selectedStaffId = selectedEvent?.extendedProps.staffId
 
+  const { data: appointments, refetch } = useQuery<AppointmentResponse>({
+    queryKey: ['appointments', profile?.role, profile?.userId], // thêm vào key để tránh cache sai
+    queryFn: async () => {
+      // Nếu là Beauty Advisor => gọi API theo userId
+      if (isBeautyAdvisor) {
+        const res = await appointmentApi.getAppoinmentByBeatyAdvisorId(profile?.userId)
+        return res.data
+      }
+
+      // Nếu là Admin => lấy toàn bộ
+      if (isAdmin) {
+        const res = await appointmentApi.getAppoinments()
+        return res.data
+      }
+
+      // Default fallback (optional)
+      const res = await appointmentApi.getAppoinments()
+      return res.data
+    },
+    enabled: !!profile?.role // tránh gọi API trước khi load xong profile
+  })
+
   const AppoinmentMutation = useMutation({
     mutationFn: (body: AppointmentForm) => appointmentApi.createAppoinments(body)
   })
@@ -73,21 +101,14 @@ const AppointmentCalendar: React.FC = () => {
     mutationFn: ({ id, body }: { id: string; body: AppointmentForm }) => appointmentApi.updateAppoinments(id, body)
   })
 
-  const { data: appointments, refetch } = useQuery<AppointmentResponse>({
-    queryKey: ['appointments'],
-    queryFn: async () => {
-      const res = await appointmentApi.getAppoinments()
-      return res.data
-    }
-  })
-
   const { data: pagingData } = useQuery<PaginaResponse<User>>({
     queryKey: ['users'],
     queryFn: async () => {
       const res = await userApi.getUsers()
       console.log('resQuery', res.data.data.items)
       return res.data // Trả về data bên trong
-    }
+    },
+    enabled: !isBeautyAdvisor
   })
 
   const { data: patientData, isLoading: isPatientLoading } = useQuery({
