@@ -40,7 +40,7 @@ export enum AppPath {
   FORM_ELEMENTS = '/form-elements',
   BLANK = '/blank',
   PATIENTS = '/patients',
-  PATIENT_DETAIL = '/patient-detail',
+  PATIENT_DETAIL = '/medical-record',
 
   // ==== ERROR ====
   NOT_FOUND = '*'

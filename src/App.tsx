@@ -17,11 +17,11 @@ import LineChart from './pages/Charts/LineChart'
 import Home from './pages/Dashboard/Home'
 import FormElements from './pages/Forms/FormElements'
 import NotFound from './pages/OtherPage/NotFound'
-import PatientDetail from './pages/Patients/PatientDetail'
 import ProductDetail from './pages/Product/ProductDetail'
 // import BasicTables from './pages/Tables/BasicTables'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import BasicTableRegistration from './components/tables/BasicTables/BasicTableRegistration'
+import TreatmentPlanTab from './pages/Patients/PatientDetail'
 import BasicTablesOrder from './pages/Tables/BasicTablesOrder'
 import BasicTablesPatients from './pages/Tables/BasicTablesPatients'
 import BasicTablesProduct from './pages/Tables/BasicTablesProduct'
@@ -97,6 +97,7 @@ export default function App() {
         >
           <Route element={<AppLayout />}>
             <Route path={AppPath.CALENDAR} element={<Calendar />} />
+            <Route path={`${AppPath.PATIENT_DETAIL}/:id`} element={<TreatmentPlanTab />} />
           </Route>
         </Route>
 
@@ -104,7 +105,7 @@ export default function App() {
         <Route element={<ProtectedRoute allowedRoles={[Role.BEAUTY_ADVISOR]} userRole={userRole} />}>
           <Route element={<AppLayout />}>
             <Route path={AppPath.PATIENTS} element={<BasicTablesPatients />} />
-            <Route path={AppPath.PATIENT_DETAIL} element={<PatientDetail />} />
+
             {/* <Route path={AppPath.BASIC_TABLES_REGISTRATION} element={<BasicTableRegistration />} /> */}
           </Route>
         </Route>

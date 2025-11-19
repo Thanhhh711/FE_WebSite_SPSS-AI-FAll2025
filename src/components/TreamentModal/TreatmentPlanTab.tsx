@@ -1,27 +1,28 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { TreatmentPlan } from '../../types/treatmentPlan.type'
+import { useQuery } from '@tanstack/react-query'
 import { treatmentPlanApi } from '../../api/treatmentPlan.api'
-import TreatmentPlanCard from '../../components/TreamentModal/TreatmentPlanCard'
-import TreatmentPlanModal from '../../components/TreamentModal/TreatmentPlanModal'
-import { useParams } from 'react-router'
+import TreatmentPlanModal from './TreatmentPlanModal'
+import TreatmentPlanCard from './TreatmentPlanCard'
 
-export default function TreatmentPlanTab() {
-  const { id } = useParams<{ id: string }>()
+interface TreatmentPlanTabProps {
+  customerId: string // ID của bệnh nhân từ PatientDetail.tsx
+}
+
+export default function TreatmentPlanTab({ customerId }: TreatmentPlanTabProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState<TreatmentPlan | null>(null)
 
   // Giả định API getTreateMents sẽ có filter/param là customerId
   const { data: plansResponse, isLoading } = useQuery({
-    queryKey: ['treatmentPlans', id],
+    queryKey: ['treatmentPlans', customerId],
     queryFn: () => treatmentPlanApi.getTreateMents(), // Cần cập nhật API để filter theo customerId
-    enabled: !!id
+    enabled: !!customerId
     // Hiện tại: Mock data hoặc giả định API trả về hết và tự filter
   })
 
   // Mock Filter (Nếu API không hỗ trợ filter)
-  const treatmentPlans: TreatmentPlan[] = plansResponse?.data.data?.filter((p) => p.customerId === id) || []
+  const treatmentPlans: TreatmentPlan[] = plansResponse?.data.data?.filter((p) => p.customerId === customerId) || []
 
   const handleOpenCreate = () => {
     setSelectedPlan(null)
@@ -81,7 +82,7 @@ export default function TreatmentPlanTab() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         plan={selectedPlan}
-        customerId={id as string}
+        customerId={customerId}
         onSave={handleSave}
       />
     </div>

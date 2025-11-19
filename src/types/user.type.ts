@@ -42,6 +42,7 @@ export interface User {
   skinConditionName: string | null
   skinCondition: any | null
   age: number | null
+  gender: string | null
   doB: string | null // ISO date string
   diet: string | null
   dailyRoutine: string | null

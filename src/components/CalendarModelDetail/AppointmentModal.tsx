@@ -14,6 +14,8 @@ import userApi from '../../api/user.api'
 import { Role } from '../../constants/Roles'
 import { WorkScheduleStatus } from '../../constants/SchedularConstants'
 import { Service } from '../../types/service.type'
+import { useNavigate } from 'react-router'
+import { AppPath } from '../../constants/Paths'
 // GIẢ ĐỊNH: Import API từ các file liên quan (serviceApi, scheduleApi)
 // Bạn cần đảm bảo các import này tồn tại trong môi trường của bạn
 // import { serviceApi } from '../api/services.api'
@@ -174,6 +176,8 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
 }) => {
   const isEditing = !!selectedEvent
 
+  console.log('Data User', pagingData)
+
   // 1. Fetch Danh sách Service
   const { data: servicesData, isLoading: isServicesLoading } = useQuery({
     queryKey: ['allServices'],
@@ -207,7 +211,7 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
 
   const servicePrice = selectedService?.price
   const durationMinutes = selectedService?.durationMinutes || 0
-
+  const navigate = useNavigate()
   // Hàm setter cho Service ID
   const handleServiceChange = (id: string) => {
     setSelectedServiceId(id)
@@ -249,6 +253,11 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
       setEventRoom(schedule.room?.roomName || 'N/A')
       setEventLocation(schedule.room?.location || 'N/A')
     }
+  }
+
+  const handleViewMedicalRecord = (id: string) => {
+    // Điều hướng đến trang hồ sơ bệnh án của bệnh nhân
+    navigate(`${AppPath.PATIENT_DETAIL}/${id}`)
   }
 
   // --- LOGIC MAPPING VÀ UI CÒN LẠI ---
@@ -388,21 +397,33 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
                         </span>
                       </div>
 
-                      <button
-                        onClick={() => setPatientId('')}
-                        type='button'
-                        className='ml-2 text-indigo-500 hover:text-indigo-700 dark:hover:text-indigo-300'
-                        title='Re-select Customer'
-                      >
-                        <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                          <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M6 18L18 6M6 6l12 12' />
-                        </svg>
-                      </button>
+                      {/* ACTIONS: View Record & Change Button */}
+                      <div className='flex items-center space-x-3'>
+                        {/* 1. NÚT XEM BỆNH ÁN (View Record) */}
+                        <button
+                          onClick={() => handleViewMedicalRecord(patientId)} // 🚨 Cần định nghĩa hàm này
+                          type='button'
+                          className='text-sm font-medium text-indigo-500 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors'
+                          title='View Medical Record'
+                        >
+                          View Record
+                        </button>
+
+                        {/* 2. NÚT ĐỔI/CHỌN LẠI (Change) */}
+                        <button
+                          onClick={() => setPatientId('')} // 🚨 Xóa patientId để chuyển sang chế độ chọn
+                          type='button'
+                          className='text-sm font-medium text-indigo-500 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors'
+                          title='Change/Re-select Customer'
+                        >
+                          Change
+                        </button>
+                      </div>
                     </div>
                   )
                 })()
               ) : (
-                // TRƯỜNG HỢP KHÔNG CÓ ID: Cho phép chọn Bệnh nhân (Giữ nguyên)
+                // TRƯỜNG HỢP KHÔNG CÓ ID: Hiển thị Select Dropdown
                 <select
                   className='h-11 w-full rounded-lg border border-indigo-300 bg-indigo-50/50 dark:bg-indigo-900/50 px-4 py-2.5 text-sm text-indigo-700 dark:text-indigo-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500'
                   value={patientId}

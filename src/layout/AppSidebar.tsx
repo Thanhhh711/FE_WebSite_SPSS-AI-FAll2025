@@ -93,6 +93,13 @@ const navItems: NavItem[] = [
   },
 
   {
+    name: 'PatientsdETAIL',
+    icon: <UserCircleIcon />,
+    path: AppPath.PATIENT_DETAIL,
+    allowedRoles: [Role.BEAUTY_ADVISOR]
+  },
+
+  {
     name: 'Registration',
     icon: <UserCircleIcon />,
     path: AppPath.BASIC_TABLES_REGISTRATION,

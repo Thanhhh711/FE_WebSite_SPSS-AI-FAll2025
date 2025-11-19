@@ -4,17 +4,26 @@ import Button from '../ui/button/Button'
 import Input from '../form/input/InputField'
 import Label from '../form/Label'
 import { User } from '../../types/user.type'
+import { useNavigate, useParams } from 'react-router'
+import { AppPath } from '../../constants/Paths'
 
 interface UserMetaCardProps {
   user: User | null
 }
 
 export default function UserMetaCard({ user }: UserMetaCardProps) {
+  const { id } = useParams<{ id: string }>()
   const { isOpen, closeModal } = useModal()
+  const navigate = useNavigate()
   const handleSave = () => {
     // Handle save logic here
     console.log('Saving changes...')
     closeModal()
+  }
+
+  const handleViewMedicalRecord = (id: string) => {
+    // Điều hướng đến trang hồ sơ bệnh án của bệnh nhân
+    navigate(`${AppPath.PATIENT_DETAIL}/${id}`)
   }
 
   console.log('userData2', user?.userName)
@@ -37,6 +46,14 @@ export default function UserMetaCard({ user }: UserMetaCardProps) {
                 <p className='text-sm text-gray-500 dark:text-gray-400'>{user?.age}</p>
               </div>
             </div>
+            <button
+              onClick={() => handleViewMedicalRecord(id as string)}
+              type='button'
+              className='text-sm font-medium text-indigo-500 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors'
+              title='View Medical Record'
+            >
+              View Record
+            </button>
           </div>
           {/* <button
             onClick={openModal}
