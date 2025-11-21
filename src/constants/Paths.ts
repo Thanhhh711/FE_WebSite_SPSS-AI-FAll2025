@@ -41,6 +41,7 @@ export enum AppPath {
   BLANK = '/blank',
   PATIENTS = '/patients',
   PATIENT_DETAIL = '/medical-record',
+  REPORT = '/report',
 
   // ==== ERROR ====
   NOT_FOUND = '*'

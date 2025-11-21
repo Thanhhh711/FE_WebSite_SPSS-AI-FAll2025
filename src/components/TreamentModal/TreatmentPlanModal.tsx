@@ -32,12 +32,22 @@ interface TreatmentPlanModalProps {
   plan: TreatmentPlan | null // Dữ liệu cho Edit/View, null cho Create
   customerId: string // ID bắt buộc khi tạo mới
   onSave: (data: CreateTreatmentPlanDto, planId?: string) => void
+  refetch: () => void
 }
 
-export default function TreatmentPlanModal({ isOpen, onClose, plan, customerId, onSave }: TreatmentPlanModalProps) {
+export default function TreatmentPlanModal({
+  isOpen,
+  onClose,
+  plan,
+  customerId,
+  onSave,
+  refetch
+}: TreatmentPlanModalProps) {
   const [form, setForm] = useState<CreateTreatmentPlanDto>(initialFormState)
   const isEditing = !!plan
-  const isViewMode = !isEditing
+  const isViewMode =
+    isEditing && (plan?.status === TreatmentPlanStatus.Completed || plan?.status === TreatmentPlanStatus.Cancelled)
+
   const title = isEditing ? 'Edit Treatment Plan' : 'Create New Treatment Plan'
 
   // Tab trong Modal
@@ -65,9 +75,40 @@ export default function TreatmentPlanModal({ isOpen, onClose, plan, customerId, 
     }))
   }
 
+  // Trong TreatmentPlanModal.tsx
+
   const handleFormSave = () => {
-    // Cần Validation
-    onSave(form, plan?.id)
+    // 1. ✅ Kiểm tra bước 1: Hàm có được gọi không?
+    console.log('[MODAL] handleFormSave: Bắt đầu chạy.')
+
+    // ******************************************************
+    // Kiểm tra Vùng Validation/Form Logic (NƠI LỖI THƯỜNG XẢY RA)
+    // ******************************************************
+
+    // Ví dụ: Nếu bạn dùng react-hook-form, logic có thể trông như sau:
+    // handleSubmit((data) => {
+    //     // Logic này sẽ bị chặn nếu form không hợp lệ
+    //     onSave(data, plan?.id)
+    // })()
+
+    // Ví dụ: Nếu bạn dùng Validation thủ công
+    // if (form.diagnosis.length < 5) {
+    //     console.log('[MODAL] handleFormSave: Lỗi validation, đã RETURN.')
+    //     return // Dòng này sẽ chặn hàm
+    // }
+
+    // ******************************************************
+
+    const planId = plan?.id
+
+    // 2. ✅ Kiểm tra bước 2: Hàm có gọi onSave không?
+    console.log('[MODAL] handleFormSave: Gọi onSave. PlanId:', planId)
+
+    // Đây là dòng cuối cùng trước khi chuyển giao quyền kiểm soát
+    onSave(form, planId)
+
+    // 3. ✅ Kiểm tra bước 3: Dòng này có chạy không?
+    console.log('[MODAL] handleFormSave: Hoàn thành.')
   }
 
   const baseInputClass =
@@ -235,7 +276,12 @@ export default function TreatmentPlanModal({ isOpen, onClose, plan, customerId, 
 
           {/* Sessions Tab Content */}
           {activeTab === 'Sessions' && plan?.id && (
-            <TreatmentSessionList planId={plan.id} sessions={plan.treatmentSessions} isViewMode={isViewMode} />
+            <TreatmentSessionList
+              planId={plan.id}
+              sessions={plan.treatmentSessions}
+              isViewMode={isViewMode}
+              refetchPlan={refetch}
+            />
           )}
 
           {activeTab === 'Sessions' && !plan?.id && (

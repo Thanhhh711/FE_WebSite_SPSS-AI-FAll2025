@@ -1,24 +1,31 @@
+/* eslint-disable @typescript-eslint/no-empty-object-type */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { TreatmentSession, TreatmentSessionForm, TreatmentSessionStatus } from '../../types/treatmentSession.type'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
+import { toast } from 'react-toastify'
 import { sessionApi } from '../../api/treatmentSession.api'
+import { TreatmentSession, TreatmentSessionForm, TreatmentSessionStatus } from '../../types/treatmentSession.type'
+import { roomApi } from '../../api/room.api'
+import { SuccessResponse } from '../../utils/utils.type'
+import { User } from '../../types/user.type'
+import userApi from '../../api/user.api'
+import { Role } from '../../constants/Roles'
 
 const SESSION_STATUS_NAMES: { [key: number]: string } = {
-  [TreatmentSessionStatus.Scheduled]: 'Đã lên lịch',
-  [TreatmentSessionStatus.InProgress]: 'Đang thực hiện',
-  [TreatmentSessionStatus.Completed]: 'Hoàn thành',
-  [TreatmentSessionStatus.Cancelled]: 'Bị hủy',
-  [TreatmentSessionStatus.Rescheduled]: 'Hoãn lại',
-  [TreatmentSessionStatus.NoShow]: 'Không đến'
+  [TreatmentSessionStatus.Scheduled]: 'Scheduled',
+  [TreatmentSessionStatus.InProgress]: 'In Progress',
+  [TreatmentSessionStatus.Completed]: 'Completed',
+  [TreatmentSessionStatus.Cancelled]: 'Cancelled',
+  [TreatmentSessionStatus.Rescheduled]: 'Rescheduled',
+  [TreatmentSessionStatus.NoShow]: 'No Show'
 }
 
 // Giả định Staff và Room list
-const MOCK_STAFFS = [
-  { id: 'S100', name: 'Dr. Nguyễn Văn A' },
-  { id: 'S101', name: 'Nurse Lê Thị B' }
-]
-const MOCK_ROOMS = ['Room 101', 'Room 102', 'Room 203']
+// const MOCK_STAFFS = [
+//   { id: 'S100', name: 'Dr. Nguyễn Văn A' },
+//   { id: 'S101', name: 'Nurse Lê Thị B' }
+// ]
+// const MOCK_ROOMS = ['Room 101', 'Room 102', 'Room 203']
 
 export const initialFormState: TreatmentSessionForm = {
   planId: '',
@@ -41,6 +48,8 @@ interface TreatmentSessionModalProps {
   session: TreatmentSession | null // Dữ liệu cho Edit/View, null cho Create
   planId: string // ID bắt buộc
   onSave: () => void
+  refetch: () => void
+  refetchPlan: () => void
 }
 
 export default function TreatmentSessionModal({
@@ -48,12 +57,32 @@ export default function TreatmentSessionModal({
   onClose,
   session,
   planId,
-  onSave
+  refetch
 }: TreatmentSessionModalProps) {
   const [form, setForm] = useState<TreatmentSessionForm>(initialFormState)
   const isEditing = !!session
   const title = isEditing ? `Session #${session.sessionNumber} Details` : 'Schedule New Session'
+
+  const { data: roomsResponse } = useQuery({
+    queryKey: ['rooms'],
+    queryFn: roomApi.getRooms,
+    staleTime: 1000 * 60 * 5
+  })
+
   const queryClient = useQueryClient()
+
+  const { data: pagingData } = useQuery<SuccessResponse<User[]>>({
+    queryKey: ['users'],
+    queryFn: async () => {
+      const res = await userApi.getUsers()
+      console.log('resQuery', res.data.data)
+      return res.data // Trả về data bên trong
+    },
+
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    retry: false
+  })
 
   useEffect(() => {
     if (session) {
@@ -85,23 +114,31 @@ export default function TreatmentSessionModal({
   // Mutation cho Create/Update
   const saveMutation = useMutation({
     mutationFn: (data: TreatmentSessionForm) => {
-      if (isEditing && session) {
+      if (isEditing && session?.id) {
+        // Logic CẬP NHẬT
         return sessionApi.updateSession(session.id, data)
       } else {
-        return sessionApi.createSession(data)
+        const dataForm = { ...data, staffId: '60bdbc72-5b01-4c17-9682-90f6b56d7aea' }
+
+        console.log('dataForm', dataForm)
+
+        // Logic TẠO MỚI
+        return sessionApi.createSession(dataForm)
       }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['treatmentPlans', planId] as any })
-      onSave()
+    onSuccess: (data) => {
+      toast.success(data.data.message)
+
+      refetch()
+
+      queryClient.invalidateQueries({ queryKey: ['treatmentPlans', planId] })
       onClose()
     },
     onError: (error) => {
-      console.error('Save Session Error:', error)
-      // Thêm toast thông báo lỗi thực tế
+      toast.error(isEditing ? 'Lỗi khi cập nhật phiên điều trị.' : 'Lỗi khi tạo phiên điều trị.')
+      console.error(error)
     }
   })
-
   if (!isOpen) return null
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -114,7 +151,14 @@ export default function TreatmentSessionModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    saveMutation.mutate(form)
+    const body: TreatmentSessionForm = {
+      ...form,
+      planId: planId // Gán planId từ props
+    }
+
+    console.log('body', body)
+
+    saveMutation.mutate(body)
   }
 
   const baseInputClass =
@@ -194,9 +238,9 @@ export default function TreatmentSessionModal({
             <div>
               <label className='mb-1.5 block text-sm font-medium text-gray-700'>Room</label>
               <select name='roomId' value={form.roomId} onChange={handleChange} className={baseInputClass} required>
-                {MOCK_ROOMS.map((room) => (
-                  <option key={room} value={room}>
-                    {room}
+                {roomsResponse?.data.data.map((room) => (
+                  <option key={room.id} value={room.id}>
+                    {room.roomName}/ {room.location}
                   </option>
                 ))}
               </select>
@@ -207,11 +251,13 @@ export default function TreatmentSessionModal({
           <div>
             <label className='mb-1.5 block text-sm font-medium text-gray-700'>Staff Performing Treatment</label>
             <select name='staffId' value={form.staffId} onChange={handleChange} className={baseInputClass} required>
-              {MOCK_STAFFS.map((staff) => (
-                <option key={staff.id} value={staff.id}>
-                  {staff.name} ({staff.id})
-                </option>
-              ))}
+              {pagingData?.data
+                .filter((u) => u.roleName === Role.BEAUTY_ADVISOR)
+                .map((staff) => (
+                  <option key={staff.userId} value={staff.userId}>
+                    {staff.emailAddress}
+                  </option>
+                ))}
             </select>
           </div>
 

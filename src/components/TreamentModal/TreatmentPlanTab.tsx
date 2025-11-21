@@ -1,20 +1,30 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useState } from 'react'
-import { TreatmentPlan } from '../../types/treatmentPlan.type'
-import { useQuery } from '@tanstack/react-query'
+import { CreateTreatmentPlanDto, TreatmentPlan } from '../../types/treatmentPlan.type'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { treatmentPlanApi } from '../../api/treatmentPlan.api'
 import TreatmentPlanModal from './TreatmentPlanModal'
 import TreatmentPlanCard from './TreatmentPlanCard'
+import ConfirmModal from '../CalendarModelDetail/ConfirmModal'
+import { toast } from 'react-toastify'
 
 interface TreatmentPlanTabProps {
   customerId: string // ID của bệnh nhân từ PatientDetail.tsx
 }
 
 export default function TreatmentPlanTab({ customerId }: TreatmentPlanTabProps) {
+  const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false)
+  const [planToDelete, setPlanToDelete] = useState<string | null>(null)
+
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState<TreatmentPlan | null>(null)
 
   // Giả định API getTreateMents sẽ có filter/param là customerId
-  const { data: plansResponse, isLoading } = useQuery({
+  const {
+    data: plansResponse,
+    isLoading,
+    refetch
+  } = useQuery({
     queryKey: ['treatmentPlans', customerId],
     queryFn: () => treatmentPlanApi.getTreateMents(), // Cần cập nhật API để filter theo customerId
     enabled: !!customerId
@@ -34,15 +44,83 @@ export default function TreatmentPlanTab({ customerId }: TreatmentPlanTabProps) 
     setIsModalOpen(true)
   }
 
-  // Cần thêm logic onSave và Mutation (tạo/cập nhật) vào đây hoặc trong PatientDetail
-  const handleSave = () => {
-    // Logic save và invalidate queries
-    setIsModalOpen(false)
+  const createTreatmentPlanMutation = useMutation({
+    mutationFn: (body: CreateTreatmentPlanDto) => treatmentPlanApi.createTreateMent(body),
+    onSuccess: (data) => {
+      refetch() // Cập nhật danh sách plans
+      toast.success(data.data.message)
+      setIsModalOpen(false) // Đóng modal
+    },
+    onError: (error) => {
+      toast.error(error.message)
+    }
+  })
+
+  // ✅ 2. MUTATION CHO CẬP NHẬT (UPDATE)
+  const updateTreatmentPlanMutation = useMutation({
+    mutationFn: ({ planId, body }: { planId: string; body: CreateTreatmentPlanDto }) =>
+      treatmentPlanApi.updateTreateMent(planId, body),
+    onSuccess: (data) => {
+      refetch()
+      toast.success(data.data.message)
+      setIsModalOpen(false)
+    },
+    onError: (error) => {
+      toast.error(error.message)
+    }
+  })
+
+  const deleteTreatmentPlanMutation = useMutation({
+    mutationFn: (planId: string) => treatmentPlanApi.deleteTreateMent(planId),
+    onSuccess: (data) => {
+      refetch()
+      toast.success(data.data.message)
+      setIsConfirmDeleteOpen(false)
+      setPlanToDelete(null)
+    },
+    onError: (error) => {
+      toast.error(error.message)
+    }
+  })
+
+  const handleSave = (data: CreateTreatmentPlanDto, planId?: string) => {
+    console.log('form', data)
+
+    const body: CreateTreatmentPlanDto = {
+      ...data,
+      customerId: customerId
+    }
+
+    if (planId) {
+      // Logic CẬP NHẬT
+      updateTreatmentPlanMutation.mutate({ planId, body })
+    } else {
+      console.log('create')
+
+      // Logic TẠO MỚI
+      createTreatmentPlanMutation.mutate(body)
+    }
   }
 
-  if (isLoading) {
-    return <div className='p-6 text-center text-gray-500'>Loading treatment plans...</div>
+  const handleDeletePlan = (planId: string) => {
+    console.log('id', planId)
+
+    setPlanToDelete(planId)
+    setIsConfirmDeleteOpen(true)
   }
+
+  // 2. Hàm Xóa thực tế (gọi khi bấm Confirm trong Popup)
+  // Trong TreatmentPlanTab.tsx
+
+  const confirmDeleteAction = async () => {
+    if (!planToDelete) return
+    // Sử dụng mutation đã định nghĩa để gọi API xóa
+    deleteTreatmentPlanMutation.mutate(planToDelete)
+  }
+
+  // Luôn đóng popup và reset state sau khi hoàn tất
+  setIsConfirmDeleteOpen(false)
+  setPlanToDelete(null)
 
   return (
     <div className='p-6 bg-white rounded-xl shadow-lg min-h-[500px]'>
@@ -67,7 +145,9 @@ export default function TreatmentPlanTab({ customerId }: TreatmentPlanTabProps) 
 
       <div className='space-y-6'>
         {treatmentPlans.length > 0 ? (
-          treatmentPlans.map((plan) => <TreatmentPlanCard key={plan.id} plan={plan} onViewDetails={handleViewOrEdit} />)
+          treatmentPlans.map((plan) => (
+            <TreatmentPlanCard key={plan.id} plan={plan} onViewDetails={handleViewOrEdit} onDelete={handleDeletePlan} />
+          ))
         ) : (
           <div className='text-center p-12 border border-dashed border-gray-300 rounded-lg text-gray-500'>
             <p>This patient currently has no treatment plan.</p>
@@ -84,6 +164,7 @@ export default function TreatmentPlanTab({ customerId }: TreatmentPlanTabProps) 
         plan={selectedPlan}
         customerId={customerId}
         onSave={handleSave}
+        refetch={refetch}
       />
     </div>
   )

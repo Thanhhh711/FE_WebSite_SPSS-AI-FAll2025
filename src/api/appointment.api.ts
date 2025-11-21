@@ -7,6 +7,8 @@ const APPOINTMENTS = '/appointments'
 export const appointmentApi = {
   getAppoinments: () => http.get<AppointmentResponse>(`${APPOINTMENTS}`),
 
+  getAppoinmentsById: (appoimentId: string) => http.get<SuccessResponse<Appointment>>(`${APPOINTMENTS}/${appoimentId}`),
+
   getAppoinmentByBeatyAdvisorId: (BeatyAdvisorId: string) =>
     http.get<SuccessResponse<Appointment[]>>(`${APPOINTMENTS}/staff/${BeatyAdvisorId}`),
 

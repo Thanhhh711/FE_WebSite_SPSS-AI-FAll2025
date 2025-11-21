@@ -13,5 +13,7 @@ export const sessionApi = {
   updateSession: (sessionId: string, sessionFrom: TreatmentSessionForm) =>
     http.put<SuccessResponse<TreatmentSession>>(`${SESSIONS}/${sessionId}`, sessionFrom),
 
-  deleteSession: (sessionId: string) => http.delete<SuccessResponse<TreatmentSession>>(`${SESSIONS}/${sessionId}`)
+  deleteSession: (sessionId: string) => http.delete<SuccessResponse<TreatmentSession>>(`${SESSIONS}/${sessionId}`),
+
+  getSessionsByPlanId: (plandId: string) => http.get<SuccessResponse<TreatmentSession[]>>(`${SESSIONS}/plan/${plandId}`)
 }

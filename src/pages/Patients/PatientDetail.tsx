@@ -1,19 +1,29 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
-import { TreatmentPlan } from '../../types/treatmentPlan.type'
+import { CreateTreatmentPlanDto, TreatmentPlan } from '../../types/treatmentPlan.type'
 import { treatmentPlanApi } from '../../api/treatmentPlan.api'
 import TreatmentPlanCard from '../../components/TreamentModal/TreatmentPlanCard'
 import TreatmentPlanModal from '../../components/TreamentModal/TreatmentPlanModal'
 import { useParams } from 'react-router'
+import ConfirmModal from '../../components/CalendarModelDetail/ConfirmModal'
+import { toast } from 'react-toastify'
+import { useAppContext } from '../../context/AuthContext'
 
 export default function TreatmentPlanTab() {
   const { id } = useParams<{ id: string }>()
+  const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false)
+  const [planToDelete, setPlanToDelete] = useState<string | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState<TreatmentPlan | null>(null)
-
+  const { profile } = useAppContext()
   // Giả định API getTreateMents sẽ có filter/param là customerId
-  const { data: plansResponse, isLoading } = useQuery({
+  const {
+    data: plansResponse,
+    isLoading,
+    refetch
+  } = useQuery({
     queryKey: ['treatmentPlans', id],
     queryFn: () => treatmentPlanApi.getTreateMents(), // Cần cập nhật API để filter theo customerId
     enabled: !!id
@@ -33,10 +43,90 @@ export default function TreatmentPlanTab() {
     setIsModalOpen(true)
   }
 
+  const createTreatmentPlanMutation = useMutation({
+    mutationFn: (body: CreateTreatmentPlanDto) => treatmentPlanApi.createTreateMent(body),
+    onSuccess: (data) => {
+      refetch() // Cập nhật danh sách plans
+      toast.success(data.data.message)
+      setIsModalOpen(false) // Đóng modal
+    },
+    onError: (error) => {
+      toast.error(error.message)
+    }
+  })
+
+  // ✅ 2. MUTATION CHO CẬP NHẬT (UPDATE)
+  const updateTreatmentPlanMutation = useMutation({
+    mutationFn: ({ planId, body }: { planId: string; body: CreateTreatmentPlanDto }) =>
+      treatmentPlanApi.updateTreateMent(planId, body),
+    onSuccess: (data) => {
+      refetch()
+      toast.success(data.data.message)
+      setIsModalOpen(false)
+    },
+    onError: (error) => {
+      toast.error(error.message)
+    }
+  })
+
+  const deleteTreatmentPlanMutation = useMutation({
+    mutationFn: (planId: string) => treatmentPlanApi.deleteTreateMent(planId),
+    onSuccess: (data) => {
+      refetch()
+      toast.success(data.data.message)
+      setIsConfirmDeleteOpen(false)
+      setPlanToDelete(null)
+    },
+    onError: (error) => {
+      toast.error(error.message)
+    }
+  })
+
+  const handleSave = (data: CreateTreatmentPlanDto, planId?: string) => {
+    console.log('form', data)
+
+    const body: CreateTreatmentPlanDto = {
+      ...data,
+      customerId: id as string,
+      createdByStaffId: '60bdbc72-5b01-4c17-9682-90f6b56d7aea'
+    }
+
+    if (planId) {
+      // Logic CẬP NHẬT
+      updateTreatmentPlanMutation.mutate({ planId, body })
+      setIsModalOpen(false)
+    } else {
+      console.log('create')
+
+      // Logic TẠO MỚI
+      createTreatmentPlanMutation.mutate(body)
+      setIsModalOpen(false)
+    }
+  }
+
   // Cần thêm logic onSave và Mutation (tạo/cập nhật) vào đây hoặc trong PatientDetail
-  const handleSave = () => {
-    // Logic save và invalidate queries
-    setIsModalOpen(false)
+  // const handleSave = () => {
+  //   // Logic save và invalidate queries
+  //   setIsModalOpen(false)
+  // }
+
+  const handleDeletePlan = (planId: string) => {
+    console.log('id', planId)
+
+    setPlanToDelete(planId)
+    setIsConfirmDeleteOpen(true)
+  }
+
+  // 2. Hàm Xóa thực tế (gọi khi bấm Confirm trong Popup)
+  // Trong TreatmentPlanTab.tsx
+
+  const confirmDeleteAction = async () => {
+    if (!planToDelete) return
+
+    deleteTreatmentPlanMutation.mutate(planToDelete)
+
+    setIsConfirmDeleteOpen(false)
+    setPlanToDelete(null)
   }
 
   if (isLoading) {
@@ -66,7 +156,9 @@ export default function TreatmentPlanTab() {
 
       <div className='space-y-6'>
         {treatmentPlans.length > 0 ? (
-          treatmentPlans.map((plan) => <TreatmentPlanCard key={plan.id} plan={plan} onViewDetails={handleViewOrEdit} />)
+          treatmentPlans.map((plan) => (
+            <TreatmentPlanCard onDelete={handleDeletePlan} key={plan.id} plan={plan} onViewDetails={handleViewOrEdit} />
+          ))
         ) : (
           <div className='text-center p-12 border border-dashed border-gray-300 rounded-lg text-gray-500'>
             <p>This patient currently has no treatment plan.</p>
@@ -82,7 +174,15 @@ export default function TreatmentPlanTab() {
         onClose={() => setIsModalOpen(false)}
         plan={selectedPlan}
         customerId={id as string}
+        refetch={refetch}
         onSave={handleSave}
+      />
+      <ConfirmModal
+        isOpen={isConfirmDeleteOpen}
+        onClose={() => setIsConfirmDeleteOpen(false)}
+        onConfirm={confirmDeleteAction} // Khi người dùng xác nhận, gọi hàm xóa API
+        title='Confirm Delete Treatment Plan'
+        message={`Are you sure you want to delete this Treatment Plan? This action cannot be undone.`}
       />
     </div>
   )

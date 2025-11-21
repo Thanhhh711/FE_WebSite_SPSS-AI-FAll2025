@@ -11,6 +11,7 @@ import PageMeta from '../components/common/PageMeta'
 
 import { useNavigate } from 'react-router'
 import { toast } from 'react-toastify'
+import { sessionApi } from '../api/treatmentSession.api'
 import userApi from '../api/user.api'
 import EventModalForm from '../components/CalendarModelDetail/AppointmentModal'
 import ConfirmModal from '../components/CalendarModelDetail/ConfirmModal'
@@ -20,8 +21,8 @@ import { Role } from '../constants/Roles'
 import { useAppContext } from '../context/AuthContext'
 import { useModal } from '../hooks/useModal'
 import { AppointmentForm, AppointmentResponse } from '../types/appoinment.type'
-import { PaginaResponse } from '../types/auth.type'
 import { User } from '../types/user.type'
+import { SuccessResponse } from '../utils/utils.type'
 
 interface CalendarEvent extends EventInput {
   extendedProps: {
@@ -101,11 +102,11 @@ const AppointmentCalendar: React.FC = () => {
     mutationFn: ({ id, body }: { id: string; body: AppointmentForm }) => appointmentApi.updateAppoinments(id, body)
   })
 
-  const { data: pagingData } = useQuery<PaginaResponse<User>>({
+  const { data: pagingData } = useQuery<SuccessResponse<User[]>>({
     queryKey: ['users'],
     queryFn: async () => {
       const res = await userApi.getUsers()
-      console.log('resQuery', res.data.data.items)
+      console.log('resQuery', res.data.data)
       return res.data // Trả về data bên trong
     },
     enabled: !isBeautyAdvisor
@@ -124,6 +125,15 @@ const AppointmentCalendar: React.FC = () => {
     enabled: isOpen && !!selectedStaffId,
     select: (data) => data.data.data.emailAddress
   })
+
+  const { data: sesionData } = useQuery({
+    queryKey: ['sessionData'],
+    queryFn: () => sessionApi.getSessions(),
+
+    select: (data) => data.data
+  })
+
+  console.log('sessionData', sesionData)
 
   // Mapping màu sự kiện
   const calendarsEvents = {
@@ -418,7 +428,8 @@ const AppointmentCalendar: React.FC = () => {
           sessionId={sessionId}
           setSessionId={setSessionId}
           setDurationMinutes={setDurationMinutes}
-          pagingData={pagingData?.data.items || []}
+          pagingData={pagingData?.data || []}
+          sesionData={sesionData?.data || []}
           onSave={handleAddOrUpdateEvent}
           onDeleted={handleDeleteEvent}
           patientName={isPatientLoading ? 'Đang tải...' : patientData || 'Bệnh nhân (N/A)'}

@@ -14,13 +14,16 @@ const STATUS_MAP: { [key: number]: { text: string; color: string } } = {
 interface TreatmentPlanCardProps {
   plan: TreatmentPlan
   onViewDetails: (plan: TreatmentPlan) => void
+  onDelete: (planId: string) => void
 }
 
-export default function TreatmentPlanCard({ plan, onViewDetails }: TreatmentPlanCardProps) {
+export default function TreatmentPlanCard({ plan, onViewDetails, onDelete }: TreatmentPlanCardProps) {
+  console.log('TreatmentPlanCard props received:', { planId: plan.id, onDeleteExists: typeof onDelete === 'function' })
+
   const statusInfo = STATUS_MAP[plan.status] || STATUS_MAP[TreatmentPlanStatus.Draft]
   const completedSessions = plan.treatmentSessions.filter((s) => s.status === 2).length // Status 2 = Completed
   const totalSessions = plan.totalSessions || plan.treatmentSessions.length
-
+  const canDelete = plan.status === TreatmentPlanStatus.Draft
   return (
     <div className='border border-gray-200 p-5 rounded-xl shadow-sm bg-white hover:shadow-md transition duration-300'>
       <div className='flex justify-between items-start border-b pb-3 mb-3'>
@@ -65,6 +68,15 @@ export default function TreatmentPlanCard({ plan, onViewDetails }: TreatmentPlan
 
       {/* Action */}
       <div className='pt-4 mt-4 border-t border-gray-100 flex justify-end'>
+        {canDelete && (
+          <button
+            type='button'
+            onClick={() => onDelete(plan.id)}
+            className='px-3 py-1 text-sm font-medium text-red-600 border border-red-300 rounded-lg hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/[0.03]'
+          >
+            Delete
+          </button>
+        )}
         <button
           onClick={() => onViewDetails(plan)}
           className='px-3 py-1 text-sm font-medium text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 transition'

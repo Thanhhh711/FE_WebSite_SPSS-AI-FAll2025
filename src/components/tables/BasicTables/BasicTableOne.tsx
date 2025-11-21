@@ -1,18 +1,18 @@
 // src/components/BasicTableOne.tsx
 
-import { useEffect, useMemo, useState } from 'react'
-import { Table, TableBody, TableCell, TableHeader, TableRow } from '../../ui/table' // Thay đổi path tùy theo cấu trúc thư mục thực tế của bạn
-import Badge from '../../ui/badge/Badge' // Thay đổi path
-import ActionModal, { Button } from '../../ActionModal'
-import { Status, User } from '../../../types/user.type'
 import { useQuery } from '@tanstack/react-query'
-import userApi from '../../../api/user.api'
-import { PaginaResponse } from '../../../types/auth.type'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
-import { AppPath } from '../../../constants/Paths'
 import { toast } from 'react-toastify'
-import { useAppContext } from '../../../context/AuthContext'
+import userApi from '../../../api/user.api'
+import { AppPath } from '../../../constants/Paths'
 import { Role } from '../../../constants/Roles'
+import { useAppContext } from '../../../context/AuthContext'
+import { Status, User } from '../../../types/user.type'
+import { SuccessResponse } from '../../../utils/utils.type'
+import ActionModal, { Button } from '../../ActionModal'
+import Badge from '../../ui/badge/Badge' // Thay đổi path
+import { Table, TableBody, TableCell, TableHeader, TableRow } from '../../ui/table' // Thay đổi path tùy theo cấu trúc thư mục thực tế của bạn
 
 // Dùng mock Button cho Action Cell
 
@@ -137,11 +137,11 @@ export default function BasicTableOne() {
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10 // Đặt số mục mỗi trang là 10
 
-  const { data: pagingData, refetch } = useQuery<PaginaResponse<User>>({
+  const { data: pagingData, refetch } = useQuery<SuccessResponse<User[]>>({
     queryKey: ['users'],
     queryFn: async () => {
       const res = await userApi.getUsers()
-      console.log('resQuery', res.data.data.items)
+      console.log('resQuery', res.data.data)
       return res.data // Trả về data bên trong
     },
     enabled: isAdmin && !!profile,
@@ -151,11 +151,11 @@ export default function BasicTableOne() {
   })
 
   useEffect(() => {
-    if (pagingData?.data.items) {
-      console.log('res', pagingData.data.items)
+    if (pagingData?.data) {
+      console.log('res', pagingData.data)
 
       toast.success(pagingData.message)
-      setTableData(pagingData.data.items)
+      setTableData(pagingData.data)
       // Khi dữ liệu mới được tải, reset về trang 1
       setCurrentPage(1)
     }

@@ -1,10 +1,10 @@
 // src/components/ActionModal.tsx
 
-import { MouseEvent, ReactNode, useEffect, useState } from 'react'
-import { Status, User } from '../types/user.type'
-import userApi from '../api/user.api'
-import { PaginaResponse } from '../types/auth.type'
 import { QueryObserverResult, RefetchOptions } from '@tanstack/react-query'
+import { MouseEvent, ReactNode, useEffect, useState } from 'react'
+import userApi from '../api/user.api'
+import { Status, User } from '../types/user.type'
+import { SuccessResponse } from '../utils/utils.type'
 
 // src/interface/Order.ts
 
@@ -81,7 +81,7 @@ export const Button = ({ children, onClick, className = '', color = 'primary', d
 // End Mock Components
 
 interface ActionModalProps {
-  refetch: (options?: RefetchOptions | undefined) => Promise<QueryObserverResult<PaginaResponse<User>, Error>>
+  refetch: (options?: RefetchOptions | undefined) => Promise<QueryObserverResult<SuccessResponse<User[]>, Error>>
   isOpen: boolean
   onClose: () => void
   user: User | null

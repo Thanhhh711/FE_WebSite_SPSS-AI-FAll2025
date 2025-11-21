@@ -36,6 +36,7 @@ import Buttons from './pages/UiElements/Buttons'
 import Images from './pages/UiElements/Images'
 import Videos from './pages/UiElements/Videos'
 import UserProfiles from './pages/UserProfiles'
+import MedicalReportList from './pages/Report/MedicalReportList'
 
 const BasicTables = lazy(() => import('./pages/Tables/BasicTables'))
 
@@ -98,6 +99,7 @@ export default function App() {
           <Route element={<AppLayout />}>
             <Route path={AppPath.CALENDAR} element={<Calendar />} />
             <Route path={`${AppPath.PATIENT_DETAIL}/:id`} element={<TreatmentPlanTab />} />
+            <Route path={`${AppPath.REPORT}/:id`} element={<MedicalReportList />} />
           </Route>
         </Route>
 

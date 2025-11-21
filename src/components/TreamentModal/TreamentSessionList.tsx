@@ -1,7 +1,12 @@
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
+import { sessionApi } from '../../api/treatmentSession.api'
 import { TreatmentSession, TreatmentSessionStatus } from '../../types/treatmentSession.type'
 import { formatDateToDDMMYYYY } from '../../utils/utils.type'
 import TreatmentSessionModal from './TreatmentSessionModal'
+import StaffEmailLookup from '../RegistrationModal/StaffEmailLookup'
+import { toast } from 'react-toastify'
+import ConfirmModal from '../CalendarModelDetail/ConfirmModal'
 
 // Mapping trạng thái phiên điều trị
 const SESSION_STATUS_MAP: { [key: number]: { text: string; color: string } } = {
@@ -17,14 +22,56 @@ interface TreatmentSessionListProps {
   planId: string
   sessions: TreatmentSession[]
   isViewMode: boolean
+  refetchPlan: () => void
 }
 
-export default function TreatmentSessionList({ planId, sessions, isViewMode }: TreatmentSessionListProps) {
+export default function TreatmentSessionList({ planId, isViewMode, refetchPlan }: TreatmentSessionListProps) {
   const [isSessionModalOpen, setIsSessionModalOpen] = useState(false)
   const [selectedSession, setSelectedSession] = useState<TreatmentSession | null>(null)
 
+  const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false)
+  const [sessionToDeleteId, setSessionToDeleteId] = useState<string | null>(null)
+  const [sessionToDeleteTitle, setSessionToDeleteTitle] = useState<string>('')
+
+  const {
+    data: sessionResponse,
+
+    refetch
+  } = useQuery({
+    queryKey: ['treatmentPlans', planId],
+    queryFn: () => sessionApi.getSessionsByPlanId(planId), // Cần cập nhật API để filter theo customerId
+    enabled: !!planId
+    // Hiện tại: Mock data hoặc giả định API trả về hết và tự filter
+  })
+
+  const deleteSessionMutation = useMutation({
+    mutationFn: (sessionId: string) => sessionApi.deleteSession(sessionId),
+    onSuccess: (data) => {
+      toast.success(data.data.message)
+      refetch() // Cập nhật danh sách sau khi xóa
+      setIsConfirmDeleteOpen(false) // Đóng modal xác nhận
+      setSessionToDeleteId(null)
+    },
+    onError: (error) => {
+      toast.error(error.message)
+    }
+  })
+
+  const handleDeleteClick = (session: TreatmentSession) => {
+    setSessionToDeleteId(session.id)
+    setSessionToDeleteTitle(`Session  ${session.sessionNumber} - ${formatDateToDDMMYYYY(session.sessionDate)}`)
+    setIsConfirmDeleteOpen(true)
+  }
+
+  // Hàm xác nhận xóa (chạy API) - được gọi từ ConfirmModal
+  const confirmDeleteAction = () => {
+    if (sessionToDeleteId) {
+      deleteSessionMutation.mutate(sessionToDeleteId)
+    }
+  }
+
   // Sắp xếp theo sessionNumber
-  const sortedSessions = [...sessions].sort((a, b) => a.sessionNumber - b.sessionNumber)
+  // const sortedSessions = [...sessions].sort((a, b) => a.sessionNumber - b.sessionNumber)
 
   const handleCreateSession = () => {
     setSelectedSession(null)
@@ -73,7 +120,7 @@ export default function TreatmentSessionList({ planId, sessions, isViewMode }: T
             </tr>
           </thead>
           <tbody className='bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700'>
-            {sortedSessions.map((session) => {
+            {sessionResponse?.data.data.map((session) => {
               const statusInfo = SESSION_STATUS_MAP[session.status]
               return (
                 <tr key={session.id || session.sessionNumber}>
@@ -84,7 +131,7 @@ export default function TreatmentSessionList({ planId, sessions, isViewMode }: T
                     {formatDateToDDMMYYYY(session.sessionDate)} ({session.startTime.substring(0, 5)})
                   </td>
                   <td className='px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400'>
-                    {session.staffId}
+                    <StaffEmailLookup staffId={session.staffId} />
                   </td>
                   <td className='px-4 py-3 whitespace-nowrap'>
                     <span
@@ -93,13 +140,24 @@ export default function TreatmentSessionList({ planId, sessions, isViewMode }: T
                       {statusInfo.text}
                     </span>
                   </td>
-                  <td className='px-4 py-3 whitespace-nowrap text-right text-sm font-medium'>
+                  <td className='px-4 py-3 whitespace-nowrap text-right text-sm font-medium flex justify-end space-x-2'>
                     <button
                       onClick={() => handleEditSession(session)}
                       className='text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300'
                     >
                       View/Edit
                     </button>
+
+                    {/* ✅ NÚT XÓA MỚI */}
+                    {!isViewMode && ( // Chỉ hiển thị nút xóa khi không ở chế độ chỉ xem
+                      <button
+                        onClick={() => handleDeleteClick(session)}
+                        className='text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300'
+                        disabled={deleteSessionMutation.isPending} // Vô hiệu hóa khi đang xóa
+                      >
+                        Delete
+                      </button>
+                    )}
                   </td>
                 </tr>
               )
@@ -114,9 +172,18 @@ export default function TreatmentSessionList({ planId, sessions, isViewMode }: T
         onClose={() => setIsSessionModalOpen(false)}
         session={selectedSession}
         planId={planId}
+        refetch={refetch}
+        refetchPlan={refetchPlan}
         onSave={() => {
           /* Logic save session */ setIsSessionModalOpen(false)
         }}
+      />
+      <ConfirmModal
+        isOpen={isConfirmDeleteOpen}
+        onClose={() => setIsConfirmDeleteOpen(false)}
+        onConfirm={confirmDeleteAction}
+        title='Confirm Delete Treatment Session'
+        message={`Are you sure you want to delete the treatment session "${sessionToDeleteTitle}"? This action cannot be undone.`}
       />
     </div>
   )

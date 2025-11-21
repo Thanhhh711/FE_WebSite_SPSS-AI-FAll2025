@@ -1,12 +1,12 @@
-import { PaginaResponse, PagingData, UserByIdResponse } from '../types/auth.type'
+import { SuccessResponse } from './../utils/utils.type'
+import { PagingData, UserByIdResponse } from '../types/auth.type'
 import { User, UserForm } from '../types/user.type'
 import http from '../utils/http'
 
 export const USERS = 'users'
 
 const userApi = {
-  getUsers: (pageNumber = 1, pageSize = 10) =>
-    http.get<PaginaResponse<User>>(`${USERS}?pageNumber=${pageNumber}&pageSize=${pageSize}`),
+  getUsers: () => http.get<SuccessResponse<User[]>>(`${USERS}`),
 
   createUser: (body: UserForm) => http.post<PagingData<User>>(USERS, body),
 

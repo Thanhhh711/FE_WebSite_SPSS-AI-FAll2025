@@ -1,21 +1,19 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useMemo } from 'react'
-import { Modal } from '../ui/modal'
 import { useQuery } from '@tanstack/react-query'
-import { APPOINTMENT_STATUS_LIST } from '../../constants/AppointmentConstants'
+import React, { useMemo } from 'react'
+import { useNavigate } from 'react-router'
 import { scheduleApi } from '../../api/schedulars.api'
-import { ScheduleWork } from '../../types/appoinment.type'
 import { serviceApi } from '../../api/services.api'
-import { PaginaResponse, PagingData } from '../../types/auth.type'
-import { User } from '../../types/user.type'
-import { SuccessResponse } from '../../utils/utils.type'
-import userApi from '../../api/user.api'
+import { APPOINTMENT_STATUS_LIST } from '../../constants/AppointmentConstants'
+import { AppPath } from '../../constants/Paths'
 import { Role } from '../../constants/Roles'
 import { WorkScheduleStatus } from '../../constants/SchedularConstants'
+import { ScheduleWork } from '../../types/appoinment.type'
 import { Service } from '../../types/service.type'
-import { useNavigate } from 'react-router'
-import { AppPath } from '../../constants/Paths'
+import { TreatmentSession } from '../../types/treatmentSession.type'
+import { User } from '../../types/user.type'
+import { Modal } from '../ui/modal'
 // GIẢ ĐỊNH: Import API từ các file liên quan (serviceApi, scheduleApi)
 // Bạn cần đảm bảo các import này tồn tại trong môi trường của bạn
 // import { serviceApi } from '../api/services.api'
@@ -125,6 +123,7 @@ interface EventModalFormProps {
   eventLocation: string
   setEventLocation: (location: string) => void
   pagingData: User[]
+  sesionData: TreatmentSession[]
   // Navigation & Display Info
   patientName: string
   patientId: string
@@ -153,6 +152,7 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
   // State/Setters còn lại
   selectedServiceId,
   pagingData,
+  sesionData,
   setSelectedServiceId,
   selectedScheduleId,
   setSelectedScheduleId,
@@ -258,22 +258,6 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
   const handleViewMedicalRecord = (id: string) => {
     // Điều hướng đến trang hồ sơ bệnh án của bệnh nhân
     navigate(`${AppPath.PATIENT_DETAIL}/${id}`)
-  }
-
-  // --- LOGIC MAPPING VÀ UI CÒN LẠI ---
-
-  const STATUS_API_MAP: { [key: string]: number } = {
-    Primary: 1,
-    Success: 10,
-    Warning: 20,
-    Danger: 30
-  }
-
-  const dotColorMap: { [key: number]: string } = {
-    1: 'bg-blue-500',
-    10: 'bg-green-500',
-    20: 'bg-yellow-500',
-    30: 'bg-red-500'
   }
 
   const IconPlaceholder = ({ color }: { color: string }) => <div className={`w-4 h-4 rounded-full ${color}`}></div>
@@ -567,17 +551,28 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
             </div>
 
             {/* SESSION ID */}
-            <div className='p-5 border border-gray-200 rounded-lg dark:border-gray-700'>
-              <h6 className='mb-4 text-base font-semibold text-gray-700 dark:text-white'>Session ID</h6>
+            <div className='p-5 border border-gray-200 rounded-lg dark:border-gray-700 mt-6'>
+              <h6 className='mb-4 text-base font-semibold text-gray-700 dark:text-white'>Treatment Session</h6>
               <div className=''>
-                <label className='mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400'>Session ID</label>
-                <input
-                  type='text'
+                <label className='mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400'>
+                  Select Session
+                </label>
+                <select
                   value={sessionId}
                   onChange={(e) => setSessionId(e.target.value)}
-                  className='h-10 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-800 dark:text-white/90 focus:border-brand-500'
-                  placeholder='Ví dụ: 3fa85f64-...'
-                />
+                  className='h-11 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm text-gray-800 dark:text-white/90 focus:border-brand-500 focus:ring-1 focus:ring-brand-500'
+                >
+                  <option value=''>-- Select a Session --</option>
+                  {/* sesionData được truyền từ Calendar.tsx */}
+                  {sesionData &&
+                    sesionData.map((session) => (
+                      <option key={session.id} value={session.id}>
+                        {/* Hiển thị Kits, Session Number, và Ngày */}
+                        [Kits: {session.kits || 'N/A'}] - Session #{session.sessionNumber} (
+                        {new Date(session.sessionDate).toLocaleDateString()})
+                      </option>
+                    ))}
+                </select>
               </div>
             </div>
           </div>
