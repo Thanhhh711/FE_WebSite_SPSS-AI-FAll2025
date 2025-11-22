@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react'
 import { Slot, SlotForm } from '../../types/slot.type'
 import ModalRegistration from '../RegistrationModal/ModalRegistration'
-import StaffEmailLookup from '../RegistrationModal/StaffEmailLookup'
+import StaffEmailLookup from '../../utils/StaffEmailLookup'
 
 interface SlotModalProps {
   isOpen: boolean

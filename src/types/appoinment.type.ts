@@ -32,8 +32,8 @@ export interface Schedule {
   shiftDate: string
   startTime: string
   endTime: string
-  slotIndex: WorkScheduleStatus
-  status: number
+  slotIndex: number
+  status: WorkScheduleStatus
   registrationId: string
   roomId: string
   notes: string

@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react'
 import { Room, RoomForm } from '../../types/room.type'
 import ModalRegistration from '../RegistrationModal/ModalRegistration'
-import StaffEmailLookup from '../RegistrationModal/StaffEmailLookup'
+import StaffEmailLookup from '../../utils/StaffEmailLookup'
 
 interface RoomModalProps {
   isOpen: boolean

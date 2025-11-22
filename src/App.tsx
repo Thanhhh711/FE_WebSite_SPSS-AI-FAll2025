@@ -37,6 +37,7 @@ import Images from './pages/UiElements/Images'
 import Videos from './pages/UiElements/Videos'
 import UserProfiles from './pages/UserProfiles'
 import MedicalReportList from './pages/Report/MedicalReportList'
+import WorkSchedulesManagement from './components/tables/BasicTables/BasicTableSchedule'
 
 const BasicTables = lazy(() => import('./pages/Tables/BasicTables'))
 
@@ -64,9 +65,8 @@ export default function App() {
             <Route path={AppPath.BASIC_TABLES_PRODUCT} element={<BasicTablesProduct />} />
             <Route path={AppPath.BASIC_TABLES_SERVICE} element={<BasicTablesService />} />
             <Route path={AppPath.DETAIL_PRODUCT} element={<ProductDetail />} />
-            <Route path={AppPath.BASIC_TABLES_ROOM} element={<BasicTablesRoom />} />
-            <Route path={AppPath.BASIC_TABLES_SLOT} element={<BasicTablesSlot />} />
-            <Route path={AppPath.BASIC_TABLES_TEMPLATE} element={<BasicTablesTemplate />} />
+
+            {/* <Route path={AppPath.BASIC_TABLES_TEMPLATE} element={<BasicTablesTemplate />} /> */}
 
             {/* UI */}
             <Route path={AppPath.ALERTS} element={<Alerts />} />
@@ -98,8 +98,18 @@ export default function App() {
         >
           <Route element={<AppLayout />}>
             <Route path={AppPath.CALENDAR} element={<Calendar />} />
-            <Route path={`${AppPath.PATIENT_DETAIL}/:id`} element={<TreatmentPlanTab />} />
-            <Route path={`${AppPath.REPORT}/:id`} element={<MedicalReportList />} />
+            <Route path={AppPath.BASIC_TABLES_SHEDULES} element={<WorkSchedulesManagement />} />
+          </Route>
+        </Route>
+
+        {/* === Scheular Manage and Admin === */}
+        <Route element={<ProtectedRoute allowedRoles={[Role.SCHEDULE_MANAGER, Role.ADMIN]} userRole={userRole} />}>
+          <Route element={<AppLayout />}>
+            <Route path={AppPath.BASIC_TABLES_ROOM} element={<BasicTablesRoom />} />
+            <Route path={AppPath.BASIC_TABLES_SLOT} element={<BasicTablesSlot />} />
+            <Route path={AppPath.BASIC_TABLES_TEMPLATE} element={<BasicTablesTemplate />} />
+
+            {/* <Route path={AppPath.BASIC_TABLES_REGISTRATION} element={<BasicTableRegistration />} /> */}
           </Route>
         </Route>
 
@@ -112,10 +122,13 @@ export default function App() {
           </Route>
         </Route>
 
-        {/* === Only SKINCARE SPECIALIST AND ADMIN === */}
+        {/* === Only BEAUTY_ADVISOR AND ADMIN === */}
         <Route element={<ProtectedRoute allowedRoles={[Role.BEAUTY_ADVISOR, Role.ADMIN]} userRole={userRole} />}>
           <Route element={<AppLayout />}>
             <Route path={AppPath.BASIC_TABLES_REGISTRATION} element={<BasicTableRegistration />} />
+            <Route path={AppPath.BASIC_TABLES_TEMPLATE} element={<BasicTablesTemplate />} />
+            <Route path={`${AppPath.PATIENT_DETAIL}/:id`} element={<TreatmentPlanTab />} />
+            <Route path={`${AppPath.REPORT}/:id`} element={<MedicalReportList />} />
           </Route>
         </Route>
 

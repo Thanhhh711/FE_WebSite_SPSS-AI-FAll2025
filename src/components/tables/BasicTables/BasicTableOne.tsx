@@ -388,10 +388,7 @@ export default function BasicTableOne() {
       {/* --- Phân Trang (Pagination) --- */}
       {totalPages > 1 && (
         <div className='flex justify-between items-center mt-4 p-4 border border-gray-200 rounded-xl dark:border-white/[0.05] dark:bg-white/[0.03]'>
-          <p className='text-theme-sm text-gray-600 dark:text-gray-400'>
-            Hiển thị mục **{(currentPage - 1) * itemsPerPage + 1}** đến **
-            {Math.min(currentPage * itemsPerPage, totalItems)}** trên tổng số **{totalItems}**
-          </p>
+          <p className='text-theme-sm text-gray-600 dark:text-gray-400'></p>
           <div className='flex items-center'>
             {/* Nút Previous */}
             <button

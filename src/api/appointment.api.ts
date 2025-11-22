@@ -12,6 +12,9 @@ export const appointmentApi = {
   getAppoinmentByBeatyAdvisorId: (BeatyAdvisorId: string) =>
     http.get<SuccessResponse<Appointment[]>>(`${APPOINTMENTS}/staff/${BeatyAdvisorId}`),
 
+  getAppoinmentScheduleId: (scheduleId: string) =>
+    http.get<SuccessResponse<Appointment[]>>(`${APPOINTMENTS}/schedule/${scheduleId}`),
+
   createAppoinments: (body: AppointmentForm) => http.post<AppointmentResponse>(`${APPOINTMENTS}`, body),
 
   updateAppoinments: (apppoimentId: string, appoinmentForm: AppointmentForm) =>

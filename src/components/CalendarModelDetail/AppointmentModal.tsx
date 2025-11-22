@@ -14,82 +14,13 @@ import { Service } from '../../types/service.type'
 import { TreatmentSession } from '../../types/treatmentSession.type'
 import { User } from '../../types/user.type'
 import { Modal } from '../ui/modal'
-// GIẢ ĐỊNH: Import API từ các file liên quan (serviceApi, scheduleApi)
-// Bạn cần đảm bảo các import này tồn tại trong môi trường của bạn
-// import { serviceApi } from '../api/services.api'
-// import { scheduleApi } from '../api/schedulars.api'
 
-// Định nghĩa các Interface cần thiết
-// interface Service {
-//   id: string
-//   name: string
-//   durationMinutes: number
-//   price: number
-// }
 interface Schedule {
   id: string
   startTime: string
   room: { roomName: string; location: string }
 }
 
-// GIẢ ĐỊNH: Định nghĩa hàm mock API để component có thể compile và hiển thị
-// Bạn CẦN thay thế chúng bằng các hàm useQuery thực tế của bạn.
-// Dữ liệu Mock cho Dịch vụ
-const mockServiceData = {
-  data: {
-    items: [
-      { id: 'service-1', name: 'Khám tổng quát', durationMinutes: 60, price: 500000 },
-      { id: 'service-2', name: 'Siêu âm', durationMinutes: 30, price: 300000 }
-    ]
-  }
-}
-
-// Dữ liệu Mock cho Lịch trình/Slots
-const mockAllScheduleSlots = [
-  // Slots cho service-1 (Khám tổng quát)
-  {
-    id: 'slot-1',
-    serviceId: 'service-1',
-    startTime: '2025-11-14T09:00:00Z',
-    room: { roomName: 'A1', location: 'Tầng 1' }
-  },
-  {
-    id: 'slot-2',
-    serviceId: 'service-1',
-    startTime: '2025-11-14T10:00:00Z',
-    room: { roomName: 'A2', location: 'Tầng 1' }
-  },
-  // Slots cho service-2 (Siêu âm)
-  {
-    id: 'slot-3',
-    serviceId: 'service-2',
-    startTime: '2025-11-14T11:00:00Z',
-    room: { roomName: 'B1', location: 'Tầng 2' }
-  }
-]
-
-const mockApi = {
-  getServiceList: async () => {
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    return mockServiceData
-  },
-
-  getScheduleList: async (params?: { date: string; serviceId: string }) => {
-    await new Promise((resolve) => setTimeout(resolve, 500))
-
-    // ✅ FIX: Chỉ cần có serviceId là lọc, bỏ qua date để đơn giản hóa Mock
-    if (params?.serviceId) {
-      const filteredByService = mockAllScheduleSlots.filter((slot) => slot.serviceId === params.serviceId)
-      return { data: { items: filteredByService } }
-    }
-
-    return { data: { items: [] } }
-  }
-}
-// const serviceApi = { getList: () => mockApi.getServiceList() }
-// const scheduleApi = { getList: (params: any) => mockApi.getScheduleList(params) }
-
-// --- 1. INTERFACES PROPS (ĐÃ GIẢM THIỂU & TẬP TRUNG VÀO DỮ LIỆU) ---
 interface EventModalFormProps {
   // Metadata & Control
   isOpen: boolean

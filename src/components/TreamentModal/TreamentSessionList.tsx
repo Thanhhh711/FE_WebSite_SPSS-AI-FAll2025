@@ -4,7 +4,7 @@ import { sessionApi } from '../../api/treatmentSession.api'
 import { TreatmentSession, TreatmentSessionStatus } from '../../types/treatmentSession.type'
 import { formatDateToDDMMYYYY } from '../../utils/utils.type'
 import TreatmentSessionModal from './TreatmentSessionModal'
-import StaffEmailLookup from '../RegistrationModal/StaffEmailLookup'
+import StaffEmailLookup from '../../utils/StaffEmailLookup'
 import { toast } from 'react-toastify'
 import ConfirmModal from '../CalendarModelDetail/ConfirmModal'
 

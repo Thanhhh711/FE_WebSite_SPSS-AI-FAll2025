@@ -7,7 +7,7 @@ import { Report, ReportStatus } from '../../types/report.type'
 import { formatDateToDDMMYYYY } from '../../utils/utils.type'
 // Assumed Modal component exists
 import ModalRegistration from '../RegistrationModal/ModalRegistration'
-import StaffEmailLookup from '../RegistrationModal/StaffEmailLookup'
+import StaffEmailLookup from '../../utils/StaffEmailLookup'
 import { Modal } from '../ui/modal'
 import { appointmentApi } from '../../api/appointment.api'
 

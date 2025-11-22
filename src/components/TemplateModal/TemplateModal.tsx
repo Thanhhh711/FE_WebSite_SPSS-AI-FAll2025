@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react'
 import { ScheduleTemplate, TemplateForm } from '../../types/templete.type'
 import ModalRegistration from '../RegistrationModal/ModalRegistration'
-import StaffEmailLookup from '../RegistrationModal/StaffEmailLookup'
+import StaffEmailLookup from '../../utils/StaffEmailLookup'
 
 interface TemplateModalProps {
   isOpen: boolean

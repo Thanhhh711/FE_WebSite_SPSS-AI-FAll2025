@@ -11,7 +11,7 @@ import { ScheduleTemplate } from '../../../types/templete.type'
 import { formatDateToDDMMYYYY } from '../../../utils/utils.type'
 import ConfirmModal from '../../CalendarModelDetail/ConfirmModal'
 import RegistrationModal, { WEEKDAY_NAMES } from '../../RegistrationModal/RegistrationModal'
-import StaffEmailLookup from '../../RegistrationModal/StaffEmailLookup'
+import StaffEmailLookup from '../../../utils/StaffEmailLookup'
 
 interface Template {
   id: string

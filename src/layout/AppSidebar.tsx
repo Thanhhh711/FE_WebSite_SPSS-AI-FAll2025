@@ -55,7 +55,12 @@ const navItems: NavItem[] = [
         pro: false,
         allowedRoles: [Role.ADMIN]
       },
-      { name: 'Service', path: AppPath.BASIC_TABLES_SERVICE, pro: false, allowedRoles: [Role.ADMIN] },
+      {
+        name: 'Service',
+        path: AppPath.BASIC_TABLES_SERVICE,
+        pro: false,
+        allowedRoles: [Role.ADMIN, Role.SCHEDULE_MANAGER]
+      },
       {
         name: 'Registration',
 
@@ -80,30 +85,16 @@ const navItems: NavItem[] = [
 
         path: AppPath.BASIC_TABLES_TEMPLATE,
         allowedRoles: [Role.SCHEDULE_MANAGER, Role.ADMIN]
+      },
+
+      {
+        name: 'Schedule',
+
+        path: AppPath.BASIC_TABLES_SHEDULES,
+        allowedRoles: [Role.SCHEDULE_MANAGER, Role.ADMIN, Role.BEAUTY_ADVISOR]
       }
-    ],
-    allowedRoles: [Role.ADMIN]
-  },
-
-  {
-    name: 'Patients',
-    icon: <UserCircleIcon />,
-    path: AppPath.PATIENTS,
-    allowedRoles: [Role.BEAUTY_ADVISOR]
-  },
-
-  {
-    name: 'PatientsdETAIL',
-    icon: <UserCircleIcon />,
-    path: AppPath.PATIENT_DETAIL,
-    allowedRoles: [Role.BEAUTY_ADVISOR]
-  },
-
-  {
-    name: 'Registration',
-    icon: <UserCircleIcon />,
-    path: AppPath.BASIC_TABLES_REGISTRATION,
-    allowedRoles: [Role.BEAUTY_ADVISOR]
+    ]
+    // allowedRoles: [Role.ADMIN]
   },
 
   {
