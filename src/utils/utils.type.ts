@@ -23,3 +23,5 @@ export const formatDateToDDMMYYYY = (isoDateString: string | undefined): string 
   // parts[2] = DD, parts[1] = MM, parts[0] = YYYY
   return `${parts[2]}/${parts[1]}/${parts[0]}`
 }
+
+export const ProductOrderService = 'product-order-service'

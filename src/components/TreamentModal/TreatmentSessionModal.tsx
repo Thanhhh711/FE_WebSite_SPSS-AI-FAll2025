@@ -3,13 +3,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { toast } from 'react-toastify'
-import { sessionApi } from '../../api/treatmentSession.api'
-import { TreatmentSession, TreatmentSessionForm, TreatmentSessionStatus } from '../../types/treatmentSession.type'
 import { roomApi } from '../../api/room.api'
-import { SuccessResponse } from '../../utils/utils.type'
-import { User } from '../../types/user.type'
+import { scheduleApi } from '../../api/schedulars.api'
+import { sessionApi } from '../../api/treatmentSession.api'
 import userApi from '../../api/user.api'
 import { Role } from '../../constants/Roles'
+import { useAppContext } from '../../context/AuthContext'
+import { ScheduleWork } from '../../types/appoinment.type'
+import { TreatmentSession, TreatmentSessionForm, TreatmentSessionStatus } from '../../types/treatmentSession.type'
 
 const SESSION_STATUS_NAMES: { [key: number]: string } = {
   [TreatmentSessionStatus.Scheduled]: 'Scheduled',
@@ -19,13 +20,6 @@ const SESSION_STATUS_NAMES: { [key: number]: string } = {
   [TreatmentSessionStatus.Rescheduled]: 'Rescheduled',
   [TreatmentSessionStatus.NoShow]: 'No Show'
 }
-
-// Giả định Staff và Room list
-// const MOCK_STAFFS = [
-//   { id: 'S100', name: 'Dr. Nguyễn Văn A' },
-//   { id: 'S101', name: 'Nurse Lê Thị B' }
-// ]
-// const MOCK_ROOMS = ['Room 101', 'Room 102', 'Room 203']
 
 export const initialFormState: TreatmentSessionForm = {
   planId: '',
@@ -39,8 +33,13 @@ export const initialFormState: TreatmentSessionForm = {
   status: TreatmentSessionStatus.Scheduled,
   devices: '',
   kits: '',
-  roomId: ''
+  roomId: '',
+  scheduleId: '' // Khởi tạo scheduleId rỗng
 }
+
+// ----------------------------------------------------------------------
+// COMPONENT PROPS
+// ----------------------------------------------------------------------
 
 interface TreatmentSessionModalProps {
   isOpen: boolean
@@ -59,34 +58,69 @@ export default function TreatmentSessionModal({
   planId,
   refetch
 }: TreatmentSessionModalProps) {
+  const { profile } = useAppContext()
   const [form, setForm] = useState<TreatmentSessionForm>(initialFormState)
+
+  const [selectedSchedule, setSelectedSchedule] = useState<ScheduleWork | null>(null)
+
   const isEditing = !!session
+  console.log('isEditing', isEditing)
+
   const title = isEditing ? `Session #${session.sessionNumber} Details` : 'Schedule New Session'
+
+  const queryClient = useQueryClient()
 
   const { data: roomsResponse } = useQuery({
     queryKey: ['rooms'],
     queryFn: roomApi.getRooms,
     staleTime: 1000 * 60 * 5
   })
+  const isAdmin = profile?.role === Role.ADMIN
+  const userId = profile?.userId
 
-  const queryClient = useQueryClient()
-
-  const { data: pagingData } = useQuery<SuccessResponse<User[]>>({
-    queryKey: ['users'],
+  const { data: pagingData } = useQuery({
+    queryKey: ['users', profile?.role, userId],
     queryFn: async () => {
-      const res = await userApi.getUsers()
-      console.log('resQuery', res.data.data)
-      return res.data // Trả về data bên trong
+      if (isAdmin) {
+        const res = await userApi.getUsers()
+        return res.data
+      } else {
+        const res = await userApi.getUsersById(userId!)
+        return {
+          message: res.data.message,
+          data: [res.data.data] // ép thành mảng cho đồng nhất
+        }
+      }
     },
-
+    enabled: !!profile, // tránh chạy trước khi load profile
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     retry: false
   })
 
+  console.log('session', session)
+
+  const queryStartDate = form.sessionDate
+
+  const queryEndDate = form.sessionDate
+
+  const { data: scheduleResponse, isLoading: isScheduleLoading } = useQuery({
+    queryKey: ['staffSchedules', form.staffId, queryStartDate, queryEndDate],
+    queryFn: () => scheduleApi.getScheduleByStaffIdAndDateRange(form.staffId, queryStartDate, queryEndDate),
+
+    enabled: !!form.staffId && !!form.sessionDate && !isEditing
+  })
+
+  console.log('scheduleResponse', scheduleResponse?.data.data)
+
+  const availableSchedules = scheduleResponse?.data.data.filter(
+    (s) => s.status === 1 && (!s.appointments || s.appointments.length === 0)
+  )
+
   useEffect(() => {
     if (session) {
-      // EDIT MODE
+      const scheduleIdFromAppointment = session.appointments[0]?.scheduleId || ''
+
       setForm({
         planId: session.planId,
         sessionNumber: session.sessionNumber,
@@ -99,8 +133,11 @@ export default function TreatmentSessionModal({
         status: session.status,
         devices: session.devices,
         kits: session.kits,
-        roomId: session.roomId // 🔥 thêm field này
+        roomId: session.room.id,
+
+        scheduleId: scheduleIdFromAppointment
       })
+      setSelectedSchedule(null)
     } else {
       // CREATE MODE
       setForm((prev) => ({
@@ -108,29 +145,98 @@ export default function TreatmentSessionModal({
         ...initialFormState,
         planId
       }))
+      setSelectedSchedule(null)
     }
-  }, [session])
+  }, [session, planId])
 
-  // Mutation cho Create/Update
+  useEffect(() => {
+    if (!isEditing && form.staffId && form.sessionDate) {
+      if (availableSchedules && availableSchedules.length === 1) {
+        const singleSchedule = availableSchedules[0]
+        setSelectedSchedule(singleSchedule)
+
+        setForm((prev) => ({
+          ...prev,
+
+          startTime: singleSchedule.startTime.substring(0, 5),
+          endTime: singleSchedule.endTime.substring(0, 5),
+
+          scheduleId: singleSchedule.id
+        }))
+        toast.info('Schedule automatically filled in.')
+      } else if (availableSchedules && availableSchedules.length > 1) {
+        setSelectedSchedule(null)
+        setForm((prev) => ({
+          ...prev,
+
+          startTime: '',
+          endTime: '',
+          roomId: '',
+
+          scheduleId: ''
+        }))
+        toast.warn(
+          `Found ${availableSchedules.length} available schedules. Please select one from the dropdown or enter manually.`
+        )
+      } else if (availableSchedules && availableSchedules.length === 0) {
+        setSelectedSchedule(null)
+        setForm((prev) => ({
+          ...prev,
+
+          startTime: '',
+          endTime: '',
+          roomId: '',
+
+          scheduleId: ''
+        }))
+        toast.warn('No available schedules found for this staff on this date. Please enter time and room manually.')
+      }
+    }
+  }, [scheduleResponse, isEditing, form.staffId, form.sessionDate, setForm])
+
+  useEffect(() => {
+    if (selectedSchedule && !isEditing) {
+      setForm((prev) => ({
+        ...prev,
+        sessionDate: selectedSchedule.shiftDate.substring(0, 10),
+        startTime: selectedSchedule.startTime.substring(0, 5),
+        endTime: selectedSchedule.endTime.substring(0, 5),
+        roomId: selectedSchedule.roomId,
+
+        scheduleId: selectedSchedule.id
+      }))
+    } else if (!isEditing && !selectedSchedule && form.staffId && form.sessionDate) {
+      setForm((prev) => ({
+        ...prev,
+        startTime: '',
+        endTime: '',
+        roomId: '',
+
+        scheduleId: ''
+      }))
+    }
+  }, [selectedSchedule, isEditing, form.staffId, form.sessionDate])
+
   const saveMutation = useMutation({
     mutationFn: (data: TreatmentSessionForm) => {
       if (isEditing && session?.id) {
-        // Logic CẬP NHẬT
         return sessionApi.updateSession(session.id, data)
       } else {
-        const dataForm = { ...data, staffId: '60bdbc72-5b01-4c17-9682-90f6b56d7aea' }
+        console.log('dataCreate', data)
 
-        console.log('dataForm', dataForm)
+        const form = {
+          ...data,
+          scheduleId: data.scheduleId === '' ? null : data.scheduleId
+        }
 
-        // Logic TẠO MỚI
-        return sessionApi.createSession(dataForm)
+        console.log('form', form)
+
+        return sessionApi.createSession(form)
       }
     },
     onSuccess: (data) => {
       toast.success(data.data.message)
-
       refetch()
-
       queryClient.invalidateQueries({ queryKey: ['treatmentPlans', planId] })
       onClose()
     },
@@ -141,8 +247,43 @@ export default function TreatmentSessionModal({
   })
   if (!isOpen) return null
 
+  const handleScheduleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const scheduleId = e.target.value
+    if (scheduleId === '') {
+      setSelectedSchedule(null)
+    } else {
+      const schedule = availableSchedules?.find((s) => s.id === scheduleId)
+      setSelectedSchedule(schedule || null)
+    }
+
+    setForm((prev) => ({
+      ...prev,
+      scheduleId: scheduleId
+    }))
+  }
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
+
+    const isTimeOrRoomField = name === 'startTime' || name === 'endTime' || name === 'roomId'
+    if (!isEditing && selectedSchedule && isTimeOrRoomField) {
+      return
+    }
+
+    if (name === 'sessionDate' || name === 'staffId') {
+      setSelectedSchedule(null)
+
+      setForm((prev) => ({
+        ...prev,
+        startTime: '',
+        endTime: '',
+        roomId: '',
+        scheduleId: '',
+        [name]: value
+      }))
+      return
+    }
+
     setForm((prev) => ({
       ...prev,
       [name]: name === 'sessionNumber' || name === 'status' ? Number(value) : value
@@ -151,9 +292,15 @@ export default function TreatmentSessionModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (!form.roomId || !form.sessionDate || !form.startTime || !form.endTime) {
+      toast.error('Vui lòng chọn lịch làm việc hoặc điền đầy đủ thông tin ngày/giờ/phòng.')
+      return
+    }
+
     const body: TreatmentSessionForm = {
       ...form,
-      planId: planId // Gán planId từ props
+      planId: planId
     }
 
     console.log('body', body)
@@ -162,7 +309,19 @@ export default function TreatmentSessionModal({
   }
 
   const baseInputClass =
-    'w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 disabled:bg-gray-50'
+    'w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 disabled:bg-gray-50 disabled:cursor-not-allowed'
+
+  const isFieldsLocked = !isEditing && !!selectedSchedule
+
+  // Lấy thông tin Room đã chọn
+  const currentRoom = roomsResponse?.data.data.find((room) => room.id === form.roomId)
+  console.log('formRoon', form.roomId)
+
+  console.log('currentRoom', currentRoom)
+
+  const currentRoomDisplayName = currentRoom
+    ? `${currentRoom.roomName} - Floor ${currentRoom.floorNumber}`
+    : 'Select Room'
 
   return (
     <div className='fixed inset-0 z-50 overflow-y-auto bg-gray-900 bg-opacity-75 flex items-center justify-center p-4'>
@@ -200,57 +359,18 @@ export default function TreatmentSessionModal({
             </div>
           </div>
 
-          {/* Date, Time, Staff, Room */}
-          <div className='grid grid-cols-4 gap-4'>
-            <div>
-              <label className='mb-1.5 block text-sm font-medium text-gray-700'>Date</label>
-              <input
-                type='date'
-                name='sessionDate'
-                value={form.sessionDate}
-                onChange={handleChange}
-                className={baseInputClass}
-                required
-              />
-            </div>
-            <div>
-              <label className='mb-1.5 block text-sm font-medium text-gray-700'>Start Time</label>
-              <input
-                type='time'
-                name='startTime'
-                value={form.startTime}
-                onChange={handleChange}
-                className={baseInputClass}
-                required
-              />
-            </div>
-            <div>
-              <label className='mb-1.5 block text-sm font-medium text-gray-700'>End Time</label>
-              <input
-                type='time'
-                name='endTime'
-                value={form.endTime}
-                onChange={handleChange}
-                className={baseInputClass}
-                required
-              />
-            </div>
-            <div>
-              <label className='mb-1.5 block text-sm font-medium text-gray-700'>Room</label>
-              <select name='roomId' value={form.roomId} onChange={handleChange} className={baseInputClass} required>
-                {roomsResponse?.data.data.map((room) => (
-                  <option key={room.id} value={room.id}>
-                    {room.roomName}/ {room.location}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Staff ID */}
+          {/* Staff ID - Di chuyển lên trên */}
           <div>
             <label className='mb-1.5 block text-sm font-medium text-gray-700'>Staff Performing Treatment</label>
-            <select name='staffId' value={form.staffId} onChange={handleChange} className={baseInputClass} required>
+            <select
+              name='staffId'
+              value={form.staffId}
+              onChange={handleChange}
+              className={baseInputClass}
+              required
+              disabled={isEditing} // Không đổi staff khi edit
+            >
+              <option value=''>-- Select Staff --</option>
               {pagingData?.data
                 .filter((u) => u.roleName === Role.BEAUTY_ADVISOR)
                 .map((staff) => (
@@ -260,6 +380,115 @@ export default function TreatmentSessionModal({
                 ))}
             </select>
           </div>
+
+          {/* Date, Time, Room (Locked if schedule is selected in Create mode) */}
+          <div className='grid grid-cols-4 gap-4'>
+            {/* Date */}
+            <div>
+              <label className='mb-1.5 block text-sm font-medium text-gray-700'>Date</label>
+              <input
+                type='date'
+                name='sessionDate'
+                value={form.sessionDate}
+                onChange={handleChange}
+                className={baseInputClass}
+                required
+                // Trong Edit Mode, giữ nguyên nếu không muốn cho phép thay đổi lịch
+                readOnly={isEditing}
+                disabled={isEditing}
+              />
+            </div>
+            {/* Start Time */}
+            <div>
+              <label className='mb-1.5 block text-sm font-medium text-gray-700'>Start Time</label>
+              <input
+                type='time'
+                name='startTime'
+                value={form.startTime}
+                onChange={handleChange}
+                className={baseInputClass}
+                required
+                readOnly={isFieldsLocked || isEditing}
+                disabled={isFieldsLocked || isEditing}
+              />
+            </div>
+            {/* End Time */}
+            <div>
+              <label className='mb-1.5 block text-sm font-medium text-gray-700'>End Time</label>
+              <input
+                type='time'
+                name='endTime'
+                value={form.endTime}
+                onChange={handleChange}
+                className={baseInputClass}
+                required
+                readOnly={isFieldsLocked || isEditing}
+                disabled={isFieldsLocked || isEditing}
+              />
+            </div>
+            {/* Room */}
+            <div>
+              <label className='mb-1.5 block text-sm font-medium text-gray-700'>Room</label>
+              <select
+                name='roomId'
+                value={form.roomId}
+                onChange={handleChange}
+                className={baseInputClass}
+                required
+                // Khóa trường Room nếu: (1) Ở chế độ Create và đã có Schedule được chọn, HOẶC (2) Ở chế độ Edit
+                disabled={isFieldsLocked || isEditing}
+              >
+                {/* Trong chế độ Edit, vì trường Room bị disabled, 
+                  chúng ta sẽ chỉ hiển thị option của Room hiện tại để đảm bảo giá trị đúng 
+                */}
+                {isEditing && currentRoom ? (
+                  <option value={currentRoom.id}>{currentRoomDisplayName}</option>
+                ) : (
+                  <>
+                    <option value=''>Select Room</option>
+                    {roomsResponse?.data.data.map((room) => (
+                      <option key={room.id} value={room.id}>
+                        {/* Hiển thị Room Name / Location (hoặc Floor Number) cho chế độ Create */}
+                        {room.roomName}/ {room.location} (Floor {room.floorNumber})
+                      </option>
+                    ))}
+                  </>
+                )}
+              </select>
+            </div>
+          </div>
+
+          {!isEditing && form.staffId && form.sessionDate && (
+            <div className='col-span-4'>
+              <label className='mb-1.5 block text-sm font-medium text-gray-700'>
+                Available Schedule
+                {isScheduleLoading && form.staffId && ' (Loading...)'}
+              </label>
+              <select
+                name='scheduleId'
+                value={form.scheduleId || ''}
+                onChange={handleScheduleChange}
+                className={baseInputClass}
+                disabled={!form.staffId || !form.sessionDate || isScheduleLoading}
+              >
+                <option value=''>-- Select a Schedule (or fill manually) --</option>
+                {availableSchedules && availableSchedules.length > 0 ? (
+                  availableSchedules?.map((schedule) => (
+                    <option key={schedule.id} value={schedule.id}>
+                      {schedule.shiftDate.substring(0, 10)} | {schedule.startTime.substring(0, 5)} -{' '}
+                      {schedule.endTime.substring(0, 5)} ({schedule.room.roomName})
+                    </option>
+                  ))
+                ) : (
+                  <option value='' disabled={!form.staffId || !form.sessionDate}>
+                    {form.staffId && form.sessionDate
+                      ? 'No available schedules found.'
+                      : 'Enter Staff and Date to load schedules.'}
+                  </option>
+                )}
+              </select>
+            </div>
+          )}
 
           {/* Devices and Kits */}
           <div className='grid grid-cols-2 gap-4'>
@@ -327,7 +556,7 @@ export default function TreatmentSessionModal({
             <button
               type='submit'
               className='px-4 py-2 text-sm font-medium text-white bg-brand-600 rounded-lg hover:bg-brand-700 disabled:bg-brand-400'
-              disabled={saveMutation.isPending}
+              disabled={saveMutation.isPending || form.staffId === '' || form.sessionDate === ''}
             >
               {saveMutation.isPending ? 'Saving...' : isEditing ? 'Update Session' : 'Schedule Session'}
             </button>

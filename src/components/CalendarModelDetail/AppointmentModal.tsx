@@ -12,8 +12,9 @@ import { WorkScheduleStatus } from '../../constants/SchedularConstants'
 import { ScheduleWork } from '../../types/appoinment.type'
 import { Service } from '../../types/service.type'
 import { TreatmentSession } from '../../types/treatmentSession.type'
-import { User } from '../../types/user.type'
+import { AuthUser, User } from '../../types/user.type'
 import { Modal } from '../ui/modal'
+import { AuthResponse } from '../../types/auth.type'
 
 interface Schedule {
   id: string
@@ -38,6 +39,7 @@ interface EventModalFormProps {
   appointmentDate: string
   setAppointmentDate: (date: string) => void
   startDateTime: string
+  endDateTime: string
   setStartDateTime: (time: string) => void
   status: number
   setStatus: (status: number) => void
@@ -54,12 +56,12 @@ interface EventModalFormProps {
   eventLocation: string
   setEventLocation: (location: string) => void
   pagingData: User[]
-  sesionData: TreatmentSession[]
+  sesionData: TreatmentSession
   // Navigation & Display Info
   patientName: string
   patientId: string
   setPatientId: (id: string) => void
-
+  profile: AuthUser
   doctorName: string
   doctorId: string
   setDoctorId: (id: string) => void
@@ -103,13 +105,17 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
   eventLocation,
   setDoctorId,
   onDeleted,
-  setEventLocation
+  setEventLocation,
+
+  endDateTime,
+  profile
 }) => {
   const isEditing = !!selectedEvent
 
   console.log('Data User', pagingData)
 
-  // 1. Fetch Danh sách Service
+  console.log('sessionData', sesionData)
+
   const { data: servicesData, isLoading: isServicesLoading } = useQuery({
     queryKey: ['allServices'],
     queryFn: () => serviceApi.getServices(),
@@ -119,7 +125,6 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
 
   const allServices: Service[] = servicesData?.data.data || []
 
-  // 2. Fetch Danh sách Schedule Slots
   const { data: schedulesData, isLoading: isSlotsLoading } = useQuery({
     queryKey: ['allSchedules', appointmentDate, selectedServiceId, doctorId],
 
@@ -143,7 +148,7 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
   const servicePrice = selectedService?.price
   const durationMinutes = selectedService?.durationMinutes || 0
   const navigate = useNavigate()
-  // Hàm setter cho Service ID
+
   const handleServiceChange = (id: string) => {
     setSelectedServiceId(id)
     const selected = allServices.find((s) => s.id === id)
@@ -155,27 +160,23 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
     }
   }
 
-  // Hàm setter cho Schedule Slot
   const handleScheduleChange = (id: string) => {
     console.log('id', id)
 
     setSelectedScheduleId(id)
 
-    // 1. Xử lý trường hợp chọn lại option mặc định (Clear)
     if (!id) {
       setEventRoom('')
       setEventLocation('')
-      // Bạn cũng nên clear các state khác nếu cần thiết (ví dụ: startDateTime)
+
       return
     }
-    // 1. Tìm schedule
+
     const schedule = allSchedules.find((s) => s.id === id)
 
     if (schedule) {
-      // 2. Chuyển đổi thời gian
       const start = new Date(schedule.startTime)
 
-      // Cập nhật Date/Time/Location khi Slot thay đổi
       setAppointmentDate(start.toISOString().split('T')[0])
       setStartDateTime(
         `${start.getHours().toString().padStart(2, '0')}:${start.getMinutes().toString().padStart(2, '0')}`
@@ -187,8 +188,7 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
   }
 
   const handleViewMedicalRecord = (id: string) => {
-    // Điều hướng đến trang hồ sơ bệnh án của bệnh nhân
-    navigate(`${AppPath.PATIENT_DETAIL}/${id}`)
+    navigate(`${AppPath.PROFILE}/${id}`)
   }
 
   const IconPlaceholder = ({ color }: { color: string }) => <div className={`w-4 h-4 rounded-full ${color}`}></div>
@@ -199,10 +199,13 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
         {/* HEADER */}
         <div className='flex items-center justify-between p-6 border-b border-gray-100 dark:border-gray-800'>
           <div>
-            <h5 className='mb-1 font-bold text-gray-800 modal-title text-xl lg:text-2xl dark:text-white'>
-              {isEditing ? 'Edit Appointment' : 'Add New Appointment'}
-            </h5>
-            <p className='text-sm text-gray-500 dark:text-gray-400'>
+            {profile.role === Role.CUSTOMER && (
+              <h5 className='mb-1 font-bold text-gray-800 modal-title text-xl lg:text-2xl dark:text-white'>
+                {isEditing ? 'Edit Appointment' : 'Add New Appointment'}
+              </h5>
+            )}
+
+            <p className='text-sm text-gray-500 dark:text-gray-4  00'>
               Manage appointment details, services, and schedules.
             </p>
           </div>
@@ -218,28 +221,37 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
           className='p-6 space-y-8 overflow-y-auto custom-scrollbar lg:p-8 overflow-y-auto'
           style={{ maxHeight: '80vh' }}
         >
-          {/* 1. SECTION: THÔNG TIN CHỦ THỂ & DỊCH VỤ */}
           <div className='p-5 border border-gray-200 rounded-lg dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50'>
             <h6 className='mb-4 text-lg font-semibold text-gray-700 dark:text-white'> Main Information</h6>
-            {/* Service Selection */}
+
             <div className='mb-6'>
               <label className='flex items-center mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-400'>
                 <IconPlaceholder color='bg-blue-500' />
                 <span className='ml-2'>Service</span>
               </label>
-              <select
-                value={selectedServiceId}
-                onChange={(e) => handleServiceChange(e.target.value)}
-                className='h-11 w-full rounded-lg border border-gray-300 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm text-gray-800 dark:text-white/90 focus:border-brand-500 focus:ring-1 focus:ring-brand-500'
-                disabled={isServicesLoading}
-              >
-                <option value=''>{isServicesLoading ? 'Loading services...' : 'Select a service'}</option>
-                {allServices.map((service) => (
-                  <option key={service.id} value={service.id}>
-                    {service.name} ({service.durationMinutes} phút)
-                  </option>
-                ))}
-              </select>
+              {/* Lấy thông tin dịch vụ đã chọn */}
+              {selectedServiceId &&
+                allServices.length > 0 &&
+                // Tìm dịch vụ phù hợp với ID đã chọn
+                (() => {
+                  const selectedService = allServices.find((service) => service.id === selectedServiceId)
+
+                  // Hiển thị tên dịch vụ nếu tìm thấy
+                  if (selectedService) {
+                    return (
+                      <div className='h-11 w-full rounded-lg border border-gray-300 bg-gray-50 dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-800 dark:text-white/90'>
+                        {selectedService.name} ({selectedService.durationMinutes} phút)
+                      </div>
+                    )
+                  }
+                  return null
+                })()}
+
+              {!selectedServiceId && (
+                <div className='h-11 w-full rounded-lg border border-gray-300 bg-gray-50 dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-500 dark:text-gray-400'>
+                  {isServicesLoading ? 'Loading services...' : 'No service selected'}
+                </div>
+              )}
             </div>
 
             <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
@@ -247,7 +259,6 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
 
               <label className='mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400'>Beaty Advisor</label>
               {doctorId ? (
-                // TRƯỜNG HỢP CÓ ID: Hiển thị Read-Only CÓ NÚT XÓA (FIXED)
                 (() => {
                   const currentDoctor = pagingData?.find((u) => u.userId === doctorId)
                   const displayedDoctorName = currentDoctor?.firstName || currentDoctor?.emailAddress || doctorName
@@ -314,7 +325,6 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
 
                       {/* ACTIONS: View Record & Change Button */}
                       <div className='flex items-center space-x-3'>
-                        {/* 1. NÚT XEM BỆNH ÁN (View Record) */}
                         <button
                           onClick={() => handleViewMedicalRecord(patientId)} // 🚨 Cần định nghĩa hàm này
                           type='button'
@@ -324,21 +334,19 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
                           View Record
                         </button>
 
-                        {/* 2. NÚT ĐỔI/CHỌN LẠI (Change) */}
-                        <button
-                          onClick={() => setPatientId('')} // 🚨 Xóa patientId để chuyển sang chế độ chọn
+                        {/* <button
+                          onClick={() => setPatientId('')}
                           type='button'
                           className='text-sm font-medium text-indigo-500 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors'
                           title='Change/Re-select Customer'
                         >
                           Change
-                        </button>
+                        </button> */}
                       </div>
                     </div>
                   )
                 })()
               ) : (
-                // TRƯỜNG HỢP KHÔNG CÓ ID: Hiển thị Select Dropdown
                 <select
                   className='h-11 w-full rounded-lg border border-indigo-300 bg-indigo-50/50 dark:bg-indigo-900/50 px-4 py-2.5 text-sm text-indigo-700 dark:text-indigo-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500'
                   value={patientId}
@@ -357,11 +365,9 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
             </div>
           </div>
 
-          {/* 2. SECTION: LỊCH TRÌNH (DATE, TIME, SCHEDULE, DURATION) */}
           <div className='p-5 border border-gray-200 rounded-lg dark:border-gray-700'>
             <h6 className='mb-4 text-lg font-semibold text-gray-700 dark:text-white'>Schedule & Time</h6>
 
-            {/* Schedule Slot Selection */}
             <div className='mb-6'>
               <label className='flex items-center mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-400'>
                 <IconPlaceholder color='bg-orange-500' />
@@ -386,7 +392,6 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
                   const startTime = schedule.startTime
                   const endTime = schedule.endTime
 
-                  // ✅ FIX: Định nghĩa biến với giá trị dự phòng an toàn (N/A hoặc rỗng)
                   const roomName = schedule.room?.roomName || 'N/A'
                   const location = schedule.room?.location || 'N/A'
 
@@ -399,9 +404,7 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
               </select>
             </div>
 
-            {/* DATE, TIME, DURATION */}
             <div className='grid grid-cols-2 gap-4 sm:grid-cols-3'>
-              {/* Ngày (*appointmentDate) */}
               <div>
                 <label className='mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400'>
                   Appointment Date
@@ -413,12 +416,22 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
                   className='h-10 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-800 dark:text-white/90 focus:border-brand-500'
                 />
               </div>
-              {/* Giờ Bắt đầu (*startDateTime) */}
+
               <div>
                 <label className='mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400'>Start Time</label>
                 <input
                   type='time'
                   value={startDateTime}
+                  onChange={(e) => setStartDateTime(e.target.value)}
+                  className='h-10 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-800 dark:text-white/90 focus:border-brand-500'
+                />
+              </div>
+
+              <div>
+                <label className='mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400'>End Time</label>
+                <input
+                  type='time'
+                  value={endDateTime}
                   onChange={(e) => setStartDateTime(e.target.value)}
                   className='h-10 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-800 dark:text-white/90 focus:border-brand-500'
                 />
@@ -438,8 +451,6 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
             </div>
           </div>
 
-          {/* TRẠNG THÁI (Status: *status) */}
-
           <div className='p-5 border border-gray-200 rounded-lg dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50'>
             <h6 className='mb-4 text-lg font-semibold text-gray-700 dark:text-white'>Appointment Status </h6>
 
@@ -448,7 +459,6 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
                 <label
                   key={s.code}
                   htmlFor={`status-${s.code}`}
-                  // Sử dụng Conditional Styling để làm nổi bật lựa chọn đang chọn
                   className={`
                     relative flex items-center justify-center p-3 rounded-lg text-sm font-medium border cursor-pointer 
                     transition duration-150 ease-in-out
@@ -468,7 +478,6 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
                     value={s.code}
                     checked={status === s.code}
                     onChange={() => setStatus(s.code)}
-                    // Ẩn Radio Dot mặc định, chỉ dùng lớp CSS cho hiệu ứng
                     className='sr-only'
                   />
                   <span className='flex items-center'>
@@ -488,22 +497,14 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
                 <label className='mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400'>
                   Select Session
                 </label>
-                <select
-                  value={sessionId}
-                  onChange={(e) => setSessionId(e.target.value)}
-                  className='h-11 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm text-gray-800 dark:text-white/90 focus:border-brand-500 focus:ring-1 focus:ring-brand-500'
+                <div
+                  className='h-11 w-full rounded-lg border border-gray-300 dark:border-gray-700 
+                bg-gray-100 dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-800 
+                dark:text-white/90'
                 >
-                  <option value=''>-- Select a Session --</option>
-                  {/* sesionData được truyền từ Calendar.tsx */}
-                  {sesionData &&
-                    sesionData.map((session) => (
-                      <option key={session.id} value={session.id}>
-                        {/* Hiển thị Kits, Session Number, và Ngày */}
-                        [Kits: {session.kits || 'N/A'}] - Session #{session.sessionNumber} (
-                        {new Date(session.sessionDate).toLocaleDateString()})
-                      </option>
-                    ))}
-                </select>
+                  [Kits: {(sesionData.kits as string) || 'N/A'}] - Session #{sesionData.sessionNumber} (
+                  {new Date(sesionData.sessionDate).toLocaleDateString()})
+                </div>
               </div>
             </div>
           </div>
@@ -536,7 +537,7 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
                   placeholder='e.g.: 3rd Floor, Zone D'
                 />
               </div>
-              {/* Giá (Chỉ đọc) */}
+              {/* Giá  */}
               <div>
                 <label className='mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400'>
                   Service Price
@@ -550,7 +551,7 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
               </div>
             </div>
 
-            {/* Ghi chú (*notes) */}
+            {/* (*notes) */}
             <textarea
               rows={4}
               value={notes}
@@ -567,7 +568,6 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
             <button
               onClick={onDeleted}
               type='button'
-              // Sử dụng màu đỏ để biểu thị hành động hủy (Danger)
               className='flex w-full justify-center rounded-lg border border-red-300 bg-white px-4 py-2.5 text-sm font-medium text-red-700 hover:bg-red-50 dark:border-red-700 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-red-900/[0.03] sm:w-auto'
             >
               Delete Appointment
@@ -580,13 +580,16 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
           >
             Close
           </button>
-          <button
-            onClick={onSave}
-            type='button'
-            className='btn btn-success flex w-full justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white shadow-brand-xs hover:bg-brand-600 sm:w-auto'
-          >
-            {isEditing ? 'Update Appointment' : 'Add Appointment'}
-          </button>
+
+          {profile.role === Role.CUSTOMER && (
+            <button
+              onClick={onSave}
+              type='button'
+              className='btn btn-success flex w-full justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white shadow-brand-xs hover:bg-brand-600 sm:w-auto'
+            >
+              {isEditing ? 'Update Appointment' : 'Add Appointment'}
+            </button>
+          )}
         </div>
       </div>
     </Modal>

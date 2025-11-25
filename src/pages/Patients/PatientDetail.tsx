@@ -18,16 +18,15 @@ export default function TreatmentPlanTab() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState<TreatmentPlan | null>(null)
   const { profile } = useAppContext()
-  // Giả định API getTreateMents sẽ có filter/param là customerId
+
   const {
     data: plansResponse,
     isLoading,
     refetch
   } = useQuery({
     queryKey: ['treatmentPlans', id],
-    queryFn: () => treatmentPlanApi.getTreateMents(), // Cần cập nhật API để filter theo customerId
+    queryFn: () => treatmentPlanApi.getTreateMentsyCustomerId(id as string),
     enabled: !!id
-    // Hiện tại: Mock data hoặc giả định API trả về hết và tự filter
   })
 
   // Mock Filter (Nếu API không hỗ trợ filter)

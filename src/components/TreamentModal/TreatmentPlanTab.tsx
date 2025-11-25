@@ -9,7 +9,7 @@ import ConfirmModal from '../CalendarModelDetail/ConfirmModal'
 import { toast } from 'react-toastify'
 
 interface TreatmentPlanTabProps {
-  customerId: string // ID của bệnh nhân từ PatientDetail.tsx
+  customerId: string
 }
 
 export default function TreatmentPlanTab({ customerId }: TreatmentPlanTabProps) {
@@ -19,20 +19,17 @@ export default function TreatmentPlanTab({ customerId }: TreatmentPlanTabProps) 
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState<TreatmentPlan | null>(null)
 
-  // Giả định API getTreateMents sẽ có filter/param là customerId
   const {
     data: plansResponse,
     isLoading,
     refetch
   } = useQuery({
     queryKey: ['treatmentPlans', customerId],
-    queryFn: () => treatmentPlanApi.getTreateMents(), // Cần cập nhật API để filter theo customerId
+    queryFn: () => treatmentPlanApi.getTreateMentsyCustomerId(customerId),
     enabled: !!customerId
-    // Hiện tại: Mock data hoặc giả định API trả về hết và tự filter
   })
 
-  // Mock Filter (Nếu API không hỗ trợ filter)
-  const treatmentPlans: TreatmentPlan[] = plansResponse?.data.data?.filter((p) => p.customerId === customerId) || []
+  const treatmentPlans: TreatmentPlan[] = plansResponse?.data.data ?? []
 
   const handleOpenCreate = () => {
     setSelectedPlan(null)

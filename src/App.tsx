@@ -21,7 +21,7 @@ import ProductDetail from './pages/Product/ProductDetail'
 // import BasicTables from './pages/Tables/BasicTables'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import BasicTableRegistration from './components/tables/BasicTables/BasicTableRegistration'
-import TreatmentPlanTab from './pages/Patients/PatientDetail'
+
 import BasicTablesOrder from './pages/Tables/BasicTablesOrder'
 import BasicTablesPatients from './pages/Tables/BasicTablesPatients'
 import BasicTablesProduct from './pages/Tables/BasicTablesProduct'
@@ -38,6 +38,12 @@ import Videos from './pages/UiElements/Videos'
 import UserProfiles from './pages/UserProfiles'
 import MedicalReportList from './pages/Report/MedicalReportList'
 import WorkSchedulesManagement from './components/tables/BasicTables/BasicTableSchedule'
+import BasicTablesBrand from './pages/Tables/BasicTablesBrand'
+import TreatmentPlanTab from './pages/Patients/PatientDetail'
+import BasicTablesCountries from './pages/Tables/BasicTablesCountries'
+import BasicTablesVoucher from './pages/Tables/BasicTablesVoucher'
+import BasicTablesCategory from './pages/Tables/BasicTablesCategory'
+import BasicTablesVariation from './pages/Tables/BasicTablesVariation'
 
 const BasicTables = lazy(() => import('./pages/Tables/BasicTables'))
 
@@ -63,11 +69,15 @@ export default function App() {
             {/* Tables */}
             <Route path={AppPath.BASIC_TABLES} element={<BasicTables />} />
             <Route path={AppPath.BASIC_TABLES_PRODUCT} element={<BasicTablesProduct />} />
-            <Route path={AppPath.BASIC_TABLES_SERVICE} element={<BasicTablesService />} />
+            <Route path={AppPath.BASIC_TABLES_BRAND} element={<BasicTablesBrand />} />
+            <Route path={AppPath.BASIC_TABLES_COUNTRIES} element={<BasicTablesCountries />} />
+            <Route path={AppPath.BASIC_TABLES_VOUCHER} element={<BasicTablesVoucher />} />
+            <Route path={AppPath.BASIC_TABLES_CATEGORY} element={<BasicTablesCategory />} />
+            <Route path={AppPath.BASIC_TABLES_VARIATION} element={<BasicTablesVariation />} />
+
             <Route path={AppPath.DETAIL_PRODUCT} element={<ProductDetail />} />
-
             {/* <Route path={AppPath.BASIC_TABLES_TEMPLATE} element={<BasicTablesTemplate />} /> */}
-
+            <Route path={AppPath.BASIC_TABLES_ROOM} element={<BasicTablesRoom />} />
             {/* UI */}
             <Route path={AppPath.ALERTS} element={<Alerts />} />
             <Route path={AppPath.AVATARS} element={<Avatars />} />
@@ -79,7 +89,7 @@ export default function App() {
             <Route path={AppPath.LINE_CHART} element={<LineChart />} />
             <Route path={AppPath.BAR_CHART} element={<BarChart />} />
             {/* Others */}
-            <Route path={`${AppPath.PROFILE}/:id`} element={<UserProfiles />} />
+            {/* <Route path={`${AppPath.PROFILE}/:id`} element={<UserProfiles />} /> */}
             {/* <Route path={AppPath.CALENDAR} element={<Calendar />} /> */}
             <Route path={AppPath.FORM_ELEMENTS} element={<FormElements />} />
             {/* Content */}
@@ -105,10 +115,9 @@ export default function App() {
         {/* === Scheular Manage and Admin === */}
         <Route element={<ProtectedRoute allowedRoles={[Role.SCHEDULE_MANAGER, Role.ADMIN]} userRole={userRole} />}>
           <Route element={<AppLayout />}>
-            <Route path={AppPath.BASIC_TABLES_ROOM} element={<BasicTablesRoom />} />
             <Route path={AppPath.BASIC_TABLES_SLOT} element={<BasicTablesSlot />} />
             <Route path={AppPath.BASIC_TABLES_TEMPLATE} element={<BasicTablesTemplate />} />
-
+            <Route path={AppPath.BASIC_TABLES_SERVICE} element={<BasicTablesService />} />
             {/* <Route path={AppPath.BASIC_TABLES_REGISTRATION} element={<BasicTableRegistration />} /> */}
           </Route>
         </Route>
@@ -126,7 +135,10 @@ export default function App() {
         <Route element={<ProtectedRoute allowedRoles={[Role.BEAUTY_ADVISOR, Role.ADMIN]} userRole={userRole} />}>
           <Route element={<AppLayout />}>
             <Route path={AppPath.BASIC_TABLES_REGISTRATION} element={<BasicTableRegistration />} />
+
             <Route path={AppPath.BASIC_TABLES_TEMPLATE} element={<BasicTablesTemplate />} />
+            <Route path={`${AppPath.PROFILE}/:id`} element={<UserProfiles />} />
+
             <Route path={`${AppPath.PATIENT_DETAIL}/:id`} element={<TreatmentPlanTab />} />
             <Route path={`${AppPath.REPORT}/:id`} element={<MedicalReportList />} />
           </Route>

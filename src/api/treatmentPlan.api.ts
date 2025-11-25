@@ -3,10 +3,14 @@ import http from '../utils/http'
 import { SuccessResponse } from '../utils/utils.type'
 
 const TREATMENTPLANS = 'treatment-plans'
+const CUSTOMER = 'customer'
 export const treatmentPlanApi = {
   getTreateMents: () => http.get<SuccessResponse<TreatmentPlan[]>>(`${TREATMENTPLANS}`),
 
   getTreateMentsById: (planId: string) => http.get<SuccessResponse<TreatmentPlan>>(`${TREATMENTPLANS}/${planId}`),
+
+  getTreateMentsyCustomerId: (customerId: string) =>
+    http.get<SuccessResponse<TreatmentPlan[]>>(`${TREATMENTPLANS}/${CUSTOMER}/${customerId}`),
 
   createTreateMent: (body: CreateTreatmentPlanDto) =>
     http.post<SuccessResponse<TreatmentPlan>>(`${TREATMENTPLANS}`, body),

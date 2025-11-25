@@ -11,20 +11,16 @@ interface UserMetaCardProps {
 }
 
 export default function UserMetaCard({ user }: UserMetaCardProps) {
-  // Lấy id từ URL, đây chính là customerId
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const customerId = id as string // Đảm bảo ID được sử dụng
+  const customerId = id as string
 
-  // Hàm chuyển hướng đến trang Hồ sơ Bệnh án chính
   const handleViewMedicalRecord = (userId: string) => {
-    // Điều hướng đến trang hồ sơ bệnh án tổng quan
     navigate(`${AppPath.PATIENT_DETAIL}/${userId}`)
   }
 
   // ✅ HÀM MỚI: Chuyển hướng đến phần Báo cáo Y tế
   const handleViewReports = (userId: string) => {
-    // Điều hướng đến trang Patient Detail và sử dụng query param để mở tab reports
     navigate(`${AppPath.REPORT}/${userId}`)
   }
 

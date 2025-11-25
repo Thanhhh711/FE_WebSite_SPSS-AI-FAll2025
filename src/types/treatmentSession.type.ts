@@ -1,4 +1,5 @@
 import { Appointment } from './appoinment.type'
+import { Room } from './room.type'
 
 export interface TreatmentSessionForm {
   planId: string
@@ -13,6 +14,7 @@ export interface TreatmentSessionForm {
   devices: string
   kits: string
   roomId: string
+  scheduleId?: string
 }
 
 export enum TreatmentSessionStatus {
@@ -65,7 +67,7 @@ export interface TreatmentSession {
   isDeleted: boolean
   plan: TreatmentPlanInSession
   appointments: Appointment[]
-  roomId: string
+  room: Room
 }
 
 export interface TreatmentPlanInSession {

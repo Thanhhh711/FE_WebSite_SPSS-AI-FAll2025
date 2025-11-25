@@ -29,7 +29,7 @@ export default function SignInForm() {
   const loginMutation = useMutation({
     mutationFn: (body: FormData) => authApi.loginAccount(body)
   })
-  // --- Hàm Validation (Giữ nguyên logic bảo mật cao) ---
+
   const validatePassword = (password: string): string | null => {
     if (password.length === 0) {
       return 'Mật khẩu là bắt buộc.'
@@ -100,15 +100,10 @@ export default function SignInForm() {
 
   return (
     <div className='w-full'>
-      {/* Card: Thiết kế Clean, Shadow tinh tế, Bo góc lớn */}
       <div className='bg-white dark:bg-gray-800 p-8 sm:p-12 rounded-3xl shadow-2xl ring-1 ring-gray-100 dark:ring-gray-700/50'>
-        {/* Header - Logo Hồng Phấn */}
         <div className='mb-8 text-center'>
-          {/* Logo: Sử dụng hình ảnh/thẻ Logo của bạn */}
           <div className='inline-block mb-4 p-3 rounded-full bg-pink-100 dark:bg-pink-900/50'>
-            {/* Đặt thẻ <img> Logo của bạn tại đây */}
             <span className='text-3xl font-light text-pink-600 dark:text-pink-400'>
-              {/* Placeholder cho Logo màu hồng nhạt/chủ đạo */}
               <img width={40} height={40} src='/public/images/logo/SPSS.png' alt='Logo' />
             </span>
           </div>
@@ -132,7 +127,6 @@ export default function SignInForm() {
                 name='usernameOrEmail'
                 placeholder='admin.hoang@spa.vn'
                 error={errors.email}
-                // Input: Focus ring màu Hồng phấn sang trọng
                 className='focus:border-pink-400 focus:ring-1 focus:ring-pink-200 dark:focus:ring-pink-400/30'
               />
               {errors.email && <p className='mt-1 text-sm text-red-500'>{errors.email}</p>}
@@ -188,10 +182,7 @@ export default function SignInForm() {
 
             {/* Sign In Button */}
             <div className='pt-2'>
-              <Button
-                // Nút nhấn: Màu Hồng đậm, hiệu ứng bóng mờ nhẹ, bo góc mềm mại
-                className='w-full py-3.5 text-base font-semibold bg-pink-500 hover:bg-pink-600 text-white transition-all duration-200 rounded-xl shadow-lg hover:shadow-xl focus:ring-4 focus:ring-pink-200 dark:focus:ring-pink-400/50'
-              >
+              <Button className='w-full py-3.5 text-base font-semibold bg-pink-500 hover:bg-pink-600 text-white transition-all duration-200 rounded-xl shadow-lg hover:shadow-xl focus:ring-4 focus:ring-pink-200 dark:focus:ring-pink-400/50'>
                 Đăng nhập
               </Button>
             </div>

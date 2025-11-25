@@ -21,8 +21,8 @@ import { Role } from '../constants/Roles'
 import { useAppContext } from '../context/AuthContext'
 import { useModal } from '../hooks/useModal'
 import { AppointmentForm, AppointmentResponse } from '../types/appoinment.type'
-import { User } from '../types/user.type'
-import { SuccessResponse } from '../utils/utils.type'
+import { AuthUser } from '../types/user.type'
+import { TreatmentSession } from '../types/treatmentSession.type'
 
 interface CalendarEvent extends EventInput {
   extendedProps: {
@@ -58,6 +58,7 @@ const AppointmentCalendar: React.FC = () => {
   const [selectedScheduleIdState, setSelectedScheduleIdState] = useState('')
   const [appointmentDate, setAppointmentDate] = useState('')
   const [startDateTime, setStartDateTime] = useState('')
+  const [endDateTime, setEndDateTime] = useState('')
   const [status, setStatus] = useState<number>(0)
   const [sessionId, setSessionId] = useState('')
   const [notes, setNotes] = useState('')
@@ -71,6 +72,7 @@ const AppointmentCalendar: React.FC = () => {
 
   const selectedUserId = selectedEvent?.extendedProps.userId
   const selectedStaffId = selectedEvent?.extendedProps.staffId
+  const selectedSessionId = selectedEvent?.extendedProps.sessionId || ''
 
   const { data: appointments, refetch } = useQuery<AppointmentResponse>({
     queryKey: ['appointments', profile?.role, profile?.userId], // thêm vào key để tránh cache sai
@@ -102,16 +104,6 @@ const AppointmentCalendar: React.FC = () => {
     mutationFn: ({ id, body }: { id: string; body: AppointmentForm }) => appointmentApi.updateAppoinments(id, body)
   })
 
-  const { data: pagingData } = useQuery<SuccessResponse<User[]>>({
-    queryKey: ['users'],
-    queryFn: async () => {
-      const res = await userApi.getUsers()
-      console.log('resQuery', res.data.data)
-      return res.data // Trả về data bên trong
-    },
-    enabled: !isBeautyAdvisor
-  })
-
   const { data: patientData, isLoading: isPatientLoading } = useQuery({
     queryKey: ['patientName', selectedUserId],
     queryFn: () => userApi.getUsersById(selectedUserId!),
@@ -126,14 +118,21 @@ const AppointmentCalendar: React.FC = () => {
     select: (data) => data.data.data.emailAddress
   })
 
-  const { data: sesionData } = useQuery({
-    queryKey: ['sessionData'],
-    queryFn: () => sessionApi.getSessions(),
-
-    select: (data) => data.data
+  const { data: sessionData } = useQuery({
+    queryKey: ['session', selectedSessionId],
+    queryFn: () => sessionApi.getSessionsById((selectedSessionId as string) || ''),
+    enabled: isOpen && !!selectedSessionId,
+    select: (data) => data.data.data
   })
 
-  console.log('sessionData', sesionData)
+  console.log('sessionId', selectedSessionId)
+
+  // const { data: sesionData } = useQuery({
+  //   queryKey: ['sessionData'],
+  //   queryFn: () => sessionApi.getSessions(),
+
+  //   select: (data) => data.data
+  // })
 
   // Mapping màu sự kiện
   const calendarsEvents = {
@@ -153,10 +152,8 @@ const AppointmentCalendar: React.FC = () => {
     if (!appointments.data) return
 
     const events = appointments.data.map((item) => {
-      // 1. Ánh xạ status code (0-6) sang thuộc tính hiển thị (calendar color name)
       const statusMap = APPOINTMENT_STATUS_MAP[item.status as keyof typeof APPOINTMENT_STATUS_MAP]
 
-      // 2. Định nghĩa fallback nếu status code không tìm thấy
       const defaultMap = { calendar: 'Danger', dotColor: 'bg-red-500' }
 
       return {
@@ -165,7 +162,6 @@ const AppointmentCalendar: React.FC = () => {
         start: item.startDateTime,
         end: item.endDateTime,
         extendedProps: {
-          // ✅ FIX: Lấy color name string (Primary/Success/Danger) từ MAP
           calendar: statusMap ? statusMap.calendar : defaultMap.calendar,
           room: item.schedule?.room?.roomName || '',
           location: item.schedule?.room?.location || '',
@@ -174,8 +170,8 @@ const AppointmentCalendar: React.FC = () => {
           notes: item.notes || '',
           userId: item.userId,
           staffId: item.staffId,
-          scheduleId: item.schedule?.id, // Dùng ?. an toàn
-          serviceId: item.service?.id, // Dùng ?. an toàn
+          scheduleId: item.schedule?.id,
+          serviceId: item.service?.id,
           status: item.status,
           sessionId: item.sessionId || ''
         }
@@ -245,6 +241,11 @@ const AppointmentCalendar: React.FC = () => {
       setStartDateTime(start.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })) // HH:MM
     }
 
+    const end = event.end
+    if (end) {
+      setEndDateTime(end.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })) // HH:MM
+    }
+
     setSelectedServiceIdState(extendedProps.serviceId || '')
     setSelectedScheduleIdState(extendedProps.scheduleId || '')
     setStatus(extendedProps.status || 0)
@@ -286,8 +287,6 @@ const AppointmentCalendar: React.FC = () => {
     }
 
     if (selectedEvent) {
-      // Logic gọi API CẬP NHẬT
-
       AppoinmentUpdateMutation.mutate(
         { id: selectedEvent.id as string, body: payload },
         {
@@ -315,7 +314,7 @@ const AppointmentCalendar: React.FC = () => {
           toast.error(error.data.res)
         }
       })
-      // Logic TẠO MỚI
+
       console.log('Tạo Event với Payload:', payload)
     }
 
@@ -330,13 +329,13 @@ const AppointmentCalendar: React.FC = () => {
         description='This is React.js Calendar Dashboard page for TailAdmin - React.js Tailwind CSS Admin Dashboard Template'
       />
       <div className='rounded-2xl border  border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]'>
-        <div className='custom-calendar'>
+        <div>
           <FullCalendar
             ref={calendarRef}
             plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
             initialView='dayGridMonth'
             headerToolbar={{
-              left: 'prev,next addEventButton',
+              left: 'prev,next',
               center: 'title',
               right: 'dayGridMonth,timeGridWeek,timeGridDay'
             }}
@@ -393,12 +392,14 @@ const AppointmentCalendar: React.FC = () => {
             )}
             dayMaxEventRows={1}
             dayMaxEvents={true}
-            customButtons={{
-              addEventButton: {
-                text: 'Add Event +',
-                click: openModal
+            customButtons={
+              {
+                // addEventButton: {
+                //   text: 'Add Event +',
+                //   click: openModal
+                // }
               }
-            }}
+            }
           />
         </div>
 
@@ -422,14 +423,15 @@ const AppointmentCalendar: React.FC = () => {
           appointmentDate={appointmentDate}
           setAppointmentDate={setAppointmentDate}
           startDateTime={startDateTime}
+          endDateTime={endDateTime}
           setStartDateTime={setStartDateTime}
           status={status}
           setStatus={setStatus}
           sessionId={sessionId}
           setSessionId={setSessionId}
           setDurationMinutes={setDurationMinutes}
-          pagingData={pagingData?.data || []}
-          sesionData={sesionData?.data || []}
+          pagingData={[]}
+          sesionData={(sessionData as TreatmentSession) || ''}
           onSave={handleAddOrUpdateEvent}
           onDeleted={handleDeleteEvent}
           patientName={isPatientLoading ? 'Đang tải...' : patientData || 'Bệnh nhân (N/A)'}
@@ -439,14 +441,14 @@ const AppointmentCalendar: React.FC = () => {
           doctorName={isDoctorLoading ? 'Đang tải...' : doctorData || 'Bác sĩ (N/A)'}
           doctorId={selectedStaffId || doctorId}
           onNavigate={(id) => handleNavigateToDetail(id)}
+          profile={profile as AuthUser}
         />
 
         <ConfirmModal
           isOpen={isConfirmDeleteOpen}
           onClose={() => setIsConfirmDeleteOpen(false)}
-          onConfirm={confirmDeleteAction} // Khi người dùng xác nhận, gọi hàm xóa API
+          onConfirm={confirmDeleteAction}
           title='Confirm Delete Appointment'
-          // Sử dụng eventTitle để làm message
           message={`Are you sure you want to delete the appointment "${eventTitle}"? This action cannot be undone.`}
         />
       </div>

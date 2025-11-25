@@ -7,7 +7,9 @@ const WORK_SCHEDULES = '/work-schedules'
 
 export const scheduleApi = {
   getSchedule: () => http.get<SuccessResponse<Schedule[]>>(`${WORK_SCHEDULES}`),
+
   getScheduleById: (id: string) => http.get<SuccessResponse<Schedule>>(`${WORK_SCHEDULES}/${id}`),
+
   getScheduleByIdBeautyAdvisor: (BeatyAdvisorid: string) =>
     http.get<SuccessResponse<ScheduleWork[]>>(`${WORK_SCHEDULES}/staff/${BeatyAdvisorid}`),
 
@@ -16,6 +18,11 @@ export const scheduleApi = {
 
   getScheduleByRoomID: (roomId: string) =>
     http.get<SuccessResponse<ScheduleWork[]>>(`${WORK_SCHEDULES}/room/${roomId}`),
+
+  getScheduleByStaffIdAndDateRange: (BeatyAdvisorid: string, startDate: string, endDate: string) =>
+    http.get<SuccessResponse<ScheduleWork[]>>(
+      `${WORK_SCHEDULES}/staff/${BeatyAdvisorid}/date-range?startDate=${startDate}&endDate=${endDate}`
+    ),
 
   createSchedule: (body: ScheduleRequest) => http.post<SuccessResponse<ScheduleWork>>(`${WORK_SCHEDULES}`, body),
 

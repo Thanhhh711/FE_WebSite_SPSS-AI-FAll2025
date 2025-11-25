@@ -14,11 +14,16 @@ export enum AppPath {
   BASIC_TABLES_ORDER = '/basic-tables-order',
   BASIC_TABLES_PRODUCT = '/basic-tables-product',
   BASIC_TABLES_SERVICE = '/basic-tables-service',
+  BASIC_TABLES_BRAND = '/basic-tables-brand',
   BASIC_TABLES_REGISTRATION = '/basic-tables-registration',
   BASIC_TABLES_SLOT = '/basic-tables-slot',
   BASIC_TABLES_ROOM = '/basic-tables-room',
   BASIC_TABLES_TEMPLATE = '/basic-tables-template',
   BASIC_TABLES_SHEDULES = '/basic-tables-schedules',
+  BASIC_TABLES_VOUCHER = '/basic-tables-voucher',
+  BASIC_TABLES_CATEGORY = '/basic-tables-category',
+  BASIC_TABLES_VARIATION = '/basic-tables-variation',
+
   //PRODUCT
   DETAIL_PRODUCT = '/product-detail',
 
@@ -42,6 +47,7 @@ export enum AppPath {
   PATIENTS = '/patients',
   PATIENT_DETAIL = '/medical-record',
   REPORT = '/report',
+  BASIC_TABLES_COUNTRIES = '/basic-tables-countries',
 
   // ==== ERROR ====
   NOT_FOUND = '*'

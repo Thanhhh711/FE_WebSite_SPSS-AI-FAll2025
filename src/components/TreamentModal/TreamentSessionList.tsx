@@ -44,6 +44,8 @@ export default function TreatmentSessionList({ planId, isViewMode, refetchPlan }
     // Hiện tại: Mock data hoặc giả định API trả về hết và tự filter
   })
 
+  console.log('planId', planId)
+
   const deleteSessionMutation = useMutation({
     mutationFn: (sessionId: string) => sessionApi.deleteSession(sessionId),
     onSuccess: (data) => {
@@ -70,20 +72,19 @@ export default function TreatmentSessionList({ planId, isViewMode, refetchPlan }
     }
   }
 
-  // Sắp xếp theo sessionNumber
-  // const sortedSessions = [...sessions].sort((a, b) => a.sessionNumber - b.sessionNumber)
-
   const handleCreateSession = () => {
     setSelectedSession(null)
     setIsSessionModalOpen(true)
   }
 
+  console.log('sessionResponse', sessionResponse?.data.data)
+
   const handleEditSession = (session: TreatmentSession) => {
+    console.log('sessionInList', session)
+
     setSelectedSession(session)
     setIsSessionModalOpen(true)
   }
-
-  // Cần thêm logic save session và delete session (Mutation)
 
   return (
     <div className='space-y-4'>
@@ -175,7 +176,7 @@ export default function TreatmentSessionList({ planId, isViewMode, refetchPlan }
         refetch={refetch}
         refetchPlan={refetchPlan}
         onSave={() => {
-          /* Logic save session */ setIsSessionModalOpen(false)
+          setIsSessionModalOpen(false)
         }}
       />
       <ConfirmModal
