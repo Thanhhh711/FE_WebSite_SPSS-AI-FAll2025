@@ -6,6 +6,8 @@ import { AppWrapper } from './components/common/PageMeta.tsx'
 import { ThemeProvider } from './context/ThemeContext.tsx'
 import './index.css'
 
+import 'react-toastify/dist/ReactToastify.css'
+
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ToastContainer } from 'react-toastify'
 import { AppProvider } from './context/AuthContext.tsx'
