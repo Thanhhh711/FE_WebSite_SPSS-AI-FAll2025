@@ -1,15 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import React, { useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 
 import { toast } from 'react-toastify'
-import { Table, TableBody, TableCell, TableHeader, TableRow } from '../../ui/table'
-import Pagination from '../../pagination/Pagination'
-import ConfirmModal from '../../CalendarModelDetail/ConfirmModal'
-import { SkinCondition, SkinConditionForm } from '../../../types/skin.type'
 import { skinConditionApi } from '../../../api/skin.api'
-import SkinConditionModal from '../../skinModal/SkinConditionModal'
+import { SkinCondition, SkinConditionForm } from '../../../types/skin.type'
 import { formatDateToDDMMYYYY } from '../../../utils/validForm'
+import ConfirmModal from '../../CalendarModelDetail/ConfirmModal'
+import Pagination from '../../pagination/Pagination'
+import SkinConditionModal from '../../skinModal/SkinConditionModal'
+import { Table, TableBody, TableCell, TableHeader, TableRow } from '../../ui/table'
 
 const ITEMS_PER_PAGE = 10
 

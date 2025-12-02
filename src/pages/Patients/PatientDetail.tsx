@@ -1,15 +1,14 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
-import { CreateTreatmentPlanDto, TreatmentPlan } from '../../types/treatmentPlan.type'
+import { useParams } from 'react-router'
+import { toast } from 'react-toastify'
 import { treatmentPlanApi } from '../../api/treatmentPlan.api'
+import ConfirmModal from '../../components/CalendarModelDetail/ConfirmModal'
 import TreatmentPlanCard from '../../components/TreamentModal/TreatmentPlanCard'
 import TreatmentPlanModal from '../../components/TreamentModal/TreatmentPlanModal'
-import { useParams } from 'react-router'
-import ConfirmModal from '../../components/CalendarModelDetail/ConfirmModal'
-import { toast } from 'react-toastify'
-import { useAppContext } from '../../context/AuthContext'
+import { CreateTreatmentPlanDto, TreatmentPlan } from '../../types/treatmentPlan.type'
 
 export default function TreatmentPlanTab() {
   const { id } = useParams<{ id: string }>()
@@ -17,7 +16,6 @@ export default function TreatmentPlanTab() {
   const [planToDelete, setPlanToDelete] = useState<string | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState<TreatmentPlan | null>(null)
-  const { profile } = useAppContext()
 
   const {
     data: plansResponse,

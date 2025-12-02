@@ -51,7 +51,7 @@ export default function VariationOptionManager({
 
   const { mutate: deleteOption } = useMutation({
     mutationFn: (optionId: string) => variationApi.deleteVariationOption(optionId),
-    onSuccess: (res, optionId) => {
+    onSuccess: (_res, optionId) => {
       toast.success('Option deleted successfully!')
       setOptions((prev) => prev.filter((opt) => opt.id !== optionId))
       refetch()

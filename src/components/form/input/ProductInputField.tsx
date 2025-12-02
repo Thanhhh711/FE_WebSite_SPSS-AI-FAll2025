@@ -26,8 +26,7 @@ export default function ProductInputField({
   placeholder,
   value,
   onChange,
-  isTextArea = false,
-  rows = 3
+  isTextArea = false
 }: ProductInputFieldProps) {
   // Bạn có thể thêm logic render TextArea ở đây nếu muốn gộp
   if (isTextArea) {

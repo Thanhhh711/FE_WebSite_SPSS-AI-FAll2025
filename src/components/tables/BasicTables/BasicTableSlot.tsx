@@ -1,16 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import React, { useMemo, useState } from 'react'
-import { slotApi } from '../../../api/slot.api'
-import { Slot } from '../../../types/registration.type'
-import { SlotForm } from '../../../types/slot.type'
+import { useMemo, useState } from 'react'
 import { toast } from 'react-toastify'
-import { Table, TableBody, TableCell, TableHeader, TableRow } from '../../ui/table'
-import Pagination from '../../pagination/Pagination'
-import SlotModal from '../../SlotModal/SlotModal'
-import ConfirmModal from '../../CalendarModelDetail/ConfirmModal'
+import { slotApi } from '../../../api/slot.api'
 import { Role } from '../../../constants/Roles'
 import { useAppContext } from '../../../context/AuthContext'
+import { Slot } from '../../../types/registration.type'
+import { SlotForm } from '../../../types/slot.type'
+import ConfirmModal from '../../CalendarModelDetail/ConfirmModal'
+import Pagination from '../../pagination/Pagination'
+import SlotModal from '../../SlotModal/SlotModal'
+import { Table, TableBody, TableCell, TableHeader, TableRow } from '../../ui/table'
 
 const ITEMS_PER_PAGE = 10
 

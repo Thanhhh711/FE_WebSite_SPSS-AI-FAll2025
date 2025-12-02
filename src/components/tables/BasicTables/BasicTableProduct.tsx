@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import React, { useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { toast } from 'react-toastify'
 // Giả định các imports này đã tồn tại trong dự án của bạn
 import { Table, TableBody, TableCell, TableHeader, TableRow } from '../../ui/table'
@@ -9,11 +9,11 @@ import { Table, TableBody, TableCell, TableHeader, TableRow } from '../../ui/tab
 import ConfirmModal from '../../CalendarModelDetail/ConfirmModal'
 
 import { productApi } from '../../../api/product.api'
-import { Product, ProductForm, ProductStatusEnum } from '../../../types/product.type'
-import ProductModal from '../../ProductModal/ProductModal'
-import { normalizeProductData } from '../../../utils/validForm'
 import { Role } from '../../../constants/Roles'
 import { useAppContext } from '../../../context/AuthContext'
+import { Product, ProductForm, ProductStatusEnum } from '../../../types/product.type'
+import { normalizeProductData } from '../../../utils/validForm'
+import ProductModal from '../../ProductModal/ProductModal'
 
 const ITEMS_PER_PAGE = 10
 // --- COMPONENT CHÍNH ---
@@ -24,7 +24,7 @@ export default function BasicTableProduct() {
   // --- 1. STATE QUẢN LÝ ---
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(ITEMS_PER_PAGE)
+  const [itemsPerPage] = useState(ITEMS_PER_PAGE)
   const [isProductModalOpen, setIsProductModalOpen] = useState(false)
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
@@ -34,8 +34,7 @@ export default function BasicTableProduct() {
   const {
     data: productsResponse,
     isLoading,
-    isError,
-    refetch
+    isError
   } = useQuery({
     queryKey: ['products'],
     queryFn: productApi.getProducts,
@@ -58,7 +57,7 @@ export default function BasicTableProduct() {
 
       return productApi.createProduct(normalizedData)
     },
-    onSuccess: (res, variables) => {
+    onSuccess: (_res, variables) => {
       queryClient.invalidateQueries({ queryKey: ['products'] })
       toast.success(variables.id ? 'Cập nhật sản phẩm thành công!' : 'Tạo sản phẩm mới thành công!')
       setIsProductModalOpen(false)

@@ -18,5 +18,4 @@ export interface PagingData<T> {
 // Generic type cho API trả về paging
 export type PaginaResponse<T> = SuccessResponse<PagingData<T>>
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type UserByIdResponse = SuccessResponse<User>

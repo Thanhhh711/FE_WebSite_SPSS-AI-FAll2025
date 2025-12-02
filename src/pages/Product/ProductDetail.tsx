@@ -5,7 +5,7 @@ import { Tag, DollarSign, Calendar, Package, Factory, LayoutList, CheckCircle, H
 // --- 1. Component PageMeta (Tích hợp) ---
 // Thay thế PageMeta component
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const PageMeta = ({ title, description }: { title: string; description: string }) => {
+const PageMeta = ({ title }: { title: string; description: string }) => {
   // Trong môi trường Immersive, chúng ta chỉ giả lập việc đặt tiêu đề
   React.useEffect(() => {
     document.title = title || 'Dashboard'
@@ -17,7 +17,7 @@ const PageMeta = ({ title, description }: { title: string; description: string }
 
 // --- 2. Component PageBreadcrumb (Tích hợp) ---
 // Thay thế PageBreadcrumb component
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 const PageBreadcrumb = ({ pageTitle }: any) => (
   <div className='mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
     <h2 className='text-2xl font-semibold text-gray-800 dark:text-white'>{pageTitle}</h2>
@@ -64,7 +64,7 @@ const mockProduct = {
 }
 
 // --- Component Card Item cho Chi tiết (Detail Item) ---
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 const DetailItem = ({ icon: Icon, label, value }: any) => (
   <div className='flex items-start space-x-3'>
     <div className='flex-shrink-0 p-2 rounded-full bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'>
@@ -82,7 +82,7 @@ export default function ProductDetail() {
   const product = mockProduct
 
   // Hàm chuyển đổi trạng thái thành màu sắc và nhãn
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   const getStatusDisplay = (status: any) => {
     switch (status) {
       case 'selling':
@@ -107,7 +107,7 @@ export default function ProductDetail() {
   const StatusIcon = statusDisplay.icon
 
   // Định dạng tiền tệ
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   const formatCurrency = (amount: any) =>
     new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount)
 

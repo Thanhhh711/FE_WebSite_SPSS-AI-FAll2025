@@ -3,24 +3,21 @@
 import { useQuery } from '@tanstack/react-query'
 import React, { useMemo } from 'react'
 import { useNavigate } from 'react-router'
-import { scheduleApi } from '../../api/schedulars.api'
 import { serviceApi } from '../../api/services.api'
 
+import { APPOINTMENT_STATUS_LIST, AppointmentStatus, AppointmentStatusCode } from '../../constants/AppointmentConstants'
 import { AppPath } from '../../constants/Paths'
 import { Role } from '../../constants/Roles'
-import { WorkScheduleStatus } from '../../constants/SchedularConstants'
-import { ScheduleWork } from '../../types/appoinment.type'
 import { Service } from '../../types/service.type'
 import { TreatmentSession } from '../../types/treatmentSession.type'
 import { AuthUser, User } from '../../types/user.type'
 import { Modal } from '../ui/modal'
-import { APPOINTMENT_STATUS_LIST, AppointmentStatus, AppointmentStatusCode } from '../../constants/AppointmentConstants'
 
-interface Schedule {
-  id: string
-  startTime: string
-  room: { roomName: string; location: string }
-}
+// interface Schedule {
+//   id: string
+//   startTime: string
+//   room: { roomName: string; location: string }
+// }
 
 type EditableStatusForBA = typeof AppointmentStatusCode.Completed | typeof AppointmentStatusCode.NoShow
 
@@ -86,38 +83,32 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
   onClose,
   selectedEvent,
   onSave,
-  calendarsEvents,
+
   notes,
   setNotes,
   patientName,
   patientId,
   doctorName,
   doctorId,
-  onNavigate,
-  setDurationMinutes,
+
   // State/Setters còn lại
   selectedServiceId,
   pagingData,
   sesionData,
-  setSelectedServiceId,
-  selectedScheduleId,
-  setSelectedScheduleId,
+
   appointmentDate,
   setAppointmentDate,
   startDateTime,
   setStartDateTime,
   status,
   setStatus,
-  sessionId,
-  setSessionId,
-  eventTitle,
-  setEventTitle,
+
   setPatientId,
   eventRoom,
   setEventRoom,
   eventLocation,
   setDoctorId,
-  onDeleted,
+
   setEventLocation,
 
   endDateTime,
@@ -139,21 +130,21 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
 
   const allServices: Service[] = servicesData?.data.data || []
 
-  const { data: schedulesData, isLoading: isSlotsLoading } = useQuery({
-    queryKey: ['allSchedules', appointmentDate, selectedServiceId, doctorId],
+  // const { data: schedulesData } = useQuery({
+  //   queryKey: ['allSchedules', appointmentDate, selectedServiceId, doctorId],
 
-    queryFn: () => scheduleApi.getScheduleByIdBeautyAdvisor(doctorId),
+  //   queryFn: () => scheduleApi.getScheduleByIdBeautyAdvisor(doctorId),
 
-    staleTime: 1000 * 60,
+  //   staleTime: 1000 * 60,
 
-    enabled: isOpen && !!appointmentDate && !!selectedServiceId && !!doctorId
-  })
+  //   enabled: isOpen && !!appointmentDate && !!selectedServiceId && !!doctorId
+  // })
 
-  const allSchedules: ScheduleWork[] = schedulesData?.data.data
-    ? schedulesData.data.data.filter(
-        (schedule) => schedule.appointments.length === 0 && schedule.status !== WorkScheduleStatus.Booked
-      )
-    : []
+  // const allSchedules: ScheduleWork[] = schedulesData?.data.data
+  //   ? schedulesData.data.data.filter(
+  //       (schedule) => schedule.appointments.length === 0 && schedule.status !== WorkScheduleStatus.Booked
+  //     )
+  //   : []
 
   const selectedService = useMemo(() => {
     return allServices.find((s) => s.id === selectedServiceId)
@@ -163,43 +154,43 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
   const durationMinutes = selectedService?.durationMinutes || 0
   const navigate = useNavigate()
 
-  const handleServiceChange = (id: string) => {
-    setSelectedServiceId(id)
-    const selected = allServices.find((s) => s.id === id)
-    if (selected) {
-      setDurationMinutes(selected.durationMinutes)
-      setEventTitle(selected.name)
-    } else {
-      setEventTitle('')
-    }
-  }
+  // const handleServiceChange = (id: string) => {
+  //   setSelectedServiceId(id)
+  //   const selected = allServices.find((s) => s.id === id)
+  //   if (selected) {
+  //     setDurationMinutes(selected.durationMinutes)
+  //     setEventTitle(selected.name)
+  //   } else {
+  //     setEventTitle('')
+  //   }
+  // }
 
-  const handleScheduleChange = (id: string) => {
-    console.log('id', id)
+  // const handleScheduleChange = (id: string) => {
+  //   console.log('id', id)
 
-    setSelectedScheduleId(id)
+  //   setSelectedScheduleId(id)
 
-    if (!id) {
-      setEventRoom('')
-      setEventLocation('')
+  //   if (!id) {
+  //     setEventRoom('')
+  //     setEventLocation('')
 
-      return
-    }
+  //     return
+  //   }
 
-    const schedule = allSchedules.find((s) => s.id === id)
+  //   const schedule = allSchedules.find((s) => s.id === id)
 
-    if (schedule) {
-      const start = new Date(schedule.startTime)
+  //   if (schedule) {
+  //     const start = new Date(schedule.startTime)
 
-      setAppointmentDate(start.toISOString().split('T')[0])
-      setStartDateTime(
-        `${start.getHours().toString().padStart(2, '0')}:${start.getMinutes().toString().padStart(2, '0')}`
-      )
+  //     setAppointmentDate(start.toISOString().split('T')[0])
+  //     setStartDateTime(
+  //       `${start.getHours().toString().padStart(2, '0')}:${start.getMinutes().toString().padStart(2, '0')}`
+  //     )
 
-      setEventRoom(schedule.room?.roomName || 'N/A')
-      setEventLocation(schedule.room?.location || 'N/A')
-    }
-  }
+  //     setEventRoom(schedule.room?.roomName || 'N/A')
+  //     setEventLocation(schedule.room?.location || 'N/A')
+  //   }
+  // }
 
   const handleViewMedicalRecord = (id: string) => {
     navigate(`${AppPath.PROFILE}/${id}`)

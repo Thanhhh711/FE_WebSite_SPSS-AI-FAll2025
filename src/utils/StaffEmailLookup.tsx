@@ -1,7 +1,6 @@
 // Trong BasicTableRegistration.tsx (định nghĩa hàm này trước BasicTableRegistration())
 
 import { useQuery } from '@tanstack/react-query'
-import React from 'react'
 import userApi from '../api/user.api'
 
 export default function StaffEmailLookup({ staffId }: { staffId: string }) {

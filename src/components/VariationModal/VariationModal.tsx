@@ -1,12 +1,11 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 
-import ModalRegistration from '../RegistrationModal/ModalRegistration'
-import { toast } from 'react-toastify'
 import { useQuery } from '@tanstack/react-query'
-import { Variation, VariationForm } from '../../types/variation.type'
+import { toast } from 'react-toastify'
 import { categoryApi } from '../../api/category.api'
 import { Category } from '../../types/category.type'
+import { Variation, VariationForm } from '../../types/variation.type'
+import ModalRegistration from '../RegistrationModal/ModalRegistration'
 import VariationOptionManager from './VariationOptionManager'
 
 // --- TYPES ---

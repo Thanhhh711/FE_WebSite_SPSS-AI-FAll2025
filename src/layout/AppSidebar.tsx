@@ -7,18 +7,7 @@ import { AppPath } from '../constants/Paths'
 import { Role } from '../constants/Roles'
 import { AppContext } from '../context/AuthContext'
 import { useSidebar } from '../context/SidebarContext'
-import {
-  BoxCubeIcon,
-  CalenderIcon,
-  ChevronDownIcon,
-  DocsIcon,
-  GridIcon,
-  HorizontaLDots,
-  PieChartIcon,
-  PlugInIcon,
-  TableIcon,
-  UserCircleIcon
-} from '../icons'
+import { CalenderIcon, ChevronDownIcon, DocsIcon, GridIcon, HorizontaLDots, TableIcon } from '../icons'
 
 type NavItem = {
   name: string
@@ -162,75 +151,6 @@ const navItems: NavItem[] = [
   //   ],
   //   allowedRoles: [Role.ADMIN, Role.CONTENT_STAFF]
   // }
-]
-
-const othersItems: NavItem[] = [
-  {
-    icon: <PieChartIcon />,
-    name: 'Charts',
-    subItems: [
-      {
-        name: 'Line Chart',
-        path: AppPath.LINE_CHART,
-        pro: false,
-        allowedRoles: [Role.ADMIN]
-      },
-      {
-        name: 'Bar Chart',
-        path: AppPath.BAR_CHART,
-        pro: false,
-        allowedRoles: [Role.ADMIN]
-      }
-    ],
-    allowedRoles: [Role.ADMIN]
-  },
-  {
-    icon: <BoxCubeIcon />,
-    name: 'UI Elements',
-    subItems: [
-      {
-        name: 'Alerts',
-        path: AppPath.ALERTS,
-        pro: false,
-        allowedRoles: [Role.ADMIN]
-      },
-      {
-        name: 'Avatar',
-        path: AppPath.AVATARS,
-        pro: false,
-        allowedRoles: [Role.ADMIN]
-      },
-      { name: 'Badge', path: '/badge', pro: false, allowedRoles: [Role.ADMIN] },
-      {
-        name: 'Buttons',
-        path: AppPath.BUTTONS,
-        pro: false,
-        allowedRoles: [Role.ADMIN]
-      },
-      {
-        name: 'Images',
-        path: AppPath.IMAGES,
-        pro: false,
-        allowedRoles: [Role.ADMIN]
-      },
-      {
-        name: 'Videos',
-        path: AppPath.VIDEOS,
-        pro: false,
-        allowedRoles: [Role.ADMIN]
-      }
-    ],
-    allowedRoles: [Role.ADMIN]
-  },
-  {
-    icon: <PlugInIcon />,
-    name: 'Authentication',
-    subItems: [
-      { name: 'Sign In', path: AppPath.SIGN_IN, pro: false },
-      { name: 'Sign Up', path: AppPath.SIGN_UP, pro: false }
-    ],
-    allowedRoles: [Role.ADMIN]
-  }
 ]
 
 const AppSidebar: React.FC = () => {

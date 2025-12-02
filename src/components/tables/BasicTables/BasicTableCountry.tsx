@@ -1,14 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import React, { useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 
-import countriesApi from '../../../api/country.api'
 import { toast } from 'react-toastify'
-import { Table, TableBody, TableCell, TableHeader, TableRow } from '../../ui/table'
+import countriesApi from '../../../api/country.api'
 import Pagination from '../../pagination/Pagination'
+import { Table, TableBody, TableCell, TableHeader, TableRow } from '../../ui/table'
 
-import ConfirmModal from '../../CalendarModelDetail/ConfirmModal'
 import { Country, CountryForm } from '../../../types/contries.type'
+import ConfirmModal from '../../CalendarModelDetail/ConfirmModal'
 import CountryModal from '../../CountryModal/CountryModal'
 
 const ITEMS_PER_PAGE = 10

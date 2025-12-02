@@ -1,7 +1,6 @@
-import React from 'react'
-import PageMeta from '../../components/common/PageMeta'
-import PageBreadcrumb from '../../components/common/PageBreadCrumb'
 import ComponentCard from '../../components/common/ComponentCard'
+import PageBreadcrumb from '../../components/common/PageBreadCrumb'
+import PageMeta from '../../components/common/PageMeta'
 import BasicTableBrands from '../../components/tables/BasicTables/BasicTableBrands'
 
 export default function BasicTablesBrand() {

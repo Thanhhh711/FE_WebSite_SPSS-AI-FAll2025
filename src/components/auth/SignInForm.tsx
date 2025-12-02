@@ -90,7 +90,7 @@ export default function SignInForm() {
           // 3. Navigate sau khi profile đã set
           navigate(redirectPath)
         },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
         onError: (error) => {
           toast.error(error.message)
         }

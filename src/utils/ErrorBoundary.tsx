@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { Component, ReactNode } from 'react'
+import { Component, ReactNode } from 'react'
 
 interface Props {
   children: ReactNode

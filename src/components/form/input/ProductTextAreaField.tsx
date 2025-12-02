@@ -1,6 +1,5 @@
 // File: src/components/form/form-elements/ProductTextAreaField.tsx
 
-import React from 'react'
 import Label from '../Label' // Component Label của bạn
 import TextArea from './TextArea' // Component TextArea cơ bản của bạn
 

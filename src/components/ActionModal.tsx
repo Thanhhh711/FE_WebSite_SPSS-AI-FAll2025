@@ -92,7 +92,7 @@ export default function ActionModal({ isOpen, onClose, user, onConfirm, refetch 
   const [reasonInput, setReasonInput] = useState(user?.banReason || '')
 
   // Cập nhật reasonInput khi prop order thay đổi (khi mở modal cho order khác)
-  // eslint-disable-next-line react-hooks/rules-of-hooks
+
   useEffect(() => {
     // Luôn kiểm tra order trước khi truy cập reason
     if (user) {

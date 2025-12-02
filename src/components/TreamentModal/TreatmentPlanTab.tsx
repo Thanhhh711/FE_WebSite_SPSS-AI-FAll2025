@@ -12,15 +12,15 @@ interface TreatmentPlanTabProps {
 }
 
 export default function TreatmentPlanTab({ customerId }: TreatmentPlanTabProps) {
-  const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false)
-  const [planToDelete, setPlanToDelete] = useState<string | null>(null)
+  const [, setIsConfirmDeleteOpen] = useState(false)
+  const [, setPlanToDelete] = useState<string | null>(null)
 
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState<TreatmentPlan | null>(null)
 
   const {
     data: plansResponse,
-    isLoading,
+
     refetch
   } = useQuery({
     queryKey: ['treatmentPlans', customerId],
@@ -66,18 +66,18 @@ export default function TreatmentPlanTab({ customerId }: TreatmentPlanTabProps) 
     }
   })
 
-  const deleteTreatmentPlanMutation = useMutation({
-    mutationFn: (planId: string) => treatmentPlanApi.deleteTreateMent(planId),
-    onSuccess: (data) => {
-      refetch()
-      toast.success(data.data.message)
-      setIsConfirmDeleteOpen(false)
-      setPlanToDelete(null)
-    },
-    onError: (error) => {
-      toast.error(error.message)
-    }
-  })
+  // const deleteTreatmentPlanMutation = useMutation({
+  //   mutationFn: (planId: string) => treatmentPlanApi.deleteTreateMent(planId),
+  //   onSuccess: (data) => {
+  //     refetch()
+  //     toast.success(data.data.message)
+  //     setIsConfirmDeleteOpen(false)
+  //     setPlanToDelete(null)
+  //   },
+  //   onError: (error) => {
+  //     toast.error(error.message)
+  //   }
+  // })
 
   const handleSave = (data: CreateTreatmentPlanDto, planId?: string) => {
     console.log('form', data)
@@ -108,11 +108,11 @@ export default function TreatmentPlanTab({ customerId }: TreatmentPlanTabProps) 
   // 2. Hàm Xóa thực tế (gọi khi bấm Confirm trong Popup)
   // Trong TreatmentPlanTab.tsx
 
-  const confirmDeleteAction = async () => {
-    if (!planToDelete) return
-    // Sử dụng mutation đã định nghĩa để gọi API xóa
-    deleteTreatmentPlanMutation.mutate(planToDelete)
-  }
+  // const confirmDeleteAction = async () => {
+  //   if (!planToDelete) return
+  //   // Sử dụng mutation đã định nghĩa để gọi API xóa
+  //   deleteTreatmentPlanMutation.mutate(planToDelete)
+  // }
 
   // Luôn đóng popup và reset state sau khi hoàn tất
   setIsConfirmDeleteOpen(false)

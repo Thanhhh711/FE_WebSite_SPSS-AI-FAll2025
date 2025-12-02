@@ -2,18 +2,18 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import React, { useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { toast } from 'react-toastify'
 
-import { Table, TableBody, TableCell, TableHeader, TableRow } from '../../ui/table'
-import Pagination from '../../pagination/Pagination'
 import ConfirmModal from '../../CalendarModelDetail/ConfirmModal'
+import Pagination from '../../pagination/Pagination'
+import { Table, TableBody, TableCell, TableHeader, TableRow } from '../../ui/table'
 
-import VariationModal from '../../VariationModal/VariationModal'
-import { Variation, VariationForm } from '../../../types/variation.type'
-import variationApi from '../../../api/variation.api'
 import { categoryApi } from '../../../api/category.api'
+import variationApi from '../../../api/variation.api'
 import { Category } from '../../../types/category.type'
+import { Variation, VariationForm } from '../../../types/variation.type'
+import VariationModal from '../../VariationModal/VariationModal'
 
 const ITEMS_PER_PAGE = 10
 

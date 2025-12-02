@@ -1,8 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Slot, SlotForm } from '../../types/slot.type'
-import ModalRegistration from '../RegistrationModal/ModalRegistration'
 import StaffEmailLookup from '../../utils/StaffEmailLookup'
+import ModalRegistration from '../RegistrationModal/ModalRegistration'
 
 interface SlotModalProps {
   isOpen: boolean

@@ -1,21 +1,19 @@
-import React from 'react'
-
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useMemo } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMemo, useState } from 'react'
 import { toast } from 'react-toastify'
 
 // Assume these UI components are imported correctly
-import { Table, TableBody, TableCell, TableHeader, TableRow } from '../../ui/table'
 import ConfirmModal from '../../CalendarModelDetail/ConfirmModal'
 import Pagination from '../../pagination/Pagination'
+import { Table, TableBody, TableCell, TableHeader, TableRow } from '../../ui/table'
 
 // Assume API client and types
 import { templateApi } from '../../../api/template.api' // 🚨 Ensure this path is correct
+import { Role } from '../../../constants/Roles'
+import { useAppContext } from '../../../context/AuthContext'
 import { ScheduleTemplate, TemplateForm } from '../../../types/templete.type'
 import TemplateModal from '../../TemplateModal/TemplateModal'
-import { useAppContext } from '../../../context/AuthContext'
-import { Role } from '../../../constants/Roles'
 
 // --- CONSTANTS ---
 const ITEMS_PER_PAGE = 10

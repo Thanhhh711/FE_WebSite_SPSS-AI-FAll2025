@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState } from 'react'
-import { CheckCircle, Clock, XCircle, Truck, ClipboardCheck } from 'lucide-react'
+import { CheckCircle, ClipboardCheck, Clock, Truck, XCircle } from 'lucide-react'
+import { useState } from 'react'
 import { Role } from '../../../constants/Roles'
 
 // ====================================================================
@@ -16,7 +16,7 @@ import { Role } from '../../../constants/Roles'
 /** * Mock component cho Badge, bao gồm màu 'info' mới cho trạng thái Delivery
  * @param {BadgeProps} props
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 const Badge = ({ color, children }: any) => {
   let colorClasses = ''
   switch (color) {
