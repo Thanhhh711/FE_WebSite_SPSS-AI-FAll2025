@@ -20,8 +20,10 @@ export const appointmentApi = {
   updateAppoinments: (apppoimentId: string, appoinmentForm: AppointmentForm) =>
     http.put<AppointmentResponse>(`${APPOINTMENTS}/${apppoimentId}`, appoinmentForm),
 
-  deleteAppoiment: (apppoimentId: string) => http.delete<AppointmentResponse>(`${APPOINTMENTS}/${apppoimentId}`)
+  deleteAppoiment: (apppoimentId: string) => http.delete<AppointmentResponse>(`${APPOINTMENTS}/${apppoimentId}`),
 
+  updateStatusAppoiment: (apppoimentId: string, status: number) =>
+    http.put<AppointmentResponse>(`${APPOINTMENTS}/${apppoimentId}/status/${status}`)
   //   createUser: (body: UserForm) => http.post<PagingData<User>>(USERS, body),
 
   //   getUsersById: (userId: string) => http.get<UserByIdResponse>(`${USERS}/${userId}`),

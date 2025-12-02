@@ -53,7 +53,7 @@ const navItems: NavItem[] = [
         name: 'Product',
         path: AppPath.BASIC_TABLES_PRODUCT,
         pro: false,
-        allowedRoles: [Role.ADMIN]
+        allowedRoles: [Role.ADMIN, Role.STORE_STAFF]
       },
       {
         name: 'Service',
@@ -65,20 +65,20 @@ const navItems: NavItem[] = [
         name: 'Registration',
 
         path: AppPath.BASIC_TABLES_REGISTRATION,
-        allowedRoles: [Role.BEAUTY_ADVISOR, Role.ADMIN]
+        allowedRoles: [Role.BEAUTY_ADVISOR, Role.ADMIN, Role.SCHEDULE_MANAGER]
       },
       {
         name: 'Room',
 
         path: AppPath.BASIC_TABLES_ROOM,
-        allowedRoles: [Role.ADMIN]
+        allowedRoles: [Role.ADMIN, Role.SCHEDULE_MANAGER]
       },
 
       {
         name: 'Brand',
 
         path: AppPath.BASIC_TABLES_BRAND,
-        allowedRoles: [Role.ADMIN]
+        allowedRoles: [Role.ADMIN, Role.STORE_STAFF]
       },
 
       {
@@ -92,13 +92,27 @@ const navItems: NavItem[] = [
         name: 'Voucher',
 
         path: AppPath.BASIC_TABLES_VOUCHER,
-        allowedRoles: [Role.SCHEDULE_MANAGER, Role.ADMIN]
+        allowedRoles: [Role.ADMIN]
       },
 
       {
         name: 'Category',
 
         path: AppPath.BASIC_TABLES_CATEGORY,
+        allowedRoles: [Role.ADMIN, Role.STORE_STAFF]
+      },
+
+      {
+        name: 'SkinCondition',
+
+        path: AppPath.BASIC_TABLES_SKINCONDITION,
+        allowedRoles: [Role.ADMIN]
+      },
+
+      {
+        name: 'SkinType',
+
+        path: AppPath.BASIC_TABLES_SKINTYPE,
         allowedRoles: [Role.ADMIN]
       },
 

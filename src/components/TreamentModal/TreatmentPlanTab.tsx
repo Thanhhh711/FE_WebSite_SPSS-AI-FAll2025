@@ -1,12 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { useState } from 'react'
-import { CreateTreatmentPlanDto, TreatmentPlan } from '../../types/treatmentPlan.type'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { treatmentPlanApi } from '../../api/treatmentPlan.api'
-import TreatmentPlanModal from './TreatmentPlanModal'
-import TreatmentPlanCard from './TreatmentPlanCard'
-import ConfirmModal from '../CalendarModelDetail/ConfirmModal'
+import { useState } from 'react'
 import { toast } from 'react-toastify'
+import { treatmentPlanApi } from '../../api/treatmentPlan.api'
+import { CreateTreatmentPlanDto, TreatmentPlan } from '../../types/treatmentPlan.type'
+import TreatmentPlanCard from './TreatmentPlanCard'
+import TreatmentPlanModal from './TreatmentPlanModal'
 
 interface TreatmentPlanTabProps {
   customerId: string

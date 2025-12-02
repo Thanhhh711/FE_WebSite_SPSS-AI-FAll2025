@@ -6,7 +6,7 @@ import { toast } from 'react-toastify'
 import { Voucher, VoucherForm, VoucherStatusEnum } from '../../types/vourcher.type'
 
 // >>> ĐẢM BẢO IMPORT ĐÚNG HÀM CẦN THIẾT <<<
-import { formatDateValue, formatDateToDDMMYYYY } from '../../utils/utils.type'
+import { formatDateValue, formatDateToDDMMYYYY, formatVND, parseNumber } from '../../utils/validForm'
 
 // Hàm chuyển Enum Status sang Text (Giữ nguyên)
 const getStatusText = (status: VoucherStatusEnum) => {
@@ -40,14 +40,13 @@ export default function VoucherModal({ isOpen, onClose, voucher, onSave, isViewM
   const isEditing = !!voucher && !isViewMode
   const isCreating = !voucher && !isViewMode
 
-  // --- SỬ DỤNG formatDateValue CHO initialFormState ---
   const initialFormState: VoucherForm = {
     code: '',
     description: '',
     discountRate: 0,
     minimumOrderValue: 0,
     maximumDiscountAmount: 0,
-    // Sử dụng formatDateValue để trả về YYYY-MM-DD
+
     startDate: formatDateValue(new Date().toISOString()),
     endDate: formatDateValue(new Date().toISOString()),
     usageLimit: 1
@@ -61,7 +60,6 @@ export default function VoucherModal({ isOpen, onClose, voucher, onSave, isViewM
   const [status, setStatus] = useState<VoucherStatusEnum>(voucher?.status || VoucherStatusEnum.Inactive)
   const [errors, setErrors] = useState<Partial<Record<keyof VoucherForm, string>>>({}) // State lưu lỗi
 
-  // --- CẬP NHẬT useEffect ---
   useEffect(() => {
     if (voucher) {
       setForm({
@@ -70,7 +68,7 @@ export default function VoucherModal({ isOpen, onClose, voucher, onSave, isViewM
         discountRate: voucher.discountRate,
         minimumOrderValue: voucher.minimumOrderValue,
         maximumDiscountAmount: voucher.maximumDiscountAmount,
-        // *** DÙNG formatDateValue (YYYY-MM-DD) ĐỂ HIỂN THỊ TRONG INPUT DATE ***
+
         startDate: formatDateValue(voucher.startDate),
         endDate: formatDateValue(voucher.endDate),
         usageLimit: voucher.usageLimit
@@ -103,8 +101,8 @@ export default function VoucherModal({ isOpen, onClose, voucher, onSave, isViewM
       isValid = false
     }
 
-    if (data.maximumDiscountAmount <= 0) {
-      newErrors.maximumDiscountAmount = 'Maximum Discount Amount must be greater than 0.'
+    if (data.maximumDiscountAmount <= 1000) {
+      newErrors.maximumDiscountAmount = 'Maximum Discount Amount must be greater than 1000.'
       isValid = false
     }
 
@@ -126,7 +124,7 @@ export default function VoucherModal({ isOpen, onClose, voucher, onSave, isViewM
       newErrors.endDate = 'End Date is required.'
       isValid = false
     }
-    // Dữ liệu trong form.startDate/endDate giờ là YYYY-MM-DD nên so sánh ngày sẽ chính xác
+
     if (data.startDate && data.endDate && new Date(data.startDate) >= new Date(data.endDate)) {
       newErrors.endDate = 'End Date must be after Start Date.'
       isValid = false
@@ -150,11 +148,10 @@ export default function VoucherModal({ isOpen, onClose, voucher, onSave, isViewM
     }
     onSave(dataToSave as VoucherFormData)
   }
-
-  const title = isCreating ? 'Tạo Voucher mới' : isEditing ? 'Chỉnh sửa Chi tiết Voucher' : 'Chi tiết Voucher'
+  const title = isCreating ? 'Create New Voucher' : isEditing ? 'Edit Voucher Details' : 'Voucher Details'
 
   const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>, field: keyof VoucherForm) => {
-    let value = parseFloat(e.target.value)
+    let value = parseNumber(e.target.value)
     if (isNaN(value)) value = 0
 
     if (field === 'minimumOrderValue' && value < 0) {
@@ -205,7 +202,7 @@ export default function VoucherModal({ isOpen, onClose, voucher, onSave, isViewM
             <p className='text-sm text-gray-700 dark:text-gray-300'>
               <span className='font-semibold'>Usage Limit:</span> {voucher.usageLimit}
             </p>
-            {/* SỬ DỤNG formatDatetoDDMMYYYY ĐỂ HIỂN THỊ Ở VIEW MODE */}
+
             <p className='text-sm text-gray-700 dark:text-gray-300'>
               <span className='font-semibold'>Start Date:</span> {formatDateToDDMMYYYY(voucher.startDate)}
             </p>
@@ -223,7 +220,6 @@ export default function VoucherModal({ isOpen, onClose, voucher, onSave, isViewM
 
         {!isViewMode && (
           <div className='space-y-4'>
-            {/* ... (Các trường khác giữ nguyên) ... */}
             <div>
               <label htmlFor='code' className='text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block'>
                 Voucher Code *
@@ -302,13 +298,13 @@ export default function VoucherModal({ isOpen, onClose, voucher, onSave, isViewM
                   htmlFor='maximumDiscountAmount'
                   className='text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block'
                 >
-                  Max Discount Amount ($) *
+                  Max Discount Amount (VNĐ) *
                 </label>
                 <input
                   id='maximumDiscountAmount'
                   type='number'
                   placeholder='E.g., 50.00'
-                  value={form.maximumDiscountAmount === 0 ? '' : form.maximumDiscountAmount}
+                  value={form.maximumDiscountAmount === 0 ? '' : formatVND(form.maximumDiscountAmount)}
                   onChange={(e) => handleNumberChange(e, 'maximumDiscountAmount')}
                   className={`${baseInputClass} ${errors.maximumDiscountAmount ? 'border-red-500' : ''}`}
                   min={1}
@@ -326,7 +322,7 @@ export default function VoucherModal({ isOpen, onClose, voucher, onSave, isViewM
                   htmlFor='minimumOrderValue'
                   className='text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block'
                 >
-                  Min Order Value ($)
+                  Min Order Value (VNĐ)
                 </label>
                 <input
                   id='minimumOrderValue'

@@ -16,6 +16,9 @@ interface CountryModalProps {
 
 type CountryFormData = CountryForm & { id?: number }
 
+// Định nghĩa kiểu lỗi rõ ràng hơn
+type CountryErrors = Partial<Record<keyof CountryForm, string>>
+
 export default function CountryModal({ isOpen, onClose, country, onSave, isViewMode }: CountryModalProps) {
   const isEditing = !!country && !isViewMode
   const isCreating = !country && !isViewMode
@@ -24,7 +27,7 @@ export default function CountryModal({ isOpen, onClose, country, onSave, isViewM
     countryCode: country?.countryCode || '',
     countryName: country?.countryName || ''
   })
-  const [errors, setErrors] = useState<Partial<Record<keyof CountryForm, string>>>({}) // State lưu lỗi
+  const [errors, setErrors] = useState<CountryErrors>({}) // State lưu lỗi
 
   useEffect(() => {
     if (country) {
@@ -41,12 +44,28 @@ export default function CountryModal({ isOpen, onClose, country, onSave, isViewM
     setErrors({})
   }, [country])
 
+  // Hàm xử lý thay đổi input chung
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target
+
+    // Cập nhật form
+    setForm((p) => ({
+      ...p,
+      [id]: id === 'countryCode' ? value.toUpperCase() : value // Đảm bảo CountryCode luôn là chữ hoa
+    }))
+
+    // Xóa lỗi ngay lập tức cho trường đó nếu có lỗi
+    if (errors[id as keyof CountryForm]) {
+      setErrors((p) => ({ ...p, [id as keyof CountryForm]: undefined }))
+    }
+  }
+
   const baseInputClass =
     'w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm text-gray-800 dark:text-white/90 focus:border-brand-500 focus:ring-1 focus:ring-brand-500'
 
   const validateForm = (data: CountryForm): boolean => {
-    const newErrors: Partial<Record<keyof CountryForm, string>> = {}
-    let isValid = true
+    const newErrors: CountryErrors = {}
+    let isValid = true // 1. Validation cho Country Code
 
     if (!data.countryCode.trim()) {
       newErrors.countryCode = 'Country Code cannot be empty.'
@@ -57,13 +76,16 @@ export default function CountryModal({ isOpen, onClose, country, onSave, isViewM
     } else if (!/^[A-Z0-9]+$/.test(data.countryCode.trim())) {
       newErrors.countryCode = 'Code must be alphanumeric and uppercase.'
       isValid = false
-    }
+    } // 2. Validation cho Country Name
 
     if (!data.countryName.trim()) {
       newErrors.countryName = 'Country Name cannot be empty.'
       isValid = false
     } else if (data.countryName.trim().length < 3) {
       newErrors.countryName = 'Country Name must be at least 3 characters.'
+      isValid = false
+    } else if (data.countryName.trim().length > 100) {
+      newErrors.countryName = 'Country Name must not exceed 100 characters.' // Thêm giới hạn ký tự
       isValid = false
     }
 
@@ -82,6 +104,7 @@ export default function CountryModal({ isOpen, onClose, country, onSave, isViewM
       id: isEditing ? country?.id : undefined
     }
     onSave(dataToSave)
+    toast.success(`${isEditing ? 'Updated' : 'Created'} country successfully!`)
   }
 
   const title = isCreating ? 'Tạo Quốc gia mới' : isEditing ? 'Chỉnh sửa Chi tiết Quốc gia' : 'Chi tiết Quốc gia'
@@ -97,51 +120,53 @@ export default function CountryModal({ isOpen, onClose, country, onSave, isViewM
             <p className='text-sm text-gray-700 dark:text-gray-300'>
               <span className='font-semibold'>Country Code:</span> {country.countryCode}
             </p>
+
             <p className='text-sm text-gray-700 dark:text-gray-300'>
               <span className='font-semibold'>Country Name:</span> {country.countryName}
             </p>
+
             <p className='text-sm text-gray-700 dark:text-gray-300'>
               <span className='font-semibold'>Associated Brands:</span> {country.brands?.length || 0}
             </p>
           </div>
         )}
-
         {!isViewMode && (
           <div className='space-y-4'>
             <div>
               <label htmlFor='countryCode' className='text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block'>
                 Country Code
               </label>
+
               <input
                 id='countryCode'
+                name='countryCode'
                 type='text'
                 placeholder='Code (2-3 chars, e.g., VN)'
                 value={form.countryCode}
-                onChange={(e) => setForm((p) => ({ ...p, countryCode: e.target.value.toUpperCase() }))}
-                className={`${baseInputClass} ${errors.countryCode ? 'border-red-500' : ''}`}
+                onChange={handleChange} // Sử dụng hàm handleChange mới
+                className={`${baseInputClass} ${errors.countryCode ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
                 maxLength={3}
               />
               {errors.countryCode && <p className='mt-1 text-xs text-red-500'>{errors.countryCode}</p>}
             </div>
-
             <div>
               <label htmlFor='countryName' className='text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block'>
                 Country Name
               </label>
               <input
                 id='countryName'
+                name='countryName'
                 type='text'
                 placeholder='Full country name'
                 value={form.countryName}
-                onChange={(e) => setForm((p) => ({ ...p, countryName: e.target.value }))}
-                className={`${baseInputClass} ${errors.countryName ? 'border-red-500' : ''}`}
+                onChange={handleChange} // Sử dụng hàm handleChange mới
+                className={`${baseInputClass} ${errors.countryName ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
               />
               {errors.countryName && <p className='mt-1 text-xs text-red-500'>{errors.countryName}</p>}
             </div>
           </div>
         )}
       </div>
-
       <div className='flex items-center gap-3 p-6 border-t border-gray-100 dark:border-gray-800 modal-footer sm:justify-end'>
         <button
           onClick={onClose}

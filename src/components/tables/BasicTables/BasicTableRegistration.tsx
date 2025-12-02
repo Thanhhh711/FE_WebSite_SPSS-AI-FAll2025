@@ -8,7 +8,7 @@ import { templateApi } from '../../../api/template.api'
 import { Role } from '../../../constants/Roles'
 import { useAppContext } from '../../../context/AuthContext'
 import { ScheduleTemplate } from '../../../types/templete.type'
-import { formatDateToDDMMYYYY } from '../../../utils/utils.type'
+import { formatDateToDDMMYYYY } from '../../../utils/validForm'
 import ConfirmModal from '../../CalendarModelDetail/ConfirmModal'
 import RegistrationModal, { WEEKDAY_NAMES } from '../../RegistrationModal/RegistrationModal'
 import StaffEmailLookup from '../../../utils/StaffEmailLookup'
@@ -55,12 +55,11 @@ interface SchedulePayload {
   templateId: string
   slotId: string
   notes: string
-  weekdays: number[] // Sử dụng số cho các ngày (1=T2, 7=CN)
+  weekdays: number[]
 }
 
 export const ITEMS_PER_PAGE = 10
 
-// 1. Table components
 const Table = ({ children }: { children: React.ReactNode }) => <table className='w-full table-auto'>{children}</table>
 const TableHeader: React.FC<TableHeaderProps> = ({ children, className }) => (
   <thead className={className ?? 'text-left'}>{children}</thead>
@@ -92,7 +91,6 @@ const TableCell: React.FC<React.PropsWithChildren<{ isHeader?: boolean; colSpan?
   )
 }
 
-// 2. Pagination (Simple Mock)
 interface PaginationProps {
   currentPage: number
   totalPages: number
@@ -120,22 +118,19 @@ const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages, onPage
   )
 }
 
-// 3. Modal (Simple Mock)
-
 type RegistrationForm = SchedulePayload & { id?: string }
 
 export default function BasicTableRegistration() {
   const queryClient = useQueryClient()
-  const { profile } = useAppContext() // Lấy profile từ context
+  const { profile } = useAppContext()
   const isBeautyAdvisor = profile?.role === Role.BEAUTY_ADVISOR
 
-  // --- STATE QUẢN LÝ ---
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
   const [selectedRegistration, setSelectedRegistration] = useState<ScheduleRegistrationComponent | null>(null)
-  const [isViewMode, setIsViewMode] = useState(false) // State cho chế độ View Detail
+  const [isViewMode, setIsViewMode] = useState(false)
 
   const { data: slotsData } = useQuery<Slot[]>({
     queryKey: ['slots'],
@@ -143,7 +138,7 @@ export default function BasicTableRegistration() {
       const res = await slotApi.getSlots()
       console.log('slot', res.data.data)
 
-      return res.data.data // data.data là mảng ScheduleTemplate[]
+      return res.data.data
     }
   })
 
@@ -153,26 +148,22 @@ export default function BasicTableRegistration() {
       const res = await templateApi.getTemplates()
       console.log('templates', res.data.data)
 
-      return res.data.data // data.data là mảng ScheduleTemplate[]
+      return res.data.data
     }
   })
 
-  // --- HÀM TRUY VẤN DỰA TRÊN VAI TRÒ ---
   const fetchRegistrations = async () => {
-    // Nếu là BeautyAdvisor, chỉ lấy lịch của mình
     if (isBeautyAdvisor && profile?.userId) {
       console.log(`Fetching registrations for Staff ID: ${profile.userId}`)
       const res = await registrationApi.getRegistrationByBeatyAdvisorId(profile.userId)
       return res.data.data
     }
 
-    // Nếu là ScheduleManager hoặc vai trò khác, lấy tất cả
     console.log('Fetching all registrations...')
     const res = await registrationApi.getRegistration()
     return res.data.data
   }
 
-  // --- API READ (R) ---
   const {
     data: registrationsResponse,
     isLoading,
@@ -186,13 +177,10 @@ export default function BasicTableRegistration() {
 
   const allRegistrations = registrationsResponse || []
 
-  // --- LỌC VÀ PHÂN TRANG ---
   const filteredAndPaginatedData = useMemo(() => {
-    // 1. Lọc theo tên Template
     const lowercasedSearchTerm = searchTerm.toLowerCase()
     const filtered = allRegistrations.filter((reg) => reg.template.name.toLowerCase().includes(lowercasedSearchTerm))
 
-    // 2. Phân trang
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
     const endIndex = startIndex + ITEMS_PER_PAGE
 
@@ -202,34 +190,30 @@ export default function BasicTableRegistration() {
     }
   }, [allRegistrations, searchTerm, currentPage])
 
-  // --- API MUTATIONS (C, U, D) ---
-
-  // Mutation cho Create và Update
   const { mutate: saveRegistration } = useMutation({
     mutationFn: (data: RegistrationForm) => {
-      // Logic mặc định: nếu không phải BA, cần thêm staffId vào form.
-      // ⚠️ Giả định StaffId được chọn trong form nếu là Schedule Manager.
-
       if (data.id) {
-        // Update
         return registrationApi.updateRegistration(data.id, data)
       }
-      // Create
-      // Thêm StaffId của người tạo (nếu cần) hoặc BAId nếu tạo cho người khác
+
       const payload: SchedulePayload = data
-      return registrationApi.createRegistration(payload)
+
+      if (profile?.role === Role.BEAUTY_ADVISOR) {
+        return registrationApi.createRegistration(payload)
+      }
+
+      return registrationApi.createRegistrationByStaff(profile?.userId as string, payload)
     },
     onSuccess: (res) => {
       toast.success(res.data.message || 'Registration saved successfully!')
       queryClient.invalidateQueries({ queryKey: ['registrations'] })
-      setIsModalOpen(false) // Đóng modal sau khi thành công
+      setIsModalOpen(false)
     },
     onError: (error: any) => {
       toast.error(error.data?.res || 'Error saving registration.')
     }
   })
 
-  // Mutation cho Delete
   const { mutate: deleteRegistration } = useMutation({
     mutationFn: (id: string) => registrationApi.deleteRegistration(id),
     onSuccess: (res) => {
@@ -241,8 +225,6 @@ export default function BasicTableRegistration() {
     }
   })
 
-  // --- HÀM XỬ LÝ SỰ KIỆN ---
-
   const handleOpenDetailModal = (reg: ScheduleRegistrationComponent, mode: 'view' | 'edit') => {
     setSelectedRegistration(reg)
     setIsViewMode(mode === 'view')
@@ -250,7 +232,7 @@ export default function BasicTableRegistration() {
   }
 
   const handleCreateNew = () => {
-    setSelectedRegistration(null) // Reset để mở chế độ Create
+    setSelectedRegistration(null)
     setIsViewMode(false)
     setIsModalOpen(true)
   }
@@ -284,21 +266,28 @@ export default function BasicTableRegistration() {
           value={searchTerm}
           onChange={(e) => {
             setSearchTerm(e.target.value)
-            setCurrentPage(1) // Reset trang khi tìm kiếm
+            setCurrentPage(1)
           }}
           className='w-1/3 min-w-[200px] rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500'
         />
 
         {/* Nút Tạo mới */}
-        <button
-          onClick={handleCreateNew}
-          className='btn btn-primary flex justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white shadow-brand-xs hover:bg-brand-600 transition-colors'
-        >
-          Add new registration
-        </button>
+        {profile?.role !== Role.ADMIN && (
+          <button
+            onClick={handleCreateNew}
+            className='btn btn-primary flex justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white shadow-brand-xs hover:bg-brand-600 transition-colors'
+          >
+            Add new registration
+          </button>
+        )}
       </div>
 
       <div className='overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] shadow-lg'>
+        <div className='px-4 py-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg text-end'>
+          <span className='text-sm font-semibold text-indigo-700 dark:text-indigo-400'>
+            Total Registration Found: **{filteredAndPaginatedData.totalItems}**
+          </span>
+        </div>
         <div className='max-w-full overflow-x-auto'>
           <Table>
             {/* Table Header */}
@@ -380,21 +369,25 @@ export default function BasicTableRegistration() {
                           View
                         </button>
                         {/* Nút Edit */}
-                        <button
-                          onClick={() => handleOpenDetailModal(reg as any, 'edit')}
-                          className='text-brand-500 hover:text-brand-700 dark:hover:text-brand-300 text-sm p-1'
-                          title='Edit Registration'
-                        >
-                          Edit
-                        </button>
-                        {/* Nút Delete */}
-                        <button
-                          onClick={() => handleDeleteClick(reg as any)}
-                          className='text-red-500 hover:text-red-700 dark:hover:text-red-300 text-sm p-1'
-                          title='Delete Registration'
-                        >
-                          Delete
-                        </button>
+                        {profile?.role !== Role.ADMIN && (
+                          <>
+                            <button
+                              onClick={() => handleOpenDetailModal(reg as any, 'edit')}
+                              className='text-brand-500 hover:text-brand-700 dark:hover:text-brand-300 text-sm p-1'
+                              title='Edit Registration'
+                            >
+                              Edit
+                            </button>
+                            {/* Nút Delete */}
+                            <button
+                              onClick={() => handleDeleteClick(reg as any)}
+                              className='text-red-500 hover:text-red-700 dark:hover:text-red-300 text-sm p-1'
+                              title='Delete Registration'
+                            >
+                              Delete
+                            </button>
+                          </>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -430,8 +423,8 @@ export default function BasicTableRegistration() {
         isOpen={isConfirmOpen}
         onClose={() => setIsConfirmOpen(false)}
         onConfirm={handleConfirmDelete}
-        title='Xác nhận Xóa Đăng ký Lịch'
-        message={`Bạn có chắc muốn xóa đăng ký lịch làm việc cho template "${selectedRegistration?.template.name}"? Hành động này không thể hoàn tác.`}
+        title='Confirm Schedule Registration Deletion'
+        message={`Are you sure you want to delete the schedule registration for template "${selectedRegistration?.template.name}"? This action cannot be undone.`}
       />
     </>
   )

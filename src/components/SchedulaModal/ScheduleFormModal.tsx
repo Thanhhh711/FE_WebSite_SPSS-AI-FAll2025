@@ -9,8 +9,9 @@ import { ScheduleRegistration } from '../../types/registration.type'
 import { Room } from '../../types/room.type'
 import { FormUpdateSchedular, ScheduleRequest } from '../../types/schedula.type'
 import { User } from '../../types/user.type'
-import { formatDateValue } from '../../utils/utils.type'
+import { formatDateValue } from '../../utils/validForm'
 import { toast } from 'react-toastify'
+import { Role } from '../../constants/Roles'
 
 // Simple Toast/Message Function (replacing Ant Design notification)
 const showToast = (msg: string, type: 'success' | 'error') => {
@@ -84,8 +85,8 @@ const ScheduleFormModal: React.FC<ScheduleFormModalProps> = ({
   const fetchStaff = async () => {
     setIsStaffLoading(true)
     try {
-      const response = await userApi.getUsers()
-      const beautyAdvisors = (response.data.data || []).filter((user) => user.roleName === 'BeautyAdvisor')
+      const response = await userApi.getBeatyAdvisor()
+      const beautyAdvisors = (response.data.data || []).filter((user) => user.roleName === Role.BEAUTY_ADVISOR)
       setStaffList(beautyAdvisors)
 
       if (beautyAdvisors.length > 0 && formData.staffId === '') {

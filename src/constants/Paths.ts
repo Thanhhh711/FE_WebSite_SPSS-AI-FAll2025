@@ -22,6 +22,8 @@ export enum AppPath {
   BASIC_TABLES_SHEDULES = '/basic-tables-schedules',
   BASIC_TABLES_VOUCHER = '/basic-tables-voucher',
   BASIC_TABLES_CATEGORY = '/basic-tables-category',
+  BASIC_TABLES_SKINCONDITION = '/basic-tables-skin-condition',
+  BASIC_TABLES_SKINTYPE = '/basic-tables-skin-type',
   BASIC_TABLES_VARIATION = '/basic-tables-variation',
 
   //PRODUCT

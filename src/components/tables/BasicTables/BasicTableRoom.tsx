@@ -8,15 +8,15 @@ import { Table, TableBody, TableCell, TableHeader, TableRow } from '../../ui/tab
 import Pagination from '../../pagination/Pagination'
 import RoomModal from '../../RoomModel/RoomModal'
 import ConfirmModal from '../../CalendarModelDetail/ConfirmModal'
+import { useAppContext } from '../../../context/AuthContext'
+import { Role } from '../../../constants/Roles'
 
 const ITEMS_PER_PAGE = 10
 
-// --- COMPONENT CHÍNH ---
-
 export default function BasicTableRoom() {
+  const { profile } = useAppContext()
   const queryClient = useQueryClient()
 
-  // --- STATE QUẢN LÝ ---
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [isRoomModalOpen, setIsRoomModalOpen] = useState(false)
@@ -24,7 +24,6 @@ export default function BasicTableRoom() {
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null)
   const [isViewMode, setIsViewMode] = useState(false)
 
-  // --- API READ (R) ---
   const {
     data: roomsResponse,
     isLoading,
@@ -39,7 +38,6 @@ export default function BasicTableRoom() {
 
   // --- LỌC VÀ PHÂN TRANG ---
   const filteredAndPaginatedRooms = useMemo(() => {
-    // 1. Lọc theo tên phòng hoặc vị trí
     const lowercasedSearchTerm = searchTerm.toLowerCase()
     const filtered = allRooms.filter(
       (room: Room) =>
@@ -47,7 +45,6 @@ export default function BasicTableRoom() {
         room.location.toLowerCase().includes(lowercasedSearchTerm)
     )
 
-    // 2. Phân trang
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
     const endIndex = startIndex + ITEMS_PER_PAGE
 
@@ -57,9 +54,6 @@ export default function BasicTableRoom() {
     }
   }, [allRooms, searchTerm, currentPage])
 
-  // --- API MUTATIONS (C, U, D) ---
-
-  // Mutation cho Create và Update
   const { mutate: saveRoom } = useMutation({
     mutationFn: (data: RoomForm & { id?: string }) => {
       if (data.id) {
@@ -81,7 +75,6 @@ export default function BasicTableRoom() {
     }
   })
 
-  // Mutation cho Delete
   const { mutate: deleteRoom } = useMutation({
     mutationFn: (id: string) => roomApi.deleteRoom(id),
     onSuccess: (res) => {
@@ -92,8 +85,6 @@ export default function BasicTableRoom() {
       toast.error(error.data?.res || 'Error deleting room.')
     }
   })
-
-  // --- HÀM XỬ LÝ SỰ KIỆN ---
 
   const handleOpenDetailModal = (room: Room, mode: 'view' | 'edit') => {
     setSelectedRoom(room)
@@ -120,10 +111,9 @@ export default function BasicTableRoom() {
     }
   }
 
-  // --- RENDERING ---
+  if (isLoading) return <div className='p-6 text-center text-lg text-brand-500'>Loading room list...</div>
 
-  if (isLoading) return <div className='p-6 text-center text-lg text-brand-500'>Đang tải danh sách phòng...</div>
-  if (isError) return <div className='p-6 text-center text-lg text-red-500'>Lỗi khi tải danh sách phòng.</div>
+  if (isError) return <div className='p-6 text-center text-lg text-red-500'>Failed to load room list.</div>
 
   return (
     <>
@@ -141,15 +131,23 @@ export default function BasicTableRoom() {
         />
 
         {/* Create New Button */}
-        <button
-          onClick={handleCreateNew}
-          className='btn btn-primary flex justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white shadow-brand-xs hover:bg-brand-600 transition-colors'
-        >
-          Add New Room
-        </button>
+        {profile?.role === Role.ADMIN && (
+          <button
+            onClick={handleCreateNew}
+            className='btn btn-primary flex justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white shadow-brand-xs hover:bg-brand-600 transition-colors'
+          >
+            Add New Room
+          </button>
+        )}
       </div>
 
       <div className='overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] shadow-lg'>
+        <div className='px-4 py-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg text-end'>
+          <span className='text-sm font-semibold text-indigo-700 dark:text-indigo-400'>
+            Total Room Found: **{filteredAndPaginatedRooms.totalItems}**
+          </span>
+        </div>
+
         <div className='max-w-full overflow-x-auto'>
           <Table>
             {/* Table Header */}
@@ -204,21 +202,26 @@ export default function BasicTableRoom() {
                         >
                           View
                         </button>
-                        <button
-                          onClick={() => handleOpenDetailModal(room, 'edit')}
-                          className='text-brand-500 hover:text-brand-700 dark:hover:text-brand-300 text-sm p-1'
-                          title='Edit Room'
-                        >
-                          Edit
-                        </button>
-                        {/* Nút Delete */}
-                        <button
-                          onClick={() => handleDeleteClick(room)}
-                          className='text-red-500 hover:text-red-700 dark:hover:text-red-300 text-sm p-1'
-                          title='Delete Room'
-                        >
-                          Delete
-                        </button>
+
+                        {profile?.role === Role.ADMIN && (
+                          <>
+                            <button
+                              onClick={() => handleOpenDetailModal(room, 'edit')}
+                              className='text-brand-500 hover:text-brand-700 dark:hover:text-brand-300 text-sm p-1'
+                              title='Edit Room'
+                            >
+                              Edit
+                            </button>
+                            {/* Nút Delete */}
+                            <button
+                              onClick={() => handleDeleteClick(room)}
+                              className='text-red-500 hover:text-red-700 dark:hover:text-red-300 text-sm p-1'
+                              title='Delete Room'
+                            >
+                              Delete
+                            </button>
+                          </>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

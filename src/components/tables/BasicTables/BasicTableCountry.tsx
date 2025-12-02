@@ -23,7 +23,6 @@ export default function BasicTableCountries() {
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(null)
   const [isViewMode, setIsViewMode] = useState(false)
 
-  // --- API READ (R) ---
   const {
     data: countriesResponse,
     isLoading,
@@ -54,7 +53,6 @@ export default function BasicTableCountries() {
     }
   }, [allCountries, searchTerm, currentPage])
 
-  // --- API MUTATIONS (C, U, D) ---
   const { mutate: saveCountry } = useMutation({
     mutationFn: (data: CountryForm & { id?: number }) => {
       if (data.id) {
@@ -138,6 +136,11 @@ export default function BasicTableCountries() {
       </div>
 
       <div className='overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] shadow-lg'>
+        <div className='px-4 py-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg text-end'>
+          <span className='text-sm font-semibold text-indigo-700 dark:text-indigo-400'>
+            Total: **{filteredAndPaginatedCountries.totalItems}**
+          </span>
+        </div>
         <div className='max-w-full overflow-x-auto'>
           <Table>
             <TableHeader className='border-b border-gray-100 dark:border-white/[0.05] bg-gray-50 dark:bg-white/[0.05]'>

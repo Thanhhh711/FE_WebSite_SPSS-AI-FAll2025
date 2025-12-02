@@ -107,7 +107,7 @@ export default function BasicTableVariations() {
   }
 
   const handleDeleteClick = (variation: Variation) => {
-    if (variation.options.length > 0) {
+    if (variation.variationOptions.length > 0) {
       toast.error('Cannot delete: Variation still has associated options.')
       return
     }
@@ -149,6 +149,13 @@ export default function BasicTableVariations() {
       </div>
 
       <div className='overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] shadow-lg'>
+        {/* Total Products Found (Mới) */}
+        <div className='px-4 py-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg text-end'>
+          <span className='text-sm font-semibold text-indigo-700 dark:text-indigo-400  '>
+            Total: **{filteredAndPaginatedVariations.totalItems}**
+          </span>
+        </div>
+
         <div className='max-w-full overflow-x-auto'>
           <Table>
             {/* Table Header */}
@@ -178,7 +185,7 @@ export default function BasicTableVariations() {
                 </TableRow>
               ) : (
                 filteredAndPaginatedVariations.data.map((variation) => {
-                  const hasOptions = (variation.options || []).length > 0
+                  const hasOptions = (variation.variationOptions || []).length > 0
 
                   const isDisabled = isDeleting || hasOptions
 
@@ -188,7 +195,7 @@ export default function BasicTableVariations() {
                       <TableCell className='px-4 py-3 text-start truncate max-w-[150px]'>
                         {getCategoryName(variation.productCategoryId)}
                       </TableCell>
-                      <TableCell className='px-4 py-3 text-start'>{variation.options?.length || 0}</TableCell>
+                      <TableCell className='px-4 py-3 text-start'>{variation.variationOptions?.length || 0}</TableCell>
                       <TableCell className='px-4 py-3 text-end'>
                         <div className='flex justify-end gap-2'>
                           {/* View Button */}

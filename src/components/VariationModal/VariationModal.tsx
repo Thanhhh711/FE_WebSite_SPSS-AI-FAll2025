@@ -24,7 +24,7 @@ export default function VariationModal({ isOpen, onClose, variation, onSave, isV
   const isCreating = !variation && !isViewMode
 
   // Fetch Categories
-  const { data: categoriesResponse } = useQuery({
+  const { data: categoriesResponse, refetch } = useQuery({
     queryKey: ['categories'],
     queryFn: categoryApi.getCategories,
     staleTime: 1000 * 60 * 5,
@@ -80,7 +80,7 @@ export default function VariationModal({ isOpen, onClose, variation, onSave, isV
     onSave({ ...form, id: isEditing ? variation?.id : undefined })
   }
 
-  const title = isCreating ? 'Tạo Biến thể mới' : isEditing ? 'Chỉnh sửa Chi tiết Biến thể' : 'Chi tiết Biến thể'
+  const title = isCreating ? 'Create New Variation' : isEditing ? 'Edit Variation' : 'Variation Details'
 
   const getCategoryName = (id: string) => {
     return allCategories.find((cat) => cat.id === id)?.categoryName || 'Unknown Category'
@@ -101,7 +101,12 @@ export default function VariationModal({ isOpen, onClose, variation, onSave, isV
             </p>
 
             {/* Sử dụng VariationOptionManager */}
-            <VariationOptionManager variationId={variation.id} initialOptions={variation.options} isViewMode={true} />
+            <VariationOptionManager
+              refetch={refetch}
+              variationId={variation.id}
+              initialOptions={variation.variationOptions}
+              isViewMode={true}
+            />
           </div>
         )}
 
@@ -152,8 +157,9 @@ export default function VariationModal({ isOpen, onClose, variation, onSave, isV
             {/* Variation Options Management (Chỉ trong Edit Mode) */}
             {isEditing && variation?.id && (
               <VariationOptionManager
+                refetch={refetch}
                 variationId={variation.id}
-                initialOptions={variation.options}
+                initialOptions={variation.variationOptions}
                 isViewMode={false}
               />
             )}

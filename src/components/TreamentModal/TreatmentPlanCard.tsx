@@ -1,5 +1,5 @@
 import { TreatmentPlan, TreatmentPlanStatus } from '../../types/treatmentPlan.type'
-import { formatDateToDDMMYYYY } from '../../utils/utils.type'
+import { formatDateToDDMMYYYY } from '../../utils/validForm'
 
 const STATUS_MAP: { [key: number]: { text: string; color: string } } = {
   [TreatmentPlanStatus.Draft]: { text: 'Draft', color: 'bg-gray-100 text-gray-700' },

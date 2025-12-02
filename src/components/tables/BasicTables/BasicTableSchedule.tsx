@@ -12,7 +12,7 @@ import { WorkScheduleStatus } from '../../../constants/SchedularConstants'
 import { useAppContext } from '../../../context/AuthContext'
 import { ScheduleWork } from '../../../types/appoinment.type'
 import StaffEmailLookup from '../../../utils/StaffEmailLookup'
-import { formatDateToDDMMYYYY } from '../../../utils/utils.type'
+import { formatDateToDDMMYYYY } from '../../../utils/validForm'
 import ConfirmModal from '../../CalendarModelDetail/ConfirmModal'
 import ScheduleFormModal from '../../SchedulaModal/ScheduleFormModal'
 import Pagination from '../../pagination/Pagination'
@@ -48,8 +48,8 @@ export default function WorkSchedulesManagement() {
   console.log('CURRENT_USER_ROLE', CURRENT_USER_ROLE)
   console.log('CURRENT_USER_ID', CURRENT_USER_ID)
 
-  const canModify = profile?.role === Role.ADMIN || profile?.role === Role.BEAUTY_ADVISOR
-
+  const canModify =
+    profile?.role !== Role.STORE_STAFF && profile?.role !== Role.ADMIN && profile?.role !== Role.BEAUTY_ADVISOR
   const fetchFn = useCallback(() => {
     if (CURRENT_USER_ROLE === Role.BEAUTY_ADVISOR) {
       return scheduleApi.getScheduleByIdBeautyAdvisor(CURRENT_USER_ID)

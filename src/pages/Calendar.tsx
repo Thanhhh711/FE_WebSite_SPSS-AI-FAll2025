@@ -15,14 +15,14 @@ import { sessionApi } from '../api/treatmentSession.api'
 import userApi from '../api/user.api'
 import EventModalForm from '../components/CalendarModelDetail/AppointmentModal'
 import ConfirmModal from '../components/CalendarModelDetail/ConfirmModal'
-import { APPOINTMENT_STATUS_MAP } from '../constants/AppointmentConstants'
+import { APPOINTMENT_STATUS_MAP, AppointmentStatusCode } from '../constants/AppointmentConstants'
 import { AppPath } from '../constants/Paths'
 import { Role } from '../constants/Roles'
 import { useAppContext } from '../context/AuthContext'
 import { useModal } from '../hooks/useModal'
 import { AppointmentForm, AppointmentResponse } from '../types/appoinment.type'
-import { AuthUser } from '../types/user.type'
 import { TreatmentSession } from '../types/treatmentSession.type'
+import { AuthUser } from '../types/user.type'
 
 interface CalendarEvent extends EventInput {
   extendedProps: {
@@ -74,18 +74,22 @@ const AppointmentCalendar: React.FC = () => {
   const selectedStaffId = selectedEvent?.extendedProps.staffId
   const selectedSessionId = selectedEvent?.extendedProps.sessionId || ''
 
+  console.log('selectedSessionId', selectedSessionId)
+
   const { data: appointments, refetch } = useQuery<AppointmentResponse>({
     queryKey: ['appointments', profile?.role, profile?.userId], // thêm vào key để tránh cache sai
     queryFn: async () => {
-      // Nếu là Beauty Advisor => gọi API theo userId
       if (isBeautyAdvisor) {
         const res = await appointmentApi.getAppoinmentByBeatyAdvisorId(profile?.userId)
+        console.log('res', res.data.data)
+
         return res.data
       }
 
-      // Nếu là Admin => lấy toàn bộ
       if (isAdmin) {
         const res = await appointmentApi.getAppoinments()
+        console.log('res', res.data.data)
+
         return res.data
       }
 
@@ -100,8 +104,8 @@ const AppointmentCalendar: React.FC = () => {
     mutationFn: (body: AppointmentForm) => appointmentApi.createAppoinments(body)
   })
 
-  const AppoinmentUpdateMutation = useMutation({
-    mutationFn: ({ id, body }: { id: string; body: AppointmentForm }) => appointmentApi.updateAppoinments(id, body)
+  const AppoinmentStatusUpdateMutation = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: number }) => appointmentApi.updateStatusAppoiment(id, status)
   })
 
   const { data: patientData, isLoading: isPatientLoading } = useQuery({
@@ -134,12 +138,15 @@ const AppointmentCalendar: React.FC = () => {
   //   select: (data) => data.data
   // })
 
-  // Mapping màu sự kiện
   const calendarsEvents = {
     Danger: 'danger',
     Success: 'success',
     Primary: 'primary',
-    Warning: 'warning'
+    Warning: 'warning',
+    Pending: 'pending',
+    InProgress: 'inprogress',
+    Completed: 'completed',
+    Cancelled: 'cancelled'
   }
 
   useEffect(() => {
@@ -153,6 +160,8 @@ const AppointmentCalendar: React.FC = () => {
 
     const events = appointments.data.map((item) => {
       const statusMap = APPOINTMENT_STATUS_MAP[item.status as keyof typeof APPOINTMENT_STATUS_MAP]
+
+      console.log('statusMap', statusMap)
 
       const defaultMap = { calendar: 'Danger', dotColor: 'bg-red-500' }
 
@@ -243,6 +252,8 @@ const AppointmentCalendar: React.FC = () => {
 
     const end = event.end
     if (end) {
+      console.log('end', end)
+
       setEndDateTime(end.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })) // HH:MM
     }
 
@@ -286,9 +297,13 @@ const AppointmentCalendar: React.FC = () => {
       notes
     }
 
+    console.log('payload', payload)
+
     if (selectedEvent) {
-      AppoinmentUpdateMutation.mutate(
-        { id: selectedEvent.id as string, body: payload },
+      console.log('payload', payload)
+
+      AppoinmentStatusUpdateMutation.mutate(
+        { id: selectedEvent.id as string, status: payload.status as number },
         {
           onSuccess: (data) => {
             refetch()
@@ -348,19 +363,27 @@ const AppointmentCalendar: React.FC = () => {
 
               const statusMap = APPOINTMENT_STATUS_MAP[statusCode] || APPOINTMENT_STATUS_MAP[0]
 
-              const color = statusMap.calendar.toLowerCase()
+              console.log('statusMap', statusMap)
 
-              const colorMap: { [key: string]: string } = {
-                danger: 'bg-danger-500/10 border-danger-500',
-                success: 'bg-success-500/10 border-success-500',
-                primary: 'bg-primary-500/10 border-primary-500',
-                warning: 'bg-warning-500/10 border-warning-500'
+              const STATUS_CLASS_MAP: Record<number, string> = {
+                [AppointmentStatusCode.Pending]: 'bg-warning-500/10 border-warning-500',
+                [AppointmentStatusCode.Confirmed]: 'bg-success-500/10 border-success-500',
+                [AppointmentStatusCode.InProgress]: 'bg-primary-500/10 border-primary-500',
+                [AppointmentStatusCode.Completed]: 'bg-primary-500/10 border-indigo-500',
+                [AppointmentStatusCode.Cancelled]: 'bg-danger-500/10 border-danger-500',
+                [AppointmentStatusCode.NoShow]: 'bg-danger-800/10 border-red-800',
+                [AppointmentStatusCode.Rescheduled]: 'bg-orange-500/10 border-orange-500'
               }
+
+              // Loại bỏ space, special character
+              // const colorKey = statusMap.calendar.replace(/\s+/g, '').toLowerCase()
+              const color = STATUS_CLASS_MAP[statusCode] || 'bg-gray-500/10 border-gray-500'
+
               return (
                 <div
                   className={`
                   flex items-center gap-1 p-1 rounded-md border-l-4
-                  ${colorMap[color] || 'bg-gray-500/10 border-gray-500'}
+                  ${color}
                   hover:scale-105 hover:shadow-md transition duration-150
                   min-w-0
                 `}

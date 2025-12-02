@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { AppointmentStatusCode } from '../../constants/AppointmentConstants'
 import { appointmentApi } from '../../api/appointment.api'
 import { Appointment } from '../../types/appoinment.type'
-import { formatDateToDDMMYYYY } from '../../utils/utils.type'
+import { formatDateToDDMMYYYY } from '../../utils/validForm'
 import StaffEmailLookup from '../../utils/StaffEmailLookup'
 
 interface AppointmentDetailModalProps {

@@ -3,15 +3,20 @@
 import React, { useState, useEffect } from 'react'
 import { Service, ServiceForm } from '../../types/service.type'
 import { Modal } from '../ui/modal'
+import { useAppContext } from '../../context/AuthContext'
+import { Role } from '../../constants/Roles'
+import { formatVND, parseNumber } from '../../utils/validForm'
 
 interface ServiceModalProps {
   isOpen: boolean
   onClose: () => void
-  service: Service | null // Dữ liệu service khi Update, null khi Create
+  service: Service | null
   onSave: (data: { form: ServiceForm; id?: string }) => void
 }
 
 const ServiceModal: React.FC<ServiceModalProps> = ({ isOpen, onClose, service, onSave }) => {
+  const { profile } = useAppContext()
+
   const [form, setForm] = useState<ServiceForm>({
     name: '',
     description: '',
@@ -19,7 +24,14 @@ const ServiceModal: React.FC<ServiceModalProps> = ({ isOpen, onClose, service, o
     price: 0
   })
 
-  // Đặt lại form khi Modal mở hoặc 'service' object thay đổi
+  const [errors, setErrors] = useState({
+    name: '',
+    durationMinutes: '',
+    description: '',
+    price: ''
+  })
+
+  // Reset form when opening modal
   useEffect(() => {
     if (service) {
       setForm({
@@ -31,69 +43,104 @@ const ServiceModal: React.FC<ServiceModalProps> = ({ isOpen, onClose, service, o
     } else {
       setForm({ name: '', description: '', durationMinutes: 0, price: 0 })
     }
-  }, [service])
+    setErrors({ name: '', durationMinutes: '', price: '', description: '' })
+  }, [service, isOpen])
+
+  const validate = () => {
+    let valid = true
+    const newErrors = { name: '', durationMinutes: '', price: '', description: '' }
+
+    if (!form.name.trim()) {
+      newErrors.name = 'Service name is required.'
+      valid = false
+    }
+
+    if (form.durationMinutes <= 0) {
+      newErrors.durationMinutes = 'Duration must be greater than 0.'
+      valid = false
+    }
+
+    if (!form.description.trim()) {
+      newErrors.durationMinutes = 'Description name is required.'
+      valid = false
+    }
+
+    if (typeof form.price !== 'number' || Number.isNaN(form.price)) {
+      newErrors.price = 'Price is required.'
+      valid = false
+    } else if (form.price < 0) {
+      newErrors.price = 'Price cannot be negative.'
+      valid = false
+    } else if (form.price < 1000) {
+      newErrors.price = 'Price must be at least 1,000 VND.'
+      valid = false
+    }
+
+    setErrors(newErrors)
+    return valid
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!form.name || form.durationMinutes <= 0 || form.price < 0) {
-      // Logic xử lý lỗi ở đây
-      return
-    }
-
+    if (!validate()) return
     onSave({ form, id: service?.id })
   }
 
-  // Styles chung cho input
   const inputClass =
     'w-full border border-gray-300 dark:border-gray-700 rounded-lg p-2.5 dark:bg-gray-800 dark:text-white/90 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition duration-150'
   const labelClass = 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'
+  const errorClass = 'text-xs text-red-500 mt-1'
 
   const modalTitle = service ? 'Edit Service' : 'Create New Service'
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <form onSubmit={handleSubmit}>
+        {/* HEADER */}
         <div className='px-6 pt-10 pb-2 sm:pt-14 sm:pb-4 border-b border-gray-100 dark:border-gray-800'>
           <h3 className='text-2xl font-bold text-gray-900 dark:text-white'>{modalTitle}</h3>
           <p className='text-sm text-gray-500 dark:text-gray-400 mt-1'>
-            {service ? 'Chỉnh sửa thông tin dịch vụ.' : 'Thêm mới một dịch vụ vào hệ thống.'}
+            {service ? 'Update the information of this service.' : 'Add a new service to the system.'}
           </p>
         </div>
-        {/* KHỐI NỘI DUNG FORM */}
+
+        {/* BODY */}
         <div className='space-y-5 px-6 pt-8 pb-6'>
-          {/* 1. Service Name (Tên Dịch vụ) */}
+          {/* SERVICE NAME */}
           <div>
             <label htmlFor='name' className={labelClass}>
               Service Name <span className='text-red-500'>*</span>
             </label>
             <input
               id='name'
-              placeholder='Ví dụ: Dịch vụ chăm sóc da chuyên sâu'
+              placeholder='Example: Deep facial skincare treatment'
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               className={inputClass}
-              required
             />
+            {errors.name && <p className={errorClass}>{errors.name}</p>}
           </div>
 
-          {/* 2. Description (Mô tả) */}
+          {/* DESCRIPTION */}
           <div>
             <label htmlFor='description' className={labelClass}>
               Description
             </label>
             <textarea
               id='description'
-              placeholder='Mô tả chi tiết về các bước và lợi ích của dịch vụ'
+              placeholder='Detailed description of steps and benefits'
               rows={4}
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               className={inputClass}
             />
+
+            {errors.name && <p className={errorClass}>{errors.name}</p>}
           </div>
 
-          {/* 3 & 4. Duration và Price (Sử dụng Grid 2 cột) */}
+          {/* DURATION & PRICE */}
           <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
-            {/* 3. Duration (Thời lượng) */}
+            {/* DURATION */}
             <div>
               <label htmlFor='durationMinutes' className={labelClass}>
                 Duration (minutes) <span className='text-red-500'>*</span>
@@ -101,41 +148,46 @@ const ServiceModal: React.FC<ServiceModalProps> = ({ isOpen, onClose, service, o
               <input
                 id='durationMinutes'
                 type='number'
-                placeholder='Thời lượng dịch vụ (phút)'
-                value={form.durationMinutes || ''} // Dùng || '' để tránh lỗi input khi giá trị là 0
+                placeholder='Service duration (minutes)'
+                value={form.durationMinutes || ''}
                 onChange={(e) => setForm({ ...form, durationMinutes: parseInt(e.target.value) || 0 })}
                 className={inputClass}
-                required
                 min={1}
               />
+              {errors.durationMinutes && <p className={errorClass}>{errors.durationMinutes}</p>}
             </div>
 
-            {/* 4. Price (Giá) */}
+            {/* PRICE */}
+
             <div>
               <label htmlFor='price' className={labelClass}>
                 Price (VND) <span className='text-red-500'>*</span>
               </label>
+
               <div className='relative'>
-                <span className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 font-semibold'>
+                <span className='absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 font-semibold'>
                   ₫
                 </span>
+
                 <input
                   id='price'
-                  type='number'
-                  placeholder='Giá dịch vụ'
-                  value={form.price || ''} // Dùng || '' để tránh lỗi input khi giá trị là 0
-                  onChange={(e) => setForm({ ...form, price: parseFloat(e.target.value) || 0 })}
-                  className={`${inputClass} pl-6`} // Thêm padding-left cho biểu tượng ₫
-                  required
-                  min={0}
-                  step='0.01'
+                  type='text'
+                  placeholder='Service price'
+                  value={formatVND(form.price)}
+                  onChange={(e) => {
+                    const raw = parseNumber(e.target.value)
+                    setForm({ ...form, price: raw })
+                  }}
+                  className={`${inputClass} pl-6`}
                 />
               </div>
+
+              {errors.price && <p className={errorClass}>{errors.price}</p>}
             </div>
           </div>
         </div>
 
-        {/* FOOTER (Giữ nguyên phong cách) */}
+        {/* FOOTER */}
         <div className='flex justify-end gap-3 p-4 border-t border-gray-100 dark:border-gray-800'>
           <button
             type='button'
@@ -144,12 +196,15 @@ const ServiceModal: React.FC<ServiceModalProps> = ({ isOpen, onClose, service, o
           >
             Cancel
           </button>
-          <button
-            type='submit'
-            className='flex justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white shadow-brand-xs hover:bg-brand-600'
-          >
-            {service ? 'Update' : 'Create'}
-          </button>
+
+          {profile?.role === Role.ADMIN && (
+            <button
+              type='submit'
+              className='flex justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white shadow-brand-xs hover:bg-brand-600'
+            >
+              {service ? 'Update' : 'Create'}
+            </button>
+          )}
         </div>
       </form>
     </Modal>

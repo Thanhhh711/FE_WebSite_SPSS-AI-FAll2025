@@ -1,16 +1,17 @@
 // file: VariationOptionManager.tsx
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState, useEffect, useCallback } from 'react'
-import { toast } from 'react-toastify'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { VariationOption, VariationOptionForm } from '../../types/variation.type'
+import { useCallback, useEffect, useState } from 'react'
+import { toast } from 'react-toastify'
 import variationApi from '../../api/variation.api'
+import { VariationOptionForm, VarionOptionInResponse } from '../../types/variation.type'
 
 interface VariationOptionManagerProps {
   variationId: string
-  initialOptions: VariationOption[]
+  initialOptions: VarionOptionInResponse[]
   isViewMode: boolean
+  refetch: () => void
 }
 
 const baseInputClass =
@@ -19,10 +20,11 @@ const baseInputClass =
 export default function VariationOptionManager({
   variationId,
   initialOptions,
-  isViewMode
+  isViewMode,
+  refetch
 }: VariationOptionManagerProps) {
   const queryClient = useQueryClient()
-  const [options, setOptions] = useState<VariationOption[]>(initialOptions)
+  const [options, setOptions] = useState<VarionOptionInResponse[]>(initialOptions)
   const [newOptionValue, setNewOptionValue] = useState('')
 
   useEffect(() => {
@@ -52,6 +54,7 @@ export default function VariationOptionManager({
     onSuccess: (res, optionId) => {
       toast.success('Option deleted successfully!')
       setOptions((prev) => prev.filter((opt) => opt.id !== optionId))
+      refetch()
       invalidateParentQuery()
     },
     onError: (error: any) => {
@@ -96,13 +99,11 @@ export default function VariationOptionManager({
             className='bg-brand-500 text-white rounded-lg px-3 py-2 text-sm flex items-center justify-center hover:bg-brand-600 transition-colors w-10 h-10 flex-shrink-0'
             title='Add Option'
           >
-            {/* Biểu tượng Add (+) */}
             <span className='text-xl font-bold leading-none'>+</span>
           </button>
         </div>
       )}
 
-      {/* List of existing options */}
       <div className='flex flex-wrap gap-2 max-h-40 overflow-y-auto p-1'>
         {(options?.length ?? 0) === 0 ? (
           <p className='text-sm text-gray-500 italic'>No options defined yet.</p>

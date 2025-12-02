@@ -9,11 +9,14 @@ import { Category, CategoryForm } from '../../../types/category.type'
 import { categoryApi } from '../../../api/category.api'
 import ConfirmModal from '../../CalendarModelDetail/ConfirmModal'
 import CategoryModal from '../../CategoryModal/CategoryModal'
+import { Role } from '../../../constants/Roles'
+import { useAppContext } from '../../../context/AuthContext'
 
 const ITEMS_PER_PAGE = 10
 
 export default function BasicTableCategories() {
   const queryClient = useQueryClient()
+  const { profile } = useAppContext()
 
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
@@ -22,7 +25,6 @@ export default function BasicTableCategories() {
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null)
   const [isViewMode, setIsViewMode] = useState(false)
 
-  // --- API READ (R) ---
   const {
     data: categoriesResponse,
     isLoading,
@@ -130,16 +132,23 @@ export default function BasicTableCategories() {
           className='w-1/3 min-w-[200px] rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500'
         />
 
-        {/* Create New Button */}
-        <button
-          onClick={handleCreateNew}
-          className='btn btn-primary flex justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white shadow-brand-xs hover:bg-brand-600 transition-colors'
-        >
-          Add New Category
-        </button>
+        {profile?.role === Role.STORE_STAFF && (
+          <button
+            onClick={handleCreateNew}
+            className='btn btn-primary flex justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white shadow-brand-xs hover:bg-brand-600 transition-colors'
+          >
+            Add New Category
+          </button>
+        )}
       </div>
 
       <div className='overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] shadow-lg'>
+        <div className='px-4 py-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg text-end'>
+          <span className='text-sm font-semibold text-indigo-700 dark:text-indigo-400'>
+            Total: **{filteredAndPaginatedCategories.totalItems}**
+          </span>
+        </div>
+
         <div className='max-w-full overflow-x-auto'>
           <Table>
             {/* Table Header */}
@@ -193,26 +202,31 @@ export default function BasicTableCategories() {
                         >
                           View
                         </button>
-                        {/* Edit Button */}
-                        <button
-                          onClick={() => handleOpenDetailModal(category, 'edit')}
-                          className='text-brand-500 hover:text-brand-700 dark:hover:text-brand-300 text-sm p-1'
-                          title='Edit Category'
-                        >
-                          Edit
-                        </button>
-                        {/* Delete Button */}
-                        <button
-                          onClick={() => handleDeleteClick(category)}
-                          className='text-red-500 hover:text-red-700 dark:hover:text-red-300 text-sm p-1'
-                          title='Delete Category'
-                          // Disable nếu đang xóa hoặc có sản phẩm/danh mục con
-                          disabled={
-                            isDeleting || category.products.length > 0 || category.inverseParentCategory.length > 0
-                          }
-                        >
-                          Delete
-                        </button>
+
+                        {profile?.role === Role.STORE_STAFF && (
+                          <>
+                            {/* Edit Button */}
+                            <button
+                              onClick={() => handleOpenDetailModal(category, 'edit')}
+                              className='text-brand-500 hover:text-brand-700 dark:hover:text-brand-300 text-sm p-1'
+                              title='Edit Category'
+                            >
+                              Edit
+                            </button>
+                            {/* Delete Button */}
+                            <button
+                              onClick={() => handleDeleteClick(category)}
+                              className='text-red-500 hover:text-red-700 dark:hover:text-red-300 text-sm p-1'
+                              title='Delete Category'
+                              // Disable nếu đang xóa hoặc có sản phẩm/danh mục con
+                              disabled={
+                                isDeleting || category.products.length > 0 || category.inverseParentCategory.length > 0
+                              }
+                            >
+                              Delete
+                            </button>
+                          </>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

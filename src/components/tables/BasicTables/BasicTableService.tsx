@@ -11,12 +11,16 @@ import { Service, ServiceForm } from '../../../types/service.type'
 import ConfirmModal from '../../CalendarModelDetail/ConfirmModal'
 import Pagination from '../../pagination/Pagination'
 import ServiceModal from '../../ServiceModel/ServiceModal'
+import { useAppContext } from '../../../context/AuthContext'
+import { Role } from '../../../constants/Roles'
+import { formatVND } from '../../../utils/validForm'
 
 // --- COMPONENT CHÍNH ---
 
 const ITEMS_PER_PAGE = 10
 
 export default function ServiceManagementTable() {
+  const { profile } = useAppContext()
   const queryClient = useQueryClient()
 
   // --- STATE QUẢN LÝ ---
@@ -139,15 +143,24 @@ export default function ServiceManagementTable() {
         />
 
         {/* Nút Tạo mới */}
-        <button
-          onClick={handleCreateNew}
-          className='btn btn-primary flex justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white shadow-brand-xs hover:bg-brand-600'
-        >
-          Add New Service
-        </button>
+        {profile?.role === Role.ADMIN && (
+          <button
+            onClick={handleCreateNew}
+            className='btn btn-primary flex justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white shadow-brand-xs hover:bg-brand-600'
+          >
+            Add New Service
+          </button>
+        )}
       </div>
 
       <div className='overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]'>
+        {/* Total Products Found (Mới) */}
+        <div className='px-4 py-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg text-end'>
+          <span className='text-sm font-semibold text-indigo-700 dark:text-indigo-400'>
+            Total: **{filteredAndPaginatedServices.totalItems}**
+          </span>
+        </div>
+
         <div className='max-w-full overflow-x-auto'>
           <Table>
             {/* Table Header */}
@@ -211,7 +224,7 @@ export default function ServiceManagementTable() {
                       {service.durationMinutes} minutes
                     </TableCell>
                     <TableCell className='px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400 font-semibold'>
-                      ${service.price.toFixed(2)}
+                      {formatVND(service.price)} VNĐ
                     </TableCell>
                     <TableCell className='px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400'>
                       {new Date(service.createdTime).toLocaleDateString()}
@@ -227,13 +240,15 @@ export default function ServiceManagementTable() {
                           View Detail
                         </button>
                         {/* Nút Delete */}
-                        <button
-                          onClick={() => handleDeleteClick(service)}
-                          className='text-red-500 hover:text-red-700 dark:hover:text-red-300 text-sm'
-                          title='Delete Service'
-                        >
-                          Delete
-                        </button>
+                        {profile?.role === Role.ADMIN && (
+                          <button
+                            onClick={() => handleDeleteClick(service)}
+                            className='text-red-500 hover:text-red-700 dark:hover:text-red-300 text-sm'
+                            title='Delete Service'
+                          >
+                            Delete
+                          </button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -256,7 +271,6 @@ export default function ServiceManagementTable() {
         )}
       </div>
 
-      {/* --- MODAL XEM/TẠO/CHỈNH SỬA CHI TIẾT --- */}
       <ServiceModal
         isOpen={isServiceModalOpen}
         onClose={() => setIsServiceModalOpen(false)}

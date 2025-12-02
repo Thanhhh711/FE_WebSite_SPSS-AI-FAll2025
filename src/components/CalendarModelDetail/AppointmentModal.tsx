@@ -5,7 +5,7 @@ import React, { useMemo } from 'react'
 import { useNavigate } from 'react-router'
 import { scheduleApi } from '../../api/schedulars.api'
 import { serviceApi } from '../../api/services.api'
-import { APPOINTMENT_STATUS_LIST } from '../../constants/AppointmentConstants'
+
 import { AppPath } from '../../constants/Paths'
 import { Role } from '../../constants/Roles'
 import { WorkScheduleStatus } from '../../constants/SchedularConstants'
@@ -14,7 +14,7 @@ import { Service } from '../../types/service.type'
 import { TreatmentSession } from '../../types/treatmentSession.type'
 import { AuthUser, User } from '../../types/user.type'
 import { Modal } from '../ui/modal'
-import { AuthResponse } from '../../types/auth.type'
+import { APPOINTMENT_STATUS_LIST, AppointmentStatus, AppointmentStatusCode } from '../../constants/AppointmentConstants'
 
 interface Schedule {
   id: string
@@ -22,6 +22,19 @@ interface Schedule {
   room: { roomName: string; location: string }
 }
 
+type EditableStatusForBA = typeof AppointmentStatusCode.Completed | typeof AppointmentStatusCode.NoShow
+
+const canEditStatus = (role: Role, code: AppointmentStatus): code is EditableStatusForBA => {
+  console.log('role', role)
+
+  if (role === Role.ADMIN || role === Role.SCHEDULE_MANAGER) return false
+  if (role === Role.BEAUTY_ADVISOR) {
+    console.log('yes')
+
+    return code === AppointmentStatusCode.Completed || code === AppointmentStatusCode.NoShow
+  }
+  return true
+}
 interface EventModalFormProps {
   // Metadata & Control
   isOpen: boolean
@@ -115,6 +128,7 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
   console.log('Data User', pagingData)
 
   console.log('sessionData', sesionData)
+  console.log('eventRoom', eventRoom)
 
   const { data: servicesData, isLoading: isServicesLoading } = useQuery({
     queryKey: ['allServices'],
@@ -325,14 +339,16 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
 
                       {/* ACTIONS: View Record & Change Button */}
                       <div className='flex items-center space-x-3'>
-                        <button
-                          onClick={() => handleViewMedicalRecord(patientId)} // 🚨 Cần định nghĩa hàm này
-                          type='button'
-                          className='text-sm font-medium text-indigo-500 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors'
-                          title='View Medical Record'
-                        >
-                          View Record
-                        </button>
+                        {[Role.ADMIN, Role.BEAUTY_ADVISOR].includes(profile?.role) && (
+                          <button
+                            onClick={() => handleViewMedicalRecord(patientId)}
+                            type='button'
+                            className='text-sm font-medium text-indigo-500 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors'
+                            title='View Medical Record'
+                          >
+                            View Record
+                          </button>
+                        )}
 
                         {/* <button
                           onClick={() => setPatientId('')}
@@ -366,13 +382,13 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
           </div>
 
           <div className='p-5 border border-gray-200 rounded-lg dark:border-gray-700'>
-            <h6 className='mb-4 text-lg font-semibold text-gray-700 dark:text-white'>Schedule & Time</h6>
+            <label className='flex items-center mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-400'>
+              <IconPlaceholder color='bg-orange-500' />
+              <span className='ml-2'>Time Slot</span>
+            </label>
+            {/* <h6 className='mb-4 text-lg font-semibold text-gray-700 dark:text-white'>Schedule & Time</h6>
 
             <div className='mb-6'>
-              <label className='flex items-center mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-400'>
-                <IconPlaceholder color='bg-orange-500' />
-                <span className='ml-2'>Time Slot</span>
-              </label>
               <select
                 value={selectedScheduleId}
                 onChange={(e) => handleScheduleChange(e.target.value)}
@@ -402,7 +418,7 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
                   )
                 })}
               </select>
-            </div>
+            </div> */}
 
             <div className='grid grid-cols-2 gap-4 sm:grid-cols-3'>
               <div>
@@ -447,64 +463,6 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
                   disabled
                   className='h-10 w-full rounded-lg border border-gray-300 bg-gray-100 dark:bg-gray-800 px-3 py-2 text-sm text-gray-800 dark:text-white/90 cursor-not-allowed'
                 />
-              </div>
-            </div>
-          </div>
-
-          <div className='p-5 border border-gray-200 rounded-lg dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50'>
-            <h6 className='mb-4 text-lg font-semibold text-gray-700 dark:text-white'>Appointment Status </h6>
-
-            <div className='grid grid-cols-2 sm:grid-cols-3 gap-2'>
-              {APPOINTMENT_STATUS_LIST.map((s) => (
-                <label
-                  key={s.code}
-                  htmlFor={`status-${s.code}`}
-                  className={`
-                    relative flex items-center justify-center p-3 rounded-lg text-sm font-medium border cursor-pointer 
-                    transition duration-150 ease-in-out
-                    ${s.dotColor.replace('bg-', 'text-')}-700 
-                    ${s.dotColor.replace('bg-', 'bg-')}-50/50 
-                    ${
-                      status === s.code
-                        ? 'border-brand-500 ring-2 ring-brand-500 shadow-sm'
-                        : 'border-gray-300 dark:border-gray-600 hover:border-brand-300'
-                    }
-                `}
-                >
-                  <input
-                    id={`status-${s.code}`}
-                    name='status'
-                    type='radio'
-                    value={s.code}
-                    checked={status === s.code}
-                    onChange={() => setStatus(s.code)}
-                    className='sr-only'
-                  />
-                  <span className='flex items-center'>
-                    {/* Dot màu */}
-                    <span className={`h-2.5 w-2.5 rounded-full mr-2 ${s.dotColor}`}></span>
-                    {/* Tên Status */}
-                    {s.name}
-                  </span>
-                </label>
-              ))}
-            </div>
-
-            {/* SESSION ID */}
-            <div className='p-5 border border-gray-200 rounded-lg dark:border-gray-700 mt-6'>
-              <h6 className='mb-4 text-base font-semibold text-gray-700 dark:text-white'>Treatment Session</h6>
-              <div className=''>
-                <label className='mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400'>
-                  Select Session
-                </label>
-                <div
-                  className='h-11 w-full rounded-lg border border-gray-300 dark:border-gray-700 
-                bg-gray-100 dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-800 
-                dark:text-white/90'
-                >
-                  [Kits: {(sesionData.kits as string) || 'N/A'}] - Session #{sesionData.sessionNumber} (
-                  {new Date(sesionData.sessionDate).toLocaleDateString()})
-                </div>
               </div>
             </div>
           </div>
@@ -560,11 +518,74 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
               placeholder='Add special notes for this appointment...'
             />
           </div>
+
+          <div className='p-5 border border-gray-200 rounded-lg dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50'>
+            <h6 className='mb-4 text-lg font-semibold text-gray-700 dark:text-white'>Appointment Status</h6>
+
+            <div className='grid grid-cols-2 sm:grid-cols-3 gap-2'>
+              {APPOINTMENT_STATUS_LIST.map((s) => {
+                const isDisabled = !canEditStatus(profile.role, s.code as AppointmentStatus)
+                console.log('is', isDisabled)
+
+                return (
+                  <label
+                    key={s.code}
+                    htmlFor={`status-${s.code}`}
+                    className={`
+          relative flex items-center justify-center p-3 rounded-lg text-sm font-medium border cursor-pointer 
+          transition duration-150 ease-in-out
+          ${s.dotColor.replace('bg-', 'text-')}-700 
+          ${s.dotColor.replace('bg-', 'bg-')}-50/50 
+          ${
+            status === s.code
+              ? 'border-brand-500 ring-2 ring-brand-500 shadow-sm'
+              : 'border-gray-300 dark:border-gray-600 hover:border-brand-300'
+          }
+          ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}
+        `}
+                  >
+                    <input
+                      id={`status-${s.code}`}
+                      name='status'
+                      type='radio'
+                      value={s.code}
+                      checked={status === s.code}
+                      onChange={() => canEditStatus(profile.role, s.code as AppointmentStatus) && setStatus(s.code)}
+                      className='sr-only'
+                      disabled={isDisabled}
+                    />
+                    <span className='flex items-center'>
+                      <span className={`h-2.5 w-2.5 rounded-full mr-2 ${s.dotColor}`}></span>
+
+                      {s.name}
+                    </span>
+                  </label>
+                )
+              })}
+            </div>
+            {/* SESSION ID */}
+            <div className='p-5 border border-gray-200 rounded-lg dark:border-gray-700 mt-6'>
+              <h6 className='mb-4 text-base font-semibold text-gray-700 dark:text-white'>Treatment Session</h6>
+              <div className=''>
+                <label className='mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400'>
+                  Select Session
+                </label>
+                <div
+                  className='h-11 w-full rounded-lg border border-gray-300 dark:border-gray-700 
+                bg-gray-100 dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-800 
+                dark:text-white/90'
+                >
+                  [Kits: {(sesionData.kits as string) || 'N/A'}] - Session #{sesionData.sessionNumber} (
+                  {new Date(sesionData.sessionDate).toLocaleDateString()})
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* FOOTER */}
         <div className='flex items-center gap-3 p-6 border-t border-gray-100 dark:border-gray-800 modal-footer sm:justify-end'>
-          {isEditing && (
+          {/* {isEditing && (
             <button
               onClick={onDeleted}
               type='button'
@@ -572,7 +593,7 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
             >
               Delete Appointment
             </button>
-          )}
+          )} */}
           <button
             onClick={onClose}
             type='button'
@@ -581,7 +602,7 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
             Close
           </button>
 
-          {profile.role === Role.CUSTOMER && (
+          {profile.role === Role.BEAUTY_ADVISOR && (
             <button
               onClick={onSave}
               type='button'

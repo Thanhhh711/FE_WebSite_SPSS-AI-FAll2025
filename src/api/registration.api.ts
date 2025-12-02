@@ -16,6 +16,9 @@ export const registrationApi = {
   createRegistration: (body: SchedulePayload) =>
     http.post<SuccessResponse<ScheduleRegistration>>(`${REGISTRATIONS}`, body),
 
+  createRegistrationByStaff: (staffId: string, body: SchedulePayload) =>
+    http.post<SuccessResponse<ScheduleRegistration>>(`${REGISTRATIONS}/staff/${staffId}`, body),
+
   updateRegistration: (registrationid: string, registrationForm: SchedulePayload) =>
     http.put<SuccessResponse<ScheduleRegistration>>(`${REGISTRATIONS}/${registrationid}`, registrationForm),
 

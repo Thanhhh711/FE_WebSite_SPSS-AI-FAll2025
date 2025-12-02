@@ -1,19 +1,19 @@
 import ComponentCard from '../../components/common/ComponentCard'
 import PageBreadcrumb from '../../components/common/PageBreadCrumb'
 import PageMeta from '../../components/common/PageMeta'
-import BasicTableProduct from '../../components/tables/BasicTables/BasicTableProduct'
+import BasicTableSkinCondition from '../../components/tables/BasicTables/BasicTableSkinCondition'
 
-export default function BasicTablesProduct() {
+export default function BasicTablesSkinCondition() {
   return (
     <>
       <PageMeta
         title='React.js Basic Tables Dashboard | TailAdmin - Next.js Admin Dashboard Template'
         description='This is React.js Basic Tables Dashboard page for TailAdmin - React.js Tailwind CSS Admin Dashboard Template'
       />
-      <PageBreadcrumb pageTitle='Basic Tables Product' />
+      <PageBreadcrumb pageTitle='Table Skin' />
       <div className='space-y-6'>
-        <ComponentCard title='Basic Table Product'>
-          <BasicTableProduct />
+        <ComponentCard title='Table Skin'>
+          <BasicTableSkinCondition />
         </ComponentCard>
       </div>
     </>

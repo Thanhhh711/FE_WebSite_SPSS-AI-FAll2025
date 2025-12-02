@@ -22,13 +22,23 @@ import ProductDetail from './pages/Product/ProductDetail'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import BasicTableRegistration from './components/tables/BasicTables/BasicTableRegistration'
 
+import WorkSchedulesManagement from './components/tables/BasicTables/BasicTableSchedule'
+import TreatmentPlanTab from './pages/Patients/PatientDetail'
+import MedicalReportList from './pages/Report/MedicalReportList'
+import BasicTablesBrand from './pages/Tables/BasicTablesBrand'
+import BasicTablesCategory from './pages/Tables/BasicTablesCategory'
+import BasicTablesCountries from './pages/Tables/BasicTablesCountries'
 import BasicTablesOrder from './pages/Tables/BasicTablesOrder'
 import BasicTablesPatients from './pages/Tables/BasicTablesPatients'
 import BasicTablesProduct from './pages/Tables/BasicTablesProduct'
 import BasicTablesRoom from './pages/Tables/BasicTablesRoom'
 import BasicTablesService from './pages/Tables/BasicTablesService'
+import BasicTablesSkinCondition from './pages/Tables/BasicTablesSkinCondition'
+import BasicTablesSkinType from './pages/Tables/BasicTablesSkinType'
 import BasicTablesSlot from './pages/Tables/BasicTablesSlot'
 import BasicTablesTemplate from './pages/Tables/BasicTablesTemplate'
+import BasicTablesVariation from './pages/Tables/BasicTablesVariation'
+import BasicTablesVoucher from './pages/Tables/BasicTablesVoucher'
 import Alerts from './pages/UiElements/Alerts'
 import Avatars from './pages/UiElements/Avatars'
 import Badges from './pages/UiElements/Badges'
@@ -36,14 +46,7 @@ import Buttons from './pages/UiElements/Buttons'
 import Images from './pages/UiElements/Images'
 import Videos from './pages/UiElements/Videos'
 import UserProfiles from './pages/UserProfiles'
-import MedicalReportList from './pages/Report/MedicalReportList'
-import WorkSchedulesManagement from './components/tables/BasicTables/BasicTableSchedule'
-import BasicTablesBrand from './pages/Tables/BasicTablesBrand'
-import TreatmentPlanTab from './pages/Patients/PatientDetail'
-import BasicTablesCountries from './pages/Tables/BasicTablesCountries'
-import BasicTablesVoucher from './pages/Tables/BasicTablesVoucher'
-import BasicTablesCategory from './pages/Tables/BasicTablesCategory'
-import BasicTablesVariation from './pages/Tables/BasicTablesVariation'
+import { ErrorBoundary } from './utils/ErrorBoundary'
 
 const BasicTables = lazy(() => import('./pages/Tables/BasicTables'))
 
@@ -68,16 +71,25 @@ export default function App() {
             <Route index path={AppPath.HOME} element={<Home />} />
             {/* Tables */}
             <Route path={AppPath.BASIC_TABLES} element={<BasicTables />} />
-            <Route path={AppPath.BASIC_TABLES_PRODUCT} element={<BasicTablesProduct />} />
-            <Route path={AppPath.BASIC_TABLES_BRAND} element={<BasicTablesBrand />} />
+
             <Route path={AppPath.BASIC_TABLES_COUNTRIES} element={<BasicTablesCountries />} />
             <Route path={AppPath.BASIC_TABLES_VOUCHER} element={<BasicTablesVoucher />} />
-            <Route path={AppPath.BASIC_TABLES_CATEGORY} element={<BasicTablesCategory />} />
+
             <Route path={AppPath.BASIC_TABLES_VARIATION} element={<BasicTablesVariation />} />
+            <Route
+              path={AppPath.BASIC_TABLES_SKINCONDITION}
+              element={
+                <ErrorBoundary fallback={<div>Oops! Something went wrong on this page.</div>}>
+                  <BasicTablesSkinCondition />
+                </ErrorBoundary>
+              }
+            />
+
+            <Route path={AppPath.BASIC_TABLES_SKINTYPE} element={<BasicTablesSkinType />} />
 
             <Route path={AppPath.DETAIL_PRODUCT} element={<ProductDetail />} />
             {/* <Route path={AppPath.BASIC_TABLES_TEMPLATE} element={<BasicTablesTemplate />} /> */}
-            <Route path={AppPath.BASIC_TABLES_ROOM} element={<BasicTablesRoom />} />
+
             {/* UI */}
             <Route path={AppPath.ALERTS} element={<Alerts />} />
             <Route path={AppPath.AVATARS} element={<Avatars />} />
@@ -109,6 +121,7 @@ export default function App() {
           <Route element={<AppLayout />}>
             <Route path={AppPath.CALENDAR} element={<Calendar />} />
             <Route path={AppPath.BASIC_TABLES_SHEDULES} element={<WorkSchedulesManagement />} />
+            <Route path={AppPath.BASIC_TABLES_REGISTRATION} element={<BasicTableRegistration />} />
           </Route>
         </Route>
 
@@ -117,6 +130,7 @@ export default function App() {
           <Route element={<AppLayout />}>
             <Route path={AppPath.BASIC_TABLES_SLOT} element={<BasicTablesSlot />} />
             <Route path={AppPath.BASIC_TABLES_TEMPLATE} element={<BasicTablesTemplate />} />
+            <Route path={AppPath.BASIC_TABLES_ROOM} element={<BasicTablesRoom />} />
             <Route path={AppPath.BASIC_TABLES_SERVICE} element={<BasicTablesService />} />
             {/* <Route path={AppPath.BASIC_TABLES_REGISTRATION} element={<BasicTableRegistration />} /> */}
           </Route>
@@ -134,8 +148,6 @@ export default function App() {
         {/* === Only BEAUTY_ADVISOR AND ADMIN === */}
         <Route element={<ProtectedRoute allowedRoles={[Role.BEAUTY_ADVISOR, Role.ADMIN]} userRole={userRole} />}>
           <Route element={<AppLayout />}>
-            <Route path={AppPath.BASIC_TABLES_REGISTRATION} element={<BasicTableRegistration />} />
-
             <Route path={AppPath.BASIC_TABLES_TEMPLATE} element={<BasicTablesTemplate />} />
             <Route path={`${AppPath.PROFILE}/:id`} element={<UserProfiles />} />
 
@@ -148,6 +160,9 @@ export default function App() {
         <Route element={<ProtectedRoute allowedRoles={[Role.ADMIN, Role.STORE_STAFF]} userRole={userRole} />}>
           <Route element={<AppLayout />}>
             <Route path={AppPath.BASIC_TABLES_ORDER} element={<BasicTablesOrder />} />
+            <Route path={AppPath.BASIC_TABLES_PRODUCT} element={<BasicTablesProduct />} />
+            <Route path={AppPath.BASIC_TABLES_CATEGORY} element={<BasicTablesCategory />} />
+            <Route path={AppPath.BASIC_TABLES_BRAND} element={<BasicTablesBrand />} />
           </Route>
         </Route>
         {/* === 404 FALLBACK === */}

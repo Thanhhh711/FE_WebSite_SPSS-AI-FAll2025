@@ -1,3 +1,5 @@
+import { Category } from './category.type'
+
 export interface Variation {
   id: string
   name: string
@@ -9,7 +11,15 @@ export interface Variation {
   lastUpdatedTime: string | null
   deletedTime: string | null
   isDeleted: boolean
-  options: VariationOption[]
+  productCategory: Category
+  variationOptions: VarionOptionInResponse[]
+}
+
+export interface VarionOptionInResponse {
+  id: string
+  value: string
+  variationId: string
+  variationName: string
 }
 
 export interface VariationForm {

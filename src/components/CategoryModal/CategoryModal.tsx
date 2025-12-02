@@ -17,6 +17,7 @@ interface CategoryModalProps {
 }
 
 type CategoryFormData = CategoryForm & { id?: string }
+type CategoryErrors = Partial<Record<keyof CategoryForm, string>> // Định nghĩa kiểu lỗi
 
 export default function CategoryModal({ isOpen, onClose, category, onSave, isViewMode }: CategoryModalProps) {
   const isEditing = !!category && !isViewMode
@@ -35,7 +36,7 @@ export default function CategoryModal({ isOpen, onClose, category, onSave, isVie
     categoryName: category?.categoryName || '',
     parentCategoryId: category?.parentCategoryId || null
   })
-  const [errors, setErrors] = useState<Partial<Record<keyof CategoryForm, string>>>({})
+  const [errors, setErrors] = useState<CategoryErrors>({})
 
   useEffect(() => {
     if (category) {
@@ -52,12 +53,21 @@ export default function CategoryModal({ isOpen, onClose, category, onSave, isVie
     setErrors({})
   }, [category])
 
+  // Hàm xử lý thay đổi input cho categoryName
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm((p) => ({ ...p, categoryName: e.target.value }))
+    // Xóa lỗi ngay lập tức
+    if (errors.categoryName) {
+      setErrors((p) => ({ ...p, categoryName: undefined }))
+    }
+  }
+
   const baseInputClass =
     'w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm text-gray-800 dark:text-white/90 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 disabled:bg-gray-100 dark:disabled:bg-gray-800'
 
   const validateForm = (data: CategoryForm): boolean => {
-    const newErrors: Partial<Record<keyof CategoryForm, string>> = {}
-    let isValid = true
+    const newErrors: CategoryErrors = {}
+    let isValid = true // 1. Category Name Validation
 
     if (!data.categoryName.trim()) {
       newErrors.categoryName = 'Category Name cannot be empty.'
@@ -65,11 +75,47 @@ export default function CategoryModal({ isOpen, onClose, category, onSave, isVie
     } else if (data.categoryName.trim().length < 2) {
       newErrors.categoryName = 'Category Name must be at least 2 characters.'
       isValid = false
-    }
+    } else if (data.categoryName.trim().length > 50) {
+      // Thêm giới hạn ký tự tối đa
+      newErrors.categoryName = 'Category Name must not exceed 50 characters.'
+      isValid = false
+    } // 2. Parent Category Validation (Ngăn chặn vòng lặp)
 
     if (isEditing && data.parentCategoryId === category?.id) {
       newErrors.parentCategoryId = 'Cannot select the category itself as its Parent.'
       isValid = false
+    }
+
+    // (Optional but Recommended) Ngăn chặn chọn con cháu làm cha
+    const isChild = (parentId: string | null, childId: string) => {
+      if (!parentId) return false
+      if (parentId === childId) return true
+
+      const parent = allCategories.find((c) => c.id === parentId)
+      if (!parent) return false
+
+      // Kiểm tra tất cả các con cháu (recursive)
+      let found = false
+      const checkChildren = (cat: Category) => {
+        if (found) return
+        cat.inverseParentCategory?.forEach((c) => {
+          if (c.id === childId) {
+            found = true
+            return
+          }
+          checkChildren(c)
+        })
+      }
+      checkChildren(parent)
+      return found
+    }
+
+    if (isEditing && data.parentCategoryId && category?.id) {
+      // Nếu Category đang chọn là con của Category cha mới, sẽ tạo vòng lặp
+      if (isChild(category.id, data.parentCategoryId)) {
+        newErrors.parentCategoryId = 'Cannot select a descendant category as its parent.'
+        isValid = false
+      }
     }
 
     setErrors(newErrors)
@@ -87,6 +133,7 @@ export default function CategoryModal({ isOpen, onClose, category, onSave, isVie
       id: isEditing ? category?.id : undefined
     }
     onSave(dataToSave)
+    toast.success(`${isEditing ? 'Updated' : 'Created'} category successfully!`)
   }
 
   const title = isCreating ? 'Create New Category' : isEditing ? 'Edit Category Details' : 'Category Details'
@@ -103,7 +150,7 @@ export default function CategoryModal({ isOpen, onClose, category, onSave, isVie
         excludedIds.add(child.id)
         findChildren(child)
       })
-    }
+    } // Tìm tất cả con cháu và loại bỏ chúng
     findChildren(currentCategory)
 
     return allCategories.filter((cat) => !excludedIds.has(cat.id))
@@ -114,6 +161,10 @@ export default function CategoryModal({ isOpen, onClose, category, onSave, isVie
   const handleParentCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value === '' ? null : e.target.value
     setForm((p) => ({ ...p, parentCategoryId: value }))
+    // Xóa lỗi ngay lập tức
+    if (errors.parentCategoryId) {
+      setErrors((p) => ({ ...p, parentCategoryId: undefined }))
+    }
   }
 
   return (
@@ -122,11 +173,11 @@ export default function CategoryModal({ isOpen, onClose, category, onSave, isVie
         {category && isViewMode && (
           <div className='space-y-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
             <p className='text-sm text-gray-700 dark:text-gray-300'>
-              <span className='font-semibold'>Name:</span>{' '}
+              <span className='font-semibold'>Name:</span>
               <span className='font-bold text-brand-600'>{category.categoryName}</span>
             </p>
             <p className='text-sm text-gray-700 dark:text-gray-300'>
-              <span className='font-semibold'>Parent:</span>{' '}
+              <span className='font-semibold'>Parent:</span>
               {category.parentCategory?.categoryName || 'None (Root Category)'}
             </p>
             <p className='text-sm text-gray-700 dark:text-gray-300'>
@@ -140,24 +191,25 @@ export default function CategoryModal({ isOpen, onClose, category, onSave, isVie
             </p>
           </div>
         )}
-
         {!isViewMode && (
           <div className='space-y-4'>
             <div>
               <label htmlFor='categoryName' className='text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block'>
                 Category Name *
               </label>
+
               <input
                 id='categoryName'
+                name='categoryName' // Thêm name
                 type='text'
                 placeholder='E.g., Electronics, T-Shirts, Books'
                 value={form.categoryName}
-                onChange={(e) => setForm((p) => ({ ...p, categoryName: e.target.value }))}
-                className={`${baseInputClass} ${errors.categoryName ? 'border-red-500' : ''}`}
+                onChange={handleNameChange} // Sử dụng hàm mới
+                className={`${baseInputClass} ${errors.categoryName ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
+                maxLength={50} // Thêm giới hạn ký tự cứng trên input
               />
               {errors.categoryName && <p className='mt-1 text-xs text-red-500'>{errors.categoryName}</p>}
             </div>
-
             <div>
               <label
                 htmlFor='parentCategory'
@@ -167,9 +219,10 @@ export default function CategoryModal({ isOpen, onClose, category, onSave, isVie
               </label>
               <select
                 id='parentCategory'
+                name='parentCategoryId' // Thêm name
                 value={form.parentCategoryId || ''}
-                onChange={handleParentCategoryChange}
-                className={`${baseInputClass} ${errors.parentCategoryId ? 'border-red-500' : ''}`}
+                onChange={handleParentCategoryChange} // Cập nhật để xóa lỗi
+                className={`${baseInputClass} ${errors.parentCategoryId ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
               >
                 <option value=''>--- Select Root Category ---</option>
                 {availableParents.map((cat) => (
@@ -183,7 +236,6 @@ export default function CategoryModal({ isOpen, onClose, category, onSave, isVie
           </div>
         )}
       </div>
-
       <div className='flex items-center gap-3 p-6 border-t border-gray-100 dark:border-gray-800 modal-footer sm:justify-end'>
         <button
           onClick={onClose}
@@ -192,6 +244,7 @@ export default function CategoryModal({ isOpen, onClose, category, onSave, isVie
         >
           {isViewMode ? 'Close' : 'Cancel'}
         </button>
+
         {!isViewMode && (
           <button
             onClick={handleSave}

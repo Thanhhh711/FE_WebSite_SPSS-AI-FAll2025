@@ -9,10 +9,13 @@ import { Table, TableBody, TableCell, TableHeader, TableRow } from '../../ui/tab
 import Pagination from '../../pagination/Pagination'
 import SlotModal from '../../SlotModal/SlotModal'
 import ConfirmModal from '../../CalendarModelDetail/ConfirmModal'
+import { Role } from '../../../constants/Roles'
+import { useAppContext } from '../../../context/AuthContext'
 
 const ITEMS_PER_PAGE = 10
 
 export default function BasicTableSlot() {
+  const { profile } = useAppContext()
   const queryClient = useQueryClient()
 
   // --- STATE MANAGEMENT ---
@@ -143,15 +146,23 @@ export default function BasicTableSlot() {
         />
 
         {/* Create Button */}
-        <button
-          onClick={handleCreateNew}
-          className='btn btn-primary flex justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white shadow-brand-xs hover:bg-brand-600 transition-colors'
-        >
-          Add New Slot
-        </button>
+
+        {profile?.role === Role.ADMIN && (
+          <button
+            onClick={handleCreateNew}
+            className='btn btn-primary flex justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white shadow-brand-xs hover:bg-brand-600 transition-colors'
+          >
+            Add New Slot
+          </button>
+        )}
       </div>
 
       <div className='overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] shadow-lg'>
+        <div className='px-4 py-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg text-end'>
+          <span className='text-sm font-semibold text-indigo-700 dark:text-indigo-400'>
+            Total: **{filteredAndPaginatedSlots.totalItems}**
+          </span>
+        </div>
         <div className='max-w-full overflow-x-auto'>
           <Table>
             {/* Table Header */}
@@ -198,21 +209,24 @@ export default function BasicTableSlot() {
                         >
                           View
                         </button>
-                        <button
-                          onClick={() => handleOpenDetailModal(slot, 'edit')}
-                          className='text-brand-500 hover:text-brand-700 dark:hover:text-brand-300 text-sm p-1'
-                          title='Edit Slot'
-                        >
-                          Edit
-                        </button>
-                        {/* Delete Button */}
-                        <button
-                          onClick={() => handleDeleteClick(slot)}
-                          className='text-red-500 hover:text-red-700 dark:hover:text-red-300 text-sm p-1'
-                          title='Delete Slot'
-                        >
-                          Delete
-                        </button>
+                        {profile?.role === Role.ADMIN && (
+                          <>
+                            <button
+                              onClick={() => handleOpenDetailModal(slot, 'edit')}
+                              className='text-brand-500 hover:text-brand-700 dark:hover:text-brand-300 text-sm p-1'
+                              title='Edit Slot'
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDeleteClick(slot)}
+                              className='text-red-500 hover:text-red-700 dark:hover:text-red-300 text-sm p-1'
+                              title='Delete Slot'
+                            >
+                              Delete
+                            </button>
+                          </>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

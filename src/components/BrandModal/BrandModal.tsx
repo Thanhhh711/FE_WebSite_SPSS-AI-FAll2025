@@ -1,8 +1,17 @@
 import React, { useEffect, useState } from 'react'
-
 import { toast } from 'react-toastify'
 import { Brand, BrandForm } from '../../types/brands.type'
 import { Country } from '../../types/contries.type'
+import { uploadFile } from '../../utils/supabaseStorage'
+
+// Định nghĩa kiểu cho lỗi validation
+interface BrandFormErrors {
+  name?: string
+  title?: string
+  description?: string
+  countryId?: string
+  imageFile?: string
+}
 
 interface BrandModalProps {
   isOpen: boolean
@@ -23,6 +32,9 @@ const initialFormState: BrandForm = {
 
 export default function BrandModal({ isOpen, onClose, brand, onSave, isViewMode, countries }: BrandModalProps) {
   const [form, setForm] = useState<BrandForm>(initialFormState)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [isUploading, setIsUploading] = useState(false)
+  const [validationErrors, setValidationErrors] = useState<BrandFormErrors>({})
 
   useEffect(() => {
     if (brand) {
@@ -33,30 +45,126 @@ export default function BrandModal({ isOpen, onClose, brand, onSave, isViewMode,
         imageUrl: brand.imageUrl,
         countryId: brand.countryId
       })
+      setSelectedFile(null)
     } else {
       setForm(initialFormState)
+      setSelectedFile(null)
     }
+    setValidationErrors({})
   }, [brand])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
+
     setForm((prev) => ({
       ...prev,
       [name]: name === 'countryId' ? Number(value) : value
     }))
+
+    if (validationErrors[name as keyof BrandFormErrors]) {
+      setValidationErrors((prev) => ({
+        ...prev,
+        [name]: undefined
+      }))
+    }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null
+
+    if (file) {
+      let error: string | undefined = undefined
+      const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
+      const acceptedTypes = ['image/jpeg', 'image/png', 'image/webp']
+
+      if (!acceptedTypes.includes(file.type)) {
+        error = 'Invalid file type. Only JPEG, PNG, or WebP images are allowed.'
+      } else if (file.size > MAX_FILE_SIZE) {
+        error = 'File size exceeds 5MB limit.'
+      }
+
+      if (error) {
+        toast.error(error)
+        setSelectedFile(null)
+        setValidationErrors((prev) => ({ ...prev, imageFile: error }))
+        return
+      }
+
+      setValidationErrors((prev) => ({ ...prev, imageFile: undefined }))
+    } else if (validationErrors.imageFile) {
+      setValidationErrors((prev) => ({ ...prev, imageFile: undefined }))
+    }
+
+    setSelectedFile(file)
+  }
+
+  // Cập nhật hàm Validation
+  const validateForm = (): boolean => {
+    const errors: BrandFormErrors = {}
+
+    // 1. Validation cơ bản (Name, Title, Description)
+    if (!form.name.trim()) {
+      errors.name = 'Brand name is required.'
+    } else if (form.name.trim().length < 2) {
+      errors.name = 'Brand name must be at least 2 characters.'
+    }
+
+    if (!form.title.trim()) {
+      errors.title = 'Brand title is required.'
+    }
+
+    if (!form.description.trim()) {
+      errors.description = 'Description is required.'
+    } else if (form.description.trim().length > 500) {
+      errors.description = 'Description must not exceed 500 characters.'
+    }
 
     if (form.countryId === 0) {
-      toast.error('Please select a country.')
+      errors.countryId = 'Please select a country.'
+    }
+
+    const isImageMissing = !selectedFile && !form.imageUrl
+
+    if (isImageMissing && !brand) {
+      errors.imageFile = 'An image is required for a new brand.'
+    }
+
+    setValidationErrors(errors)
+
+    return Object.keys(errors).length === 0
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!validateForm()) {
+      toast.error('Please correct the validation errors before submitting.')
       return
     }
 
-    const dataToSave = { ...form, id: brand?.id }
+    let finalImageUrl = form.imageUrl
+
+    if (selectedFile) {
+      try {
+        setIsUploading(true)
+        // Upload file sử dụng bucket 'brands'
+        const uploadResult = await uploadFile('brands', selectedFile, 'brand-logos')
+        finalImageUrl = uploadResult.publicUrl
+        toast.success('Image uploaded successfully!')
+      } catch (error) {
+        console.error('Error during file upload:', error)
+        toast.error('Failed to upload image. Please try again.')
+        return // Dừng submit nếu upload thất bại
+      } finally {
+        setIsUploading(false)
+      }
+    }
+
+    const dataToSave = { ...form, imageUrl: finalImageUrl, id: brand?.id }
 
     onSave(dataToSave)
+    setSelectedFile(null)
+    setValidationErrors({})
   }
 
   if (!isOpen) return null
@@ -64,9 +172,16 @@ export default function BrandModal({ isOpen, onClose, brand, onSave, isViewMode,
   const title = isViewMode ? `View Brand: ${brand?.name}` : brand ? `Edit Brand: ${brand?.name}` : 'Create New Brand'
 
   const isReadOnly = isViewMode
+  const isFormDisabled = isReadOnly || isUploading
 
   const baseInputClass =
     'w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 disabled:bg-gray-50'
+
+  const renderError = (fieldName: keyof BrandFormErrors) => {
+    return validationErrors[fieldName] ? (
+      <p className='mt-1 text-xs text-red-600'>{validationErrors[fieldName]}</p>
+    ) : null
+  }
 
   return (
     <div className='fixed inset-0 z-50 overflow-y-auto bg-gray-900 bg-opacity-75 flex items-center justify-center p-4'>
@@ -85,10 +200,11 @@ export default function BrandModal({ isOpen, onClose, brand, onSave, isViewMode,
                 name='name'
                 value={form.name}
                 onChange={handleChange}
-                className={baseInputClass}
+                className={`${baseInputClass} ${validationErrors.name ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
                 required
                 readOnly={isReadOnly}
               />
+              {renderError('name')}
             </div>
             <div>
               <label className='mb-1.5 block text-sm font-medium text-gray-700'>Title</label>
@@ -97,36 +213,60 @@ export default function BrandModal({ isOpen, onClose, brand, onSave, isViewMode,
                 name='title'
                 value={form.title}
                 onChange={handleChange}
-                className={baseInputClass}
+                className={`${baseInputClass} ${validationErrors.title ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
                 required
                 readOnly={isReadOnly}
               />
+              {renderError('title')}
             </div>
           </div>
 
-          {/* Image URL and Country */}
+          {/* Image Upload and Country */}
           <div className='grid grid-cols-2 gap-4'>
+            {/* Image Upload */}
             <div>
-              <label className='mb-1.5 block text-sm font-medium text-gray-700'>Image URL</label>
+              <label className='mb-1.5 block text-sm font-medium text-gray-700'>
+                Brand Logo (Optional when editing)
+              </label>
               <input
-                type='url'
-                name='imageUrl'
-                value={form.imageUrl}
-                onChange={handleChange}
-                className={baseInputClass}
-                placeholder='e.g., https://example.com/logo.png'
-                readOnly={isReadOnly}
+                type='file'
+                accept='image/jpeg,image/png,image/webp'
+                name='imageFile'
+                onChange={handleFileChange}
+                className={`${baseInputClass.replace('px-4 py-2.5', 'px-3 py-2')} ${validationErrors.imageFile ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
+                disabled={isReadOnly}
               />
+              {renderError('imageFile')}
+
+              {/* Hiển thị ảnh hiện tại hoặc file đang chọn */}
+              {(form.imageUrl || selectedFile) && (
+                <div className='mt-2'>
+                  {selectedFile ? (
+                    <p className='text-sm text-gray-500'>Selected: **{selectedFile.name}**</p>
+                  ) : (
+                    <>
+                      <p className='text-sm text-gray-500 mb-1'>Current Image:</p>
+                      <img
+                        src={form.imageUrl}
+                        alt='Current Brand Logo'
+                        className='w-20 h-20 object-contain border rounded-lg'
+                      />
+                    </>
+                  )}
+                </div>
+              )}
             </div>
+
+            {/* Country */}
             <div>
               <label className='mb-1.5 block text-sm font-medium text-gray-700'>Country</label>
               <select
                 name='countryId'
                 value={form.countryId}
                 onChange={handleChange}
-                className={baseInputClass}
+                className={`${baseInputClass} ${validationErrors.countryId ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
                 required
-                disabled={isReadOnly} // Use disabled for select
+                disabled={isFormDisabled}
               >
                 <option value={0} disabled>
                   Select Country
@@ -137,6 +277,7 @@ export default function BrandModal({ isOpen, onClose, brand, onSave, isViewMode,
                   </option>
                 ))}
               </select>
+              {renderError('countryId')}
             </div>
           </div>
 
@@ -149,10 +290,11 @@ export default function BrandModal({ isOpen, onClose, brand, onSave, isViewMode,
               value={form.description}
               onChange={handleChange}
               placeholder='Detailed description of the brand.'
-              className={`${baseInputClass} resize-none`}
+              className={`${baseInputClass} resize-none ${validationErrors.description ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
               required
               readOnly={isReadOnly}
             />
+            {renderError('description')}
           </div>
 
           {/* Modal Footer */}
@@ -167,9 +309,10 @@ export default function BrandModal({ isOpen, onClose, brand, onSave, isViewMode,
             {!isReadOnly && (
               <button
                 type='submit'
-                className='px-4 py-2 text-sm font-medium text-white bg-brand-600 rounded-lg hover:bg-brand-700'
+                className='px-4 py-2 text-sm font-medium text-white bg-brand-600 rounded-lg hover:bg-brand-700 disabled:bg-brand-400'
+                disabled={isFormDisabled}
               >
-                {brand ? 'Update Brand' : 'Create Brand'}
+                {isUploading ? 'Uploading...' : brand ? 'Update Brand' : 'Create Brand'}
               </button>
             )}
           </div>

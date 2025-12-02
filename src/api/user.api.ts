@@ -4,7 +4,7 @@ import { User, UserForm } from '../types/user.type'
 import http from '../utils/http'
 
 export const USERS = 'users'
-
+export const ACCOUNT = 'account'
 const userApi = {
   getUsers: () => http.get<SuccessResponse<User[]>>(`${USERS}`),
 
@@ -17,7 +17,11 @@ const userApi = {
   // deleteUser: (userId: string) => http.delete(`${USERS}/${userId}`, body)
   lockUser: (userId: string, banReason: string) =>
     http.patch<UserByIdResponse>(`${USERS}/${userId}/lock`, { banReason }),
-  unLockUser: (userId: string) => http.patch<UserByIdResponse>(`${USERS}/${userId}/unlock`)
+  unLockUser: (userId: string) => http.patch<UserByIdResponse>(`${USERS}/${userId}/unlock`),
+
+  changeRole: (userId: string, roleId: string) => http.patch(`${USERS}/${userId}/assign-role`, { roleId }),
+
+  getBeatyAdvisor: () => http.get<SuccessResponse<User[]>>(`${ACCOUNT}/beauty-advisor`)
 }
 
 export default userApi

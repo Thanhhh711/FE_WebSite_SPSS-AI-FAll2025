@@ -10,45 +10,47 @@ export const AppointmentStatusCode = {
 
 export const APPOINTMENT_STATUS_MAP = {
   [AppointmentStatusCode.Pending]: {
-    name: 'Chờ xác nhận',
+    name: 'Pending',
     calendar: 'Warning', // Yellow/Orange
     dotColor: 'bg-yellow-500'
   },
   [AppointmentStatusCode.Confirmed]: {
-    name: 'Đã xác nhận',
+    name: 'Confirmed',
     calendar: 'Success', // Green
     dotColor: 'bg-green-500'
   },
   [AppointmentStatusCode.InProgress]: {
-    name: 'Đang thực hiện',
+    name: 'In Progress',
     calendar: 'Primary', // Blue
     dotColor: 'bg-blue-500'
   },
   [AppointmentStatusCode.Completed]: {
-    name: 'Hoàn thành',
+    name: 'Completed',
     calendar: 'Primary', // Blue
     dotColor: 'bg-indigo-500'
   },
   [AppointmentStatusCode.Cancelled]: {
-    name: 'Đã hủy',
+    name: 'Cancelled',
     calendar: 'Danger', // Red
     dotColor: 'bg-red-500'
   },
   [AppointmentStatusCode.NoShow]: {
-    name: 'Không đến',
+    name: 'No Show',
     calendar: 'Danger',
     dotColor: 'bg-red-800'
   },
   [AppointmentStatusCode.Rescheduled]: {
-    name: 'Đã reschedule',
+    name: 'Rescheduled',
     calendar: 'Warning',
     dotColor: 'bg-orange-500'
   }
 } as const
 
-// Tạo một mảng dễ dàng cho việc render Radio Button trong Modal
+// Array for rendering radio buttons in a modal
 export const APPOINTMENT_STATUS_LIST = Object.entries(APPOINTMENT_STATUS_MAP).map(([code, value]) => ({
   code: Number(code),
   name: value.name,
   dotColor: value.dotColor
 }))
+
+export type AppointmentStatus = (typeof AppointmentStatusCode)[keyof typeof AppointmentStatusCode]

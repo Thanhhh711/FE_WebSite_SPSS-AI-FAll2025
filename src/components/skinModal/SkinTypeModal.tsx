@@ -1,66 +1,62 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState } from 'react'
-import { toast } from 'react-toastify' // Import toast
-import { ScheduleTemplate, TemplateForm } from '../../types/templete.type'
+import { toast } from 'react-toastify'
 import ModalRegistration from '../RegistrationModal/ModalRegistration'
-import StaffEmailLookup from '../../utils/StaffEmailLookup'
+import { SkinType, SkinTypeForm } from '../../types/skin.type'
+// import StaffEmailLookup from '../../utils/StaffEmailLookup'
 
-interface TemplateModalProps {
+interface SkinTypeModalProps {
   isOpen: boolean
   onClose: () => void
-  template: ScheduleTemplate | null
-  onSave: (data: TemplateForm & { id?: string }) => void
+  skinType: SkinType | null
+  onSave: (data: SkinTypeForm & { id?: string }) => void
   isViewMode: boolean
 }
 
-type TemplateFormData = TemplateForm & { id?: string }
-type TemplateErrors = Partial<Record<keyof TemplateForm, string>> // Define error type
+type SkinTypeFormData = SkinTypeForm & { id?: string }
+type SkinTypeErrors = Partial<Record<keyof SkinTypeForm, string>>
 
-const initialErrors: TemplateErrors = {}
+const initialErrors: SkinTypeErrors = {}
 
-export default function TemplateModal({ isOpen, onClose, template, onSave, isViewMode }: TemplateModalProps) {
-  const isEditing = !!template && !isViewMode
-  const isCreating = !template && !isViewMode
+export default function SkinTypeModal({ isOpen, onClose, skinType, onSave, isViewMode }: SkinTypeModalProps) {
+  const isEditing = !!skinType && !isViewMode
+  const isCreating = !skinType && !isViewMode
 
-  const [form, setForm] = useState<TemplateForm>({
-    name: template?.name || '',
-    description: template?.description || ''
+  const [form, setForm] = useState<SkinTypeForm>({
+    name: skinType?.name || '',
+    description: skinType?.description || ''
   })
-  const [errors, setErrors] = useState<TemplateErrors>(initialErrors)
+  const [errors, setErrors] = useState<SkinTypeErrors>(initialErrors) // State to store validation errors
 
   useEffect(() => {
-    if (template) {
+    if (skinType) {
       setForm({
-        name: template.name,
-        description: template.description
+        name: skinType.name,
+        description: skinType.description
       })
     } else {
-      // Reset form for Create mode
       setForm({
         name: '',
         description: ''
       })
     }
-    setErrors(initialErrors) // Reset errors on template change
-  }, [template])
+    setErrors(initialErrors) // Reset errors on change or close/open
+  }, [skinType])
 
-  const validateForm = (data: TemplateForm): boolean => {
-    const newErrors: TemplateErrors = {}
-    let isValid = true
+  const validateForm = (data: SkinTypeForm): boolean => {
+    const newErrors: SkinTypeErrors = {}
+    let isValid = true // 1. Name Validation
 
-    // 1. Name Validation
     if (!data.name.trim()) {
-      newErrors.name = 'Template Name is required.'
+      newErrors.name = 'Skin Type Name is required.'
       isValid = false
     } else if (data.name.trim().length < 3) {
-      newErrors.name = 'Template Name must be at least 3 characters.'
+      newErrors.name = 'Skin Type Name must be at least 3 characters.'
       isValid = false
     } else if (data.name.trim().length > 50) {
-      newErrors.name = 'Template Name must not exceed 50 characters.'
+      newErrors.name = 'Skin Type Name must not exceed 50 characters.'
       isValid = false
-    }
+    } // 2. Description Validation
 
-    // 2. Description Validation
     if (!data.description.trim()) {
       newErrors.description = 'Description is required.'
       isValid = false
@@ -78,11 +74,10 @@ export default function TemplateModal({ isOpen, onClose, template, onSave, isVie
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target
-    const name = id as keyof TemplateForm
+    const name = id as keyof SkinTypeForm
 
-    setForm((p) => ({ ...p, [name]: value }))
+    setForm((p) => ({ ...p, [name]: value })) // Clear error on change for the specific field
 
-    // Clear error on change for the specific field
     if (errors[name]) {
       setErrors((p) => ({ ...p, [name]: undefined }))
     }
@@ -90,46 +85,38 @@ export default function TemplateModal({ isOpen, onClose, template, onSave, isVie
 
   const handleSave = () => {
     if (!validateForm(form)) {
-      toast.error('Please correct the form errors before saving.')
+      toast.error('Please correct the form errors.')
       return
     }
 
-    const dataToSave: TemplateFormData = {
+    const dataToSave: SkinTypeFormData = {
       ...form,
-      id: isEditing ? template?.id : undefined
+      id: isEditing ? skinType?.id : undefined
     }
     onSave(dataToSave)
-    toast.success(`${isEditing ? 'Updated' : 'Created'} Template successfully!`)
+    toast.success(`${isEditing ? 'Updated' : 'Created'} Skin Type successfully!`)
   }
 
-  const title = isCreating ? 'Create New Template' : isEditing ? 'Edit Template Details' : 'Template Details'
+  const title = isCreating ? 'Create New Skin Type' : isEditing ? 'Edit Skin Type Details' : 'Skin Type Details'
 
   const baseInputClass =
     'w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm text-gray-800 dark:text-white/90 focus:border-brand-500 focus:ring-1 focus:ring-brand-500'
 
   const errorClass = 'mt-1 text-xs text-red-500'
-  const getInputClass = (fieldName: keyof TemplateForm) => {
+  const getInputClass = (fieldName: keyof SkinTypeForm) => {
     return `${baseInputClass} ${errors[fieldName] ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`
   }
 
   return (
     <ModalRegistration isOpen={isOpen} onClose={onClose} title={title}>
       <div className='p-6'>
-        {template && isViewMode && (
-          <div className='space-y-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
-            <p className='text-sm text-gray-700 dark:text-gray-300'>
-              <span className='font-semibold'>Template Name:</span> {template.name}
+        {skinType && isViewMode && (
+          <div className='space-y-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg text-gray-700 dark:text-gray-300'>
+            <p className='text-sm'>
+              <span className='font-semibold'>Type Name:</span> {skinType.name}
             </p>
-            <p className='text-sm text-gray-700 dark:text-gray-300'>
-              <span className='font-semibold'>Description:</span> {template.description || 'N/A'}
-            </p>
-            <p className='text-sm text-gray-700 dark:text-gray-300'>
-              <span className='font-semibold'>Created Time:</span>
-              {new Date(template.createdTime).toLocaleString()}
-            </p>
-            <p className='text-sm text-gray-700 dark:text-gray-300'>
-              <span className='font-semibold'>Created By:</span>
-              <StaffEmailLookup staffId={template.createdBy} />
+            <p className='text-sm whitespace-pre-wrap'>
+              <span className='font-semibold'>Description:</span> {skinType.description}
             </p>
           </div>
         )}
@@ -141,7 +128,7 @@ export default function TemplateModal({ isOpen, onClose, template, onSave, isVie
               <input
                 id='name'
                 type='text'
-                placeholder='Template Name (e.g., Full-time Staff Schedule)'
+                placeholder='E.g., Oily, Dry, Combination, Sensitive'
                 value={form.name}
                 onChange={handleChange}
                 className={getInputClass('name')}
@@ -150,17 +137,18 @@ export default function TemplateModal({ isOpen, onClose, template, onSave, isVie
               {errors.name && <p className={errorClass}>{errors.name}</p>}
             </div>
             <div>
-              <label htmlFor='description' className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>
-                Description *
-              </label>
+              <label
+                htmlFor='description'
+                className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'
+              ></label>
 
               <textarea
                 id='description'
-                placeholder='Detailed description of the template and its intended use.'
+                placeholder='Detailed description of the skin type and its characteristics...'
+                rows={4}
                 value={form.description}
                 onChange={handleChange}
-                rows={4}
-                className={`${getInputClass('description')} resize-none`}
+                className={getInputClass('description') + ' min-h-[100px]'}
                 maxLength={500}
               />
               {errors.description && <p className={errorClass}>{errors.description}</p>}
@@ -183,7 +171,7 @@ export default function TemplateModal({ isOpen, onClose, template, onSave, isVie
             type='button'
             className='flex w-full justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white shadow-brand-xs hover:bg-brand-600 sm:w-auto'
           >
-            {isEditing ? 'Save Changes' : 'Create Template'}
+            {isEditing ? 'Save Changes' : 'Create Skin Type'}
           </button>
         )}
       </div>

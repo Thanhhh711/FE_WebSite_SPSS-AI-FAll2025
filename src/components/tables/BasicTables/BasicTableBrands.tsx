@@ -11,11 +11,14 @@ import ConfirmModal from '../../CalendarModelDetail/ConfirmModal' // Giả đị
 import { Brand, BrandForm } from '../../../types/brands.type'
 import countriesApi from '../../../api/country.api'
 import BrandModal from '../../BrandModal/BrandModal'
+import { Role } from '../../../constants/Roles'
+import { useAppContext } from '../../../context/AuthContext'
 
 const ITEMS_PER_PAGE = 10
 
 export default function BasicTableBrands() {
   const queryClient = useQueryClient()
+  const { profile } = useAppContext()
 
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
@@ -24,7 +27,6 @@ export default function BasicTableBrands() {
   const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null)
   const [isViewMode, setIsViewMode] = useState(false)
 
-  // --- API READ (R) ---
   const {
     data: brandsResponse,
     isLoading,
@@ -63,7 +65,6 @@ export default function BasicTableBrands() {
     }
   }, [allBrands, searchTerm, currentPage])
 
-  // --- API MUTATIONS (C, U, D) ---
   const { mutate: saveBrand } = useMutation({
     mutationFn: (data: BrandForm & { id?: string }) => {
       if (data.id) {
@@ -140,15 +141,24 @@ export default function BasicTableBrands() {
         />
 
         {/* Create New Button */}
-        <button
-          onClick={handleCreateNew}
-          className='btn btn-primary flex justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white shadow-brand-xs hover:bg-brand-600 transition-colors'
-        >
-          Add New Brand
-        </button>
+
+        {profile?.role === Role.STORE_STAFF && (
+          <button
+            onClick={handleCreateNew}
+            className='btn btn-primary flex justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white shadow-brand-xs hover:bg-brand-600 transition-colors'
+          >
+            Add New Brand
+          </button>
+        )}
       </div>
 
       <div className='overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] shadow-lg'>
+        <div className='px-4 py-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg text-end'>
+          <span className='text-sm font-semibold text-indigo-700 dark:text-indigo-400'>
+            Total: **{filteredAndPaginatedBrands.totalItems}**
+          </span>
+        </div>
+
         <div className='max-w-full overflow-x-auto'>
           <Table>
             {/* Table Header */}
@@ -196,23 +206,28 @@ export default function BasicTableBrands() {
                         >
                           View
                         </button>
-                        {/* Edit Button */}
-                        <button
-                          onClick={() => handleOpenDetailModal(brand, 'edit')}
-                          className='text-brand-500 hover:text-brand-700 dark:hover:text-brand-300 text-sm p-1'
-                          title='Edit Brand'
-                        >
-                          Edit
-                        </button>
-                        {/* Delete Button */}
-                        <button
-                          onClick={() => handleDeleteClick(brand)}
-                          className='text-red-500 hover:text-red-700 dark:hover:text-red-300 text-sm p-1'
-                          title='Delete Brand'
-                          disabled={isDeleting}
-                        >
-                          Delete
-                        </button>
+
+                        {profile?.role === Role.STORE_STAFF && (
+                          <>
+                            {/* Edit Button */}
+                            <button
+                              onClick={() => handleOpenDetailModal(brand, 'edit')}
+                              className='text-brand-500 hover:text-brand-700 dark:hover:text-brand-300 text-sm p-1'
+                              title='Edit Brand'
+                            >
+                              Edit
+                            </button>
+                            {/* Delete Button */}
+                            <button
+                              onClick={() => handleDeleteClick(brand)}
+                              className='text-red-500 hover:text-red-700 dark:hover:text-red-300 text-sm p-1'
+                              title='Delete Brand'
+                              disabled={isDeleting}
+                            >
+                              Delete
+                            </button>
+                          </>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
