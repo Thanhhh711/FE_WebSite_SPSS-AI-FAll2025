@@ -1,5 +1,5 @@
 const config = {
-  baseUrl: 'http://spss-api-gateway.runasp.net/api/'
+  baseUrl: '/api/proxy?path='
 } as const
 
 export default config
