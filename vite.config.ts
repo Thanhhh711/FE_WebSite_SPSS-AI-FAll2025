@@ -21,14 +21,14 @@ export default defineConfig({
     host: true // cho phép LAN access
   },
   build: {
-    outDir: 'dist', // folder build chuẩn
-    sourcemap: false, // tắt source map production
-    chunkSizeWarningLimit: 1000, // cảnh báo chunk lớn
+    outDir: 'dist',
+    sourcemap: false,
+    chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            return 'vendor' // tách thư viện bên ngoài ra chunk riêng
+            return 'vendor'
           }
         }
       }
