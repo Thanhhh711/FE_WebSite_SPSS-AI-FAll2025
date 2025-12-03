@@ -10,7 +10,6 @@ import { AppContext } from './context/AuthContext'
 import AppLayout from './layout/AppLayout'
 import SignIn from './pages/AuthPages/SignIn'
 import SignUp from './pages/AuthPages/SignUp'
-import ManageContent from './pages/Blank'
 import Calendar from './pages/Calendar'
 import BarChart from './pages/Charts/BarChart'
 import LineChart from './pages/Charts/LineChart'
@@ -23,6 +22,7 @@ import { ProtectedRoute } from './components/ProtectedRoute'
 import BasicTableRegistration from './components/tables/BasicTables/BasicTableRegistration'
 
 import WorkSchedulesManagement from './components/tables/BasicTables/BasicTableSchedule'
+import ManageBlogs from './pages/Blogs/ManageBlogs'
 import TreatmentPlanTab from './pages/Patients/PatientDetail'
 import MedicalReportList from './pages/Report/MedicalReportList'
 import BasicTablesBrand from './pages/Tables/BasicTablesBrand'
@@ -105,7 +105,7 @@ export default function App() {
             {/* <Route path={AppPath.CALENDAR} element={<Calendar />} /> */}
             <Route path={AppPath.FORM_ELEMENTS} element={<FormElements />} />
             {/* Content */}
-            <Route path={AppPath.BLANK} element={<ManageContent />} />
+            <Route path={AppPath.BLANK} element={<ManageBlogs />} />
           </Route>
         </Route>
 

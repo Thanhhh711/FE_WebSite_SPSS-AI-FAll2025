@@ -1,9 +1,24 @@
+import { useState } from 'react'
 import ComponentCard from '../../components/common/ComponentCard'
 import PageBreadcrumb from '../../components/common/PageBreadCrumb'
 import PageMeta from '../../components/common/PageMeta'
 import BasicTableProduct from '../../components/tables/BasicTables/BasicTableProduct'
+import ProductReviewsModal from '../../components/ProductModal/ProductReviewsModal'
 
 export default function BasicTablesProduct() {
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [selectedProductItemId, setSelectedProductItemId] = useState<string | null>(null)
+
+  const openReviewsModal = (productItemId: string) => {
+    setSelectedProductItemId(productItemId)
+    setIsModalOpen(true)
+  }
+
+  const closeReviewsModal = () => {
+    setIsModalOpen(false)
+    setSelectedProductItemId(null)
+  }
+
   return (
     <>
       <PageMeta
@@ -13,9 +28,13 @@ export default function BasicTablesProduct() {
       <PageBreadcrumb pageTitle='Basic Tables Product' />
       <div className='space-y-6'>
         <ComponentCard title='Basic Table Product'>
-          <BasicTableProduct />
+          <BasicTableProduct onViewReviews={openReviewsModal} />
         </ComponentCard>
       </div>
+
+      {isModalOpen && selectedProductItemId && (
+        <ProductReviewsModal productItemId={selectedProductItemId} onClose={closeReviewsModal} />
+      )}
     </>
   )
 }

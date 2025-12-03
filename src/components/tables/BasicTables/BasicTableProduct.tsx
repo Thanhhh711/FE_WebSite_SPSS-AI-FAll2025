@@ -18,7 +18,11 @@ import ProductModal from '../../ProductModal/ProductModal'
 const ITEMS_PER_PAGE = 10
 // --- COMPONENT CHÍNH ---
 
-export default function BasicTableProduct() {
+interface BasicTableProductProps {
+  onViewReviews: (productItemId: string) => void
+}
+
+export default function BasicTableProduct({ onViewReviews }: BasicTableProductProps) {
   const queryClient = useQueryClient()
   const { profile } = useAppContext()
   // --- 1. STATE QUẢN LÝ ---
@@ -331,6 +335,13 @@ export default function BasicTableProduct() {
                           title='View Details'
                         >
                           View
+                        </button>
+
+                        <button
+                          onClick={() => onViewReviews(product.id)}
+                          className='text-blue-600 hover:text-blue-900 mr-2 border border-blue-600 px-3 py-1 rounded-md text-xs transition duration-150'
+                        >
+                          View Reviews
                         </button>
                         {profile?.role === Role.STORE_STAFF && (
                           <>
