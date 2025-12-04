@@ -160,9 +160,9 @@ export default function ProductModal({ isOpen, onClose, product, onSave, isViewM
     videoUrl: detail.videoUrl || '',
     brandId: detail.brandId || '',
     productCategoryId: detail.productCategoryId || '',
-    skinConditionIds: detail.skinConditions.map((skin) => skin.id) || [],
-    skinTypeIds: detail.skinTypes.map((skinType) => skinType.id) || [],
-    variationOptionIds: detail.variationOptions.map((variation) => variation.id) || [],
+    skinConditionIds: detail.skinConditions?.map((skin) => skin.id) || [],
+    skinTypeIds: detail.skinTypes?.map((skinType) => skinType.id) || [],
+    variationOptionIds: detail.variationOptions?.map((variation) => variation.id) || [],
     images: (detail.images || []) as ProductFormState['images']
   })
 

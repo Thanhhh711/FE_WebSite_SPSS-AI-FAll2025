@@ -185,9 +185,6 @@ export default function CategoryModal({ isOpen, onClose, category, onSave, isVie
             <p className='text-sm text-gray-700 dark:text-gray-300'>
               <span className='font-semibold'>Products:</span> {category.products.length}
             </p>
-            <p className='text-sm text-gray-700 dark:text-gray-300'>
-              <span className='font-semibold'>Variations:</span> {category.variations.length}
-            </p>
           </div>
         )}
         {!isViewMode && (

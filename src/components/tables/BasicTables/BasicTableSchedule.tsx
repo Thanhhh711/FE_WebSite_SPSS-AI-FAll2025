@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -13,10 +14,11 @@ import { useAppContext } from '../../../context/AuthContext'
 import { ScheduleWork } from '../../../types/appoinment.type'
 import StaffEmailLookup from '../../../utils/StaffEmailLookup'
 import { formatDateToDDMMYYYY } from '../../../utils/validForm'
+import AppointmentDetailModal from '../../SchedulaModal/AppointmentDetailModal'
 import ConfirmModal from '../../CalendarModelDetail/ConfirmModal'
 import ScheduleFormModal from '../../SchedulaModal/ScheduleFormModal'
 import Pagination from '../../pagination/Pagination'
-import AppointmentDetailModal from '../../SchedulaModal/AppointmentDetailModal'
+import { GenerateScheduleFromRegistrationModal } from '../../SchedulaModal/GenerateScheduleFromRegistrationModal'
 
 const ITEMS_PER_PAGE = 10
 
@@ -25,9 +27,31 @@ const showToast = (msg: string, type: 'success' | 'error') => {
   console.log(`${type.toUpperCase()}: ${msg}`)
 }
 
+// Định nghĩa kiểu dữ liệu cho Beauty Advisor (giả định)
+interface BeautyAdvisor {
+  userId: string
+  emailAddress: string
+  // ... các trường khác
+}
+
+// HÀM TIỆN ÍCH MỚI: Trích xuất ngày YYYY-MM-DD để so sánh
+const getYYYYMMDD = (dateString: string) => {
+  if (!dateString) return ''
+  // Giả định dateString là ISO format: YYYY-MM-DDTHH:MM:SSZ
+  return dateString.substring(0, 10)
+}
+
 export default function WorkSchedulesManagement() {
   const queryClient = useQueryClient()
 
+  // STATE MỚI: Lọc theo ngày
+  const [filterDate, setFilterDate] = useState<string>('') // Định dạng YYYY-MM-DD
+
+  // STATE ĐÃ CÓ: Danh sách Beauty Advisor và ID được chọn
+  const [beautyAdvisors, setBeautyAdvisors] = useState<BeautyAdvisor[]>([])
+  const [selectedBAId, setSelectedBAId] = useState<string | undefined>(undefined)
+
+  const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false)
   // ... (State Management - Giữ nguyên) ...
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState<WorkScheduleStatus | undefined>(undefined)
@@ -45,18 +69,45 @@ export default function WorkSchedulesManagement() {
   const CURRENT_USER_ROLE = profile?.role
   const CURRENT_USER_ID = profile?.userId as string
 
-  console.log('CURRENT_USER_ROLE', CURRENT_USER_ROLE)
-  console.log('CURRENT_USER_ID', CURRENT_USER_ID)
-
   const canModify =
     profile?.role !== Role.STORE_STAFF && profile?.role !== Role.ADMIN && profile?.role !== Role.BEAUTY_ADVISOR
+
+  // FETCH DANH SÁCH BEAUTY ADVISOR
+  useEffect(() => {
+    const fetchBAs = async () => {
+      try {
+        const response = await userApi.getBeatyAdvisor()
+
+        const allOption = { userId: 'all', emailAddress: 'All Beauty Advisors' }
+        setBeautyAdvisors([allOption, ...response.data.data])
+
+        setSelectedBAId('all')
+      } catch (error) {
+        showToast('Error fetching Beauty Advisors.', 'error')
+        setBeautyAdvisors([{ userId: 'all', emailAddress: 'All Beauty Advisors' }])
+        setSelectedBAId('all')
+      }
+    }
+
+    if (CURRENT_USER_ROLE === Role.BEAUTY_ADVISOR) {
+      setSelectedBAId(CURRENT_USER_ID)
+    } else {
+      fetchBAs()
+    }
+  }, [CURRENT_USER_ROLE, CURRENT_USER_ID])
+
+  // LOGIC FETCH DỰA TRÊN VAI TRÒ VÀ SELECTED_BA_ID
   const fetchFn = useCallback(() => {
     if (CURRENT_USER_ROLE === Role.BEAUTY_ADVISOR) {
       return scheduleApi.getScheduleByIdBeautyAdvisor(CURRENT_USER_ID)
     }
 
+    if (selectedBAId && selectedBAId !== 'all') {
+      return scheduleApi.getScheduleByIdBeautyAdvisor(selectedBAId)
+    }
+
     return scheduleApi.getSchedule()
-  }, [])
+  }, [CURRENT_USER_ROLE, CURRENT_USER_ID, selectedBAId])
 
   const {
     data: schedulesResponse,
@@ -64,44 +115,26 @@ export default function WorkSchedulesManagement() {
     isError,
     refetch
   } = useQuery({
-    queryKey: ['workSchedules', CURRENT_USER_ROLE, CURRENT_USER_ID],
+    queryKey: ['workSchedules', CURRENT_USER_ROLE, CURRENT_USER_ID, selectedBAId],
     queryFn: fetchFn,
     staleTime: 1000 * 60
   })
   const allSchedules = schedulesResponse?.data.data || []
 
-  console.log('allSchedules', allSchedules)
-
-  const { mutate: deleteSchedule, isPending: isDeleting } = useMutation({
-    mutationFn: (id: string) => scheduleApi.deleteSchedule(id),
-    onSuccess: (data) => {
-      showToast(data.data.message, 'success')
-      queryClient.invalidateQueries({ queryKey: ['workSchedules'] })
-      refetch()
-      setIsConfirmOpen(false)
-      setSelectedSchedule(null)
-    },
-    onError: (error: any) => {
-      showToast(error.data?.res || 'Error deleting schedule.', 'error')
-    }
-  })
-
-  const handleViewAppointmentsClick = (schedule: ScheduleWork) => {
-    setSelectedScheduleForAppt(schedule)
-    setIsApptDetailOpen(true)
-  }
-
+  // CẬP NHẬT LOGIC LỌC
   const filteredAndPaginatedSchedules = useMemo(() => {
     const schedules = allSchedules as ScheduleWork[]
 
     const lowercasedSearchTerm = searchTerm.toLowerCase()
-    let filtered = schedules.filter((schedule) =>
-      // schedule.staffId.toLowerCase().includes(lowercasedSearchTerm) ||
-      schedule.room.roomName.toLowerCase().includes(lowercasedSearchTerm)
-    )
+    let filtered = schedules.filter((schedule) => schedule.room.roomName.toLowerCase().includes(lowercasedSearchTerm))
 
     if (filterStatus !== undefined) {
       filtered = filtered.filter((schedule) => schedule.status === filterStatus)
+    }
+
+    // LOGIC LỌC MỚI THEO NGÀY
+    if (filterDate) {
+      filtered = filtered.filter((schedule) => getYYYYMMDD(schedule.shiftDate) === filterDate)
     }
 
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
@@ -111,9 +144,15 @@ export default function WorkSchedulesManagement() {
       totalItems: filtered.length,
       data: filtered.slice(startIndex, endIndex)
     }
-  }, [allSchedules, searchTerm, filterStatus, currentPage])
+  }, [allSchedules, searchTerm, filterStatus, filterDate, currentPage]) // THÊM filterDate vào dependency
 
   const totalPages = Math.ceil(filteredAndPaginatedSchedules.totalItems / ITEMS_PER_PAGE)
+
+  // ... (các hàm handle khác giữ nguyên)
+
+  const handleOpenGenerateModal = () => {
+    setIsGenerateModalOpen(true)
+  }
 
   const handleOpenModal = (schedule: ScheduleWork | null) => {
     setSelectedSchedule(schedule)
@@ -137,7 +176,21 @@ export default function WorkSchedulesManagement() {
     }
   }, [selectedSchedule?.staffId])
 
-  // Hàm hiển thị Tag trạng thái (Chuyển sang Tailwind)
+  const { mutate: deleteSchedule, isPending: isDeleting } = useMutation({
+    mutationFn: (id: string) => scheduleApi.deleteSchedule(id),
+    onSuccess: (data) => {
+      showToast(data.data.message, 'success')
+      queryClient.invalidateQueries({ queryKey: ['workSchedules'] })
+      refetch()
+      setIsConfirmOpen(false)
+      setSelectedSchedule(null)
+    },
+    onError: (error: any) => {
+      showToast(error.data?.res || 'Error deleting schedule.', 'error')
+    }
+  })
+
+  // Hàm hiển thị Tag trạng thái (Giữ nguyên)
   const getStatusTag = (record: ScheduleWork) => {
     const appointmentCount = record.appointments ? record.appointments.length : 0
     let colorClass = ''
@@ -168,9 +221,14 @@ export default function WorkSchedulesManagement() {
     )
   }
 
+  const handleViewAppointmentsClick = (schedule: ScheduleWork) => {
+    setSelectedScheduleForAppt(schedule)
+    setIsApptDetailOpen(true)
+  }
+
   // --- RENDERING ---
 
-  if (isLoading)
+  if (isLoading || selectedBAId === undefined)
     return (
       <div className='p-6 text-center text-lg text-blue-500'>
         <div className='animate-spin inline-block w-8 h-8 border-4 border-t-4 border-blue-500 border-gray-200 rounded-full'></div>{' '}
@@ -185,9 +243,7 @@ export default function WorkSchedulesManagement() {
 
       <div className='flex justify-between items-center mb-5'>
         <div className='flex items-center gap-3'>
-          {' '}
-          {/* Thay thế cho <Space> */}
-          {/* Thanh Tìm kiếm (Thay thế Input Ant Design) */}
+          {/* Thanh Tìm kiếm */}
           <input
             type='text'
             placeholder='Search by Room...'
@@ -198,9 +254,41 @@ export default function WorkSchedulesManagement() {
             }}
             className='w-1/3 min-w-[200px] rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
           />
-          {/* Lọc Trạng thái (Thay thế Select Ant Design) */}
+
+          {/* SELECT CHỌN BEAUTY ADVISOR */}
+          {CURRENT_USER_ROLE !== Role.BEAUTY_ADVISOR && (
+            <select
+              className='w-[200px] rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none'
+              value={selectedBAId || 'all'}
+              onChange={(e) => {
+                setSelectedBAId(e.target.value)
+                setCurrentPage(1)
+              }}
+              disabled={!beautyAdvisors.length || selectedBAId === undefined}
+            >
+              {!beautyAdvisors.length && <option value='all'>Loading Beauty Advisors...</option>}
+              {beautyAdvisors.map((ba) => (
+                <option key={ba.userId} value={ba.userId}>
+                  {ba.emailAddress}
+                </option>
+              ))}
+            </select>
+          )}
+
+          {/* INPUT LỌC THEO NGÀY */}
+          <input
+            type='date'
+            value={filterDate}
+            onChange={(e) => {
+              setFilterDate(e.target.value)
+              setCurrentPage(1)
+            }}
+            className='w-[150px] rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
+          />
+
+          {/* Lọc Trạng thái */}
           <select
-            className='w-[150px] rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none' // appearance-none để control style
+            className='w-[150px] rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none'
             value={filterStatus === undefined ? '' : filterStatus.toString()}
             onChange={(e) => {
               const value = e.target.value
@@ -217,17 +305,27 @@ export default function WorkSchedulesManagement() {
           </select>
         </div>
 
-        {/* Create New Button (Thay thế Button Ant Design) */}
+        {/* Create New Button */}
         {canModify && (
-          <button
-            onClick={() => handleOpenModal(null)}
-            className='flex justify-center rounded-lg bg-blue-500 px-4 py-2.5 text-sm font-medium text-white shadow-md hover:bg-blue-600 transition-colors'
-          >
-            Add New Schedule
-          </button>
+          <div className='flex gap-3'>
+            <button
+              onClick={() => handleOpenModal(null)}
+              className='flex justify-center rounded-lg bg-blue-500 px-4 py-2.5 text-sm font-medium text-white shadow-md hover:bg-blue-600 transition-colors'
+            >
+              Add New Schedule
+            </button>
+            {/* NÚT MỚI: Generate from Registration */}
+            <button
+              onClick={handleOpenGenerateModal}
+              className='flex justify-center rounded-lg bg-green-500 px-4 py-2.5 text-sm font-medium text-white shadow-md hover:bg-green-600 transition-colors'
+            >
+              Generate from Registration
+            </button>
+          </div>
         )}
       </div>
 
+      {/* ... (Phần hiển thị bảng và pagination giữ nguyên) ... */}
       <div className='overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] shadow-lg'>
         <div className='flex items-center justify-end mb-4'>
           <div className='px-4 py-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg'>
@@ -343,7 +441,7 @@ export default function WorkSchedulesManagement() {
         )}
       </div>
 
-      {/* Modal Thêm/Cập nhật (Bạn cần đảm bảo component này cũng chỉ dùng Tailwind) */}
+      {/* Modal Thêm/Cập nhật */}
       <ScheduleFormModal
         refetch={refetch}
         visible={isModalOpen}
@@ -352,7 +450,7 @@ export default function WorkSchedulesManagement() {
         onSuccess={() => queryClient.invalidateQueries({ queryKey: ['workSchedules'] })}
       />
 
-      {/* Modal Xác nhận Xóa (Bạn cần đảm bảo component này cũng chỉ dùng Tailwind) */}
+      {/* Modal Xác nhận Xóa */}
       <ConfirmModal
         isOpen={isConfirmOpen}
         onClose={() => setIsConfirmOpen(false)}
@@ -371,6 +469,13 @@ export default function WorkSchedulesManagement() {
         scheduleId={selectedScheduleForAppt?.id || null}
         staffId={selectedScheduleForAppt?.staffId || 'N/A'}
         shiftDate={selectedScheduleForAppt?.shiftDate || ''}
+      />
+
+      <GenerateScheduleFromRegistrationModal
+        isOpen={isGenerateModalOpen}
+        onClose={() => setIsGenerateModalOpen(false)}
+        selectedBAId={selectedBAId === 'all' ? undefined : selectedBAId} // Truyền ID BA đang được chọn (trừ 'all')
+        onScheduleGenerated={refetch}
       />
     </>
   )

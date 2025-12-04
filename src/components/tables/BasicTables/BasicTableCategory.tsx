@@ -38,6 +38,8 @@ export default function BasicTableCategories() {
 
   const allCategories: Category[] = categoriesResponse || []
 
+  console.log('allCategories', allCategories)
+
   const filteredAndPaginatedCategories = useMemo(() => {
     const lowercasedSearchTerm = searchTerm.toLowerCase()
 

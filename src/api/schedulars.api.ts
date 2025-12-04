@@ -26,6 +26,9 @@ export const scheduleApi = {
 
   createSchedule: (body: ScheduleRequest) => http.post<SuccessResponse<ScheduleWork>>(`${WORK_SCHEDULES}`, body),
 
+  createGenerateSchedule: (registrationId: string) =>
+    http.post<SuccessResponse<ScheduleWork>>(`${WORK_SCHEDULES}/generate/registration/${registrationId}`),
+
   updateScheduleById: (id: string, body: FormUpdateSchedular) =>
     http.put<SuccessResponse<ScheduleWork>>(`${WORK_SCHEDULES}/${id}`, body),
 

@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import React, { ReactNode, useMemo, useState } from 'react'
+import React, { ReactNode, useMemo, useState, useEffect } from 'react'
 import { toast } from 'react-toastify'
 import { registrationApi } from '../../../api/registration.api'
 import { slotApi } from '../../../api/slot.api'
@@ -12,6 +13,7 @@ import { formatDateToDDMMYYYY } from '../../../utils/validForm'
 import ConfirmModal from '../../CalendarModelDetail/ConfirmModal'
 import RegistrationModal, { WEEKDAY_NAMES } from '../../RegistrationModal/RegistrationModal'
 import StaffEmailLookup from '../../../utils/StaffEmailLookup'
+import userApi from '../../../api/user.api' // Đảm bảo import userApi
 
 interface Template {
   id: string
@@ -58,6 +60,16 @@ interface SchedulePayload {
   weekdays: number[]
 }
 
+// Định nghĩa kiểu dữ liệu cho Beauty Advisor (giả định)
+interface BeautyAdvisor {
+  userId: string
+  emailAddress: string
+  // ... các trường khác
+}
+
+// HÀM TIỆN ÍCH: Trích xuất phần ngày (YYYY-MM-DD) từ chuỗi ISO Date
+const getDatePart = (isoString: string) => (isoString ? isoString.substring(0, 10) : '')
+
 export const ITEMS_PER_PAGE = 10
 
 const Table = ({ children }: { children: React.ReactNode }) => <table className='w-full table-auto'>{children}</table>
@@ -65,7 +77,7 @@ const TableHeader: React.FC<TableHeaderProps> = ({ children, className }) => (
   <thead className={className ?? 'text-left'}>{children}</thead>
 )
 const TableBody: React.FC<TableHeaderProps> = ({ children, className }) => (
-  <thead className={className ?? 'text-left'}>{children}</thead>
+  <tbody className={className ?? 'text-left'}>{children}</tbody> // FIX: Sửa lại thành tbody
 )
 const TableRow = ({ children }: { children: React.ReactNode }) => (
   <tr className='hover:bg-gray-50 dark:hover:bg-white/[0.05] transition-colors duration-150 border-b border-gray-100 dark:border-white/[0.05] last:border-b-0'>
@@ -125,12 +137,41 @@ export default function BasicTableRegistration() {
   const { profile } = useAppContext()
   const isBeautyAdvisor = profile?.role === Role.BEAUTY_ADVISOR
 
+  // STATE LỌC MỚI
+  const [beautyAdvisors, setBeautyAdvisors] = useState<BeautyAdvisor[]>([])
+  const [selectedBAId, setSelectedBAId] = useState<string | undefined>(undefined)
+  const [filterStartDate, setFilterStartDate] = useState<string>('') // YYYY-MM-DD
+  const [filterEndDate, setFilterEndDate] = useState<string>('') // YYYY-MM-DD
+
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
   const [selectedRegistration, setSelectedRegistration] = useState<ScheduleRegistrationComponent | null>(null)
   const [isViewMode, setIsViewMode] = useState(false)
+
+  // FETCH DANH SÁCH BEAUTY ADVISOR
+  useEffect(() => {
+    const fetchBAs = async () => {
+      try {
+        const response = await userApi.getBeatyAdvisor()
+        const allOption = { userId: 'all', emailAddress: 'All Staff' }
+        setBeautyAdvisors([allOption, ...response.data.data])
+        setSelectedBAId('all')
+      } catch (error) {
+        toast.error('Error fetching Staff list.')
+        setBeautyAdvisors([{ userId: 'all', emailAddress: 'All Staff' }])
+        setSelectedBAId('all')
+      }
+    }
+
+    if (!isBeautyAdvisor) {
+      fetchBAs()
+    } else if (profile?.userId) {
+      // Nếu là BA, mặc định chỉ xem lịch của mình
+      setSelectedBAId(profile.userId)
+    }
+  }, [isBeautyAdvisor, profile?.userId])
 
   const { data: slotsData } = useQuery<Slot[]>({
     queryKey: ['slots'],
@@ -153,8 +194,10 @@ export default function BasicTableRegistration() {
   })
 
   const fetchRegistrations = async () => {
+    // Logic fetch giữ nguyên, lọc theo BA/Ngày sẽ xử lý client-side trong useMemo
     if (isBeautyAdvisor && profile?.userId) {
       console.log(`Fetching registrations for Staff ID: ${profile.userId}`)
+      // Giả định API này fetch lịch cho BA hiện tại
       const res = await registrationApi.getRegistrationByBeatyAdvisorId(profile.userId)
       return res.data.data
     }
@@ -177,9 +220,27 @@ export default function BasicTableRegistration() {
 
   const allRegistrations = registrationsResponse || []
 
+  // CẬP NHẬT LOGIC LỌC
   const filteredAndPaginatedData = useMemo(() => {
     const lowercasedSearchTerm = searchTerm.toLowerCase()
-    const filtered = allRegistrations.filter((reg) => reg.template.name.toLowerCase().includes(lowercasedSearchTerm))
+    let filtered = allRegistrations.filter((reg) => reg.template.name.toLowerCase().includes(lowercasedSearchTerm))
+
+    // 1. Lọc theo Beauty Advisor
+    if (selectedBAId && selectedBAId !== 'all') {
+      filtered = filtered.filter((reg) => reg.staffId === selectedBAId)
+    }
+
+    // 2. Lọc theo Ngày Bắt đầu
+    if (filterStartDate) {
+      // Đảm bảo registration startDate (ISO string) >= filterStartDate (YYYY-MM-DD string)
+      filtered = filtered.filter((reg) => getDatePart(reg.startDate) >= filterStartDate)
+    }
+
+    // 3. Lọc theo Ngày Kết thúc
+    if (filterEndDate) {
+      // Đảm bảo registration endDate (ISO string) <= filterEndDate (YYYY-MM-DD string)
+      filtered = filtered.filter((reg) => getDatePart(reg.endDate) <= filterEndDate)
+    }
 
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
     const endIndex = startIndex + ITEMS_PER_PAGE
@@ -188,7 +249,7 @@ export default function BasicTableRegistration() {
       totalItems: filtered.length,
       data: filtered.slice(startIndex, endIndex)
     }
-  }, [allRegistrations, searchTerm, currentPage])
+  }, [allRegistrations, searchTerm, currentPage, selectedBAId, filterStartDate, filterEndDate]) // Thêm dependencies
 
   const { mutate: saveRegistration } = useMutation({
     mutationFn: (data: RegistrationForm) => {
@@ -250,7 +311,7 @@ export default function BasicTableRegistration() {
     }
   }
 
-  if (isLoading)
+  if (isLoading || selectedBAId === undefined)
     return <div className='p-6 text-center text-lg text-brand-500'>Loading Work Schedule Registrations...</div>
 
   if (isError)
@@ -259,17 +320,71 @@ export default function BasicTableRegistration() {
   return (
     <>
       <div className='flex justify-between items-center mb-5'>
-        {/* Thanh Tìm kiếm */}
-        <input
-          type='text'
-          placeholder='Search by Template Name...'
-          value={searchTerm}
-          onChange={(e) => {
-            setSearchTerm(e.target.value)
-            setCurrentPage(1)
-          }}
-          className='w-1/3 min-w-[200px] rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500'
-        />
+        <div className='flex items-center gap-3'>
+          {/* Thanh Tìm kiếm */}
+          <input
+            type='text'
+            placeholder='Search by Template Name...'
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value)
+              setCurrentPage(1)
+            }}
+            className='w-1/3 min-w-[200px] rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500'
+          />
+
+          {/* SELECT CHỌN BEAUTY ADVISOR */}
+          {!isBeautyAdvisor && (
+            <select
+              className='w-[200px] rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none'
+              value={selectedBAId || 'all'}
+              onChange={(e) => {
+                setSelectedBAId(e.target.value)
+                setCurrentPage(1)
+              }}
+              disabled={!beautyAdvisors.length}
+            >
+              {!beautyAdvisors.length && <option value='all'>Loading Staff...</option>}
+              {beautyAdvisors.map((ba) => (
+                <option key={ba.userId} value={ba.userId}>
+                  {ba.emailAddress}
+                </option>
+              ))}
+            </select>
+          )}
+
+          {/* START DATE */}
+
+          <label className='mb-1 text-sm font-medium text-gray-700 dark:text-gray-300'>Start Date</label>
+          <input
+            type='date'
+            placeholder='Start Date'
+            value={filterStartDate}
+            onChange={(e) => {
+              setFilterStartDate(e.target.value)
+              setCurrentPage(1)
+            }}
+            className='w-[150px] rounded-lg border border-gray-300 dark:border-gray-700 
+      bg-white dark:bg-gray-900 px-4 py-2.5 text-sm 
+      focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
+          />
+
+          {/* END DATE */}
+
+          <label className='mb-1 text-sm font-medium text-gray-700 dark:text-gray-300'>End Date</label>
+          <input
+            type='date'
+            placeholder='End Date'
+            value={filterEndDate}
+            onChange={(e) => {
+              setFilterEndDate(e.target.value)
+              setCurrentPage(1)
+            }}
+            className='w-[150px] rounded-lg border border-gray-300 dark:border-gray-700 
+      bg-white dark:bg-gray-900 px-4 py-2.5 text-sm 
+      focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
+          />
+        </div>
 
         {/* Nút Tạo mới */}
         {profile?.role !== Role.ADMIN && (

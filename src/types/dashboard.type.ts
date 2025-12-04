@@ -10,3 +10,8 @@ export interface DashboardData {
   totalOrders: DashboardMetric
   totalRevenue: DashboardMetric
 }
+
+export interface MonthlyRevenue {
+  month: string
+  revenue: number
+}

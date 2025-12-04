@@ -561,14 +561,24 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
                 <label className='mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400'>
                   Select Session
                 </label>
-                <div
-                  className='h-11 w-full rounded-lg border border-gray-300 dark:border-gray-700 
-                bg-gray-100 dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-800 
-                dark:text-white/90'
-                >
-                  [Kits: {(sesionData.kits as string) || 'N/A'}] - Session #{sesionData.sessionNumber} (
-                  {new Date(sesionData.sessionDate).toLocaleDateString()})
-                </div>
+                {sesionData ? (
+                  <div
+                    className='h-11 w-full rounded-lg border border-gray-300 dark:border-gray-700 
+    bg-gray-100 dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-800 
+    dark:text-white/90'
+                  >
+                    [Kits: {(sesionData.kits as string) || 'N/A'}] - Session #{sesionData.sessionNumber} (
+                    {new Date(sesionData.sessionDate).toLocaleDateString()})
+                  </div>
+                ) : (
+                  <div
+                    className='h-11 w-full rounded-lg border border-gray-300 dark:border-gray-700 
+    bg-gray-100 dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-800 
+    dark:text-white/90'
+                  >
+                    No session
+                  </div>
+                )}
               </div>
             </div>
           </div>

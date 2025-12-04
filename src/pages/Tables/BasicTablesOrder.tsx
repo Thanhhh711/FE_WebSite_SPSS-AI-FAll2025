@@ -12,7 +12,7 @@ export default function BasicTablesOrder() {
       />
       <PageBreadcrumb pageTitle='Basic Tables Order' />
       <div className='space-y-6'>
-        <ComponentCard title='Basic Table 2'>
+        <ComponentCard title='Basic Table Order'>
           <BasicTableOrder />
         </ComponentCard>
       </div>
