@@ -1,30 +1,35 @@
 export async function handler(event, context) {
   const backendBase = 'http://spss-api-gateway.runasp.net/api'
 
-  // Lấy đường dẫn phía sau /proxy/
-  const subPath = event.path.replace('/.netlify/functions/proxy/', '')
+  // Lấy phần đường dẫn sau "/.netlify/functions/proxy"
+  let subPath = event.path.replace('/.netlify/functions/proxy', '')
+  if (subPath.startsWith('/')) subPath = subPath.slice(1)
 
-  const url = `${backendBase}/${subPath}`
+  const targetUrl = `${backendBase}/${subPath}`
 
   try {
-    const response = await fetch(url, {
+    const response = await fetch(targetUrl, {
       method: event.httpMethod,
       headers: {
         'Content-Type': 'application/json',
-        ...event.headers // copy header FE (Authorization cũng đi theo)
+        ...event.headers
       },
-      body: event.body // body gửi thẳng vào backend
+      body: event.httpMethod !== 'GET' ? event.body : undefined
     })
 
-    const data = await response.text() // backend có thể trả text hoặc json
+    const text = await response.text()
+
     return {
       statusCode: response.status,
-      body: data
+      body: text
     }
   } catch (err) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: 'Proxy error', detail: err.message })
+      body: JSON.stringify({
+        error: 'Proxy error',
+        detail: err.message
+      })
     }
   }
 }
