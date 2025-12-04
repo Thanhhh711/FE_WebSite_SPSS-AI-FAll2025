@@ -5,12 +5,10 @@ import { CheckCircle, Clock, Search, Truck, XCircle } from 'lucide-react'
 import React, { ReactNode, useMemo, useState } from 'react'
 import { toast } from 'react-toastify'
 import { orderApi } from '../../../api/order.api'
-import { useAppContext } from '../../../context/AuthContext'
 import { OrderResponse, OrderStatus, OrderUserAddress } from '../../../types/order.type'
 import { formatDateToDDMMYYYY, formatVND } from '../../../utils/validForm'
 import { OrderDetailModal } from '../../order/OrderDetailModal'
 import Pagination from '../../pagination/Pagination'
-import { calculateOrderMetrics } from '../../../utils/oder.utils'
 
 const ITEMS_PER_PAGE = 10
 
@@ -103,8 +101,6 @@ const getStatusDisplay = (status: OrderStatus) => {
 }
 
 export default function BasicTableOrder() {
-  const { profile } = useAppContext()
-
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState<OrderStatus | 'all'>('all')
   const [currentPage, setCurrentPage] = useState(1)
@@ -134,7 +130,6 @@ export default function BasicTableOrder() {
 
   const allOrders: OrderResponse[] = ordersResponse || []
 
-  const orderMetrics = useMemo(() => calculateOrderMetrics(allOrders), [allOrders])
   const handleViewDetails = (order: OrderResponse) => {
     setSelectedOrderForDetail(order)
     setIsDetailModalOpen(true)
