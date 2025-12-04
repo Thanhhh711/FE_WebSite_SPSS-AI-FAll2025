@@ -1,3 +1,5 @@
-[build]
-  publish = "dist"
-  functions = "netlify/functions"
+  [[redirects]]
+  from = "/api/*"
+  to = "http://spss-api-gateway.runasp.net/:splat"
+  status = 200
+  force = true

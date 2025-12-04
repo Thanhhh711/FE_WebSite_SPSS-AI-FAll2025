@@ -9,7 +9,7 @@ const SUMMARY = 'summary'
 
 const dashboardApi = {
   getdashboardUsers: () => http.get<SuccessResponse<DashboardMetric>>(`${DASHBOARD}/${USERS}/${SUMMARY}`),
-  getdashboardBusiness: () => http.get<SuccessResponse<DashboardData>>(`${DASHBOARD}/${BUSINESS}/${SUMMARY}`)
+  getdashboardBusiness: () => http.get<SuccessResponse<DashboardData>>(`${DASHBOARD}/${BUSINESS}`)
 }
 
 export default dashboardApi
