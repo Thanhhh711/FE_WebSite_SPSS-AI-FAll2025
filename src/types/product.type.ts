@@ -1,5 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { SkinType } from './skin.type'
+import { VarionOptionInResponse } from './variation.type'
+
 export interface SelectOption {
   value: string | number
   label: string
@@ -91,9 +94,9 @@ export interface Product {
   brandId: string
   productCategoryId: string
   keyActiveIngredients: string
-  skinTypeIds: string[]
-  skinConditionIds: string[]
-  variationOptionIds: string[]
+  skinTypes: SkinType[]
+  skinConditions: SkinType[]
+  variationOptions: VarionOptionInResponse[]
 
   images: ProductImage[]
   reviews: any[]
