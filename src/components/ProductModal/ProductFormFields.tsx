@@ -23,7 +23,7 @@ interface ProductFormFieldsProps {
   imagePreviews: string[]
   isViewMode: boolean
   isUploading: boolean
-
+  handleRemoveExistingImage: (imageUrl: string) => void
   skinConditionsOptions: SelectOption[]
   skinTypesOptions: SelectOption[]
   variationOptions: SelectOption[]
@@ -122,6 +122,7 @@ export default function ProductFormFields({
   handleImageFileChange,
   handleVideoFileChange,
   handleRemoveImagePreview,
+  handleRemoveExistingImage,
   handleRemoveVideo,
   imagePreviews,
   isViewMode,
@@ -426,14 +427,39 @@ export default function ProductFormFields({
               .filter((img) => !('imagePath' in img))
               .map((image, index) => (
                 <div
-                  key={'id' in image ? image.id : image.imagePath}
+                  // Thay đổi key để chắc chắn không bị trùng với index
+                  key={image.imageUrl}
                   className='relative w-full aspect-square rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700'
                 >
                   <img src={image.imageUrl} alt={`Product Image ${index + 1}`} className='w-full h-full object-cover' />
+
+                  {/* 1. HIỂN THỊ CHỮ THUMBNAIL */}
                   {image.isThumbnail && (
                     <span className='absolute top-1 left-1 bg-brand-500 text-white text-[10px] px-1.5 rounded-full'>
                       Thumb
                     </span>
+                  )}
+
+                  {/* 2. NÚT XÓA ẢNH HIỆN TẠI (Chỉ hiển thị khi KHÔNG ở chế độ xem) */}
+                  {/* Giả sử bạn nhận prop isViewMode và handleRemoveExistingImage vào component này */}
+                  {!isViewMode && handleRemoveExistingImage && (
+                    <button
+                      type='button'
+                      onClick={() => handleRemoveExistingImage(image.imageUrl)} // Gọi hàm xóa với URL của ảnh
+                      className='absolute top-1 right-1 p-1 bg-red-600/80 hover:bg-red-700 rounded-full transition-colors'
+                      title='Xóa ảnh này'
+                    >
+                      <svg
+                        xmlns='http://www.w3.org/2000/svg'
+                        className='h-4 w-4 text-white'
+                        fill='none'
+                        viewBox='0 0 24 24'
+                        stroke='currentColor'
+                        strokeWidth={2}
+                      >
+                        <path strokeLinecap='round' strokeLinejoin='round' d='M6 18L18 6M6 6l12 12' />
+                      </svg>
+                    </button>
                   )}
                 </div>
               ))}

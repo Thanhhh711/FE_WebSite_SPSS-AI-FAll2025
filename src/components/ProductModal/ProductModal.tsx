@@ -123,6 +123,8 @@ const useProductDependencies = () => {
 // ----------------------------------------------------
 
 export default function ProductModal({ isOpen, onClose, product, onSave, isViewMode }: ProductModalProps) {
+  const [images, setImages] = useState<ProductImage[]>([])
+
   const isEditing = !!product && !isViewMode
   const isCreating = !product && !isViewMode
   const productId = product?.id
@@ -228,6 +230,22 @@ export default function ProductModal({ isOpen, onClose, product, onSave, isViewM
       URL.revokeObjectURL(form.videoUrl)
     }
     setForm((p) => ({ ...p, videoUrl: '' }))
+  }
+
+  const handleRemoveExistingImage = (imageUrl: string) => {
+    setForm((prevForm) => {
+      // Lọc ra ảnh có imageUrl khớp
+      const newImages = prevForm.images.filter((img) => img.imageUrl !== imageUrl)
+      // Nếu ảnh bị xóa là thumbnail, ta cần đặt lại thumbnail cho ảnh đầu tiên còn lại (nếu có)
+      if (newImages.length > 0 && !newImages.some((img) => img.isThumbnail)) {
+        // Đặt ảnh đầu tiên còn lại làm thumbnail mới
+        newImages[0] = { ...newImages[0], isThumbnail: true }
+      }
+      return {
+        ...prevForm,
+        images: newImages
+      }
+    })
   }
 
   // Change Handler (giữ nguyên)
@@ -353,6 +371,7 @@ export default function ProductModal({ isOpen, onClose, product, onSave, isViewM
           handleImageFileChange={handleImageFileChange}
           handleVideoFileChange={handleVideoFileChange}
           handleRemoveImagePreview={handleRemoveImagePreview}
+          handleRemoveExistingImage={handleRemoveExistingImage}
           handleRemoveVideo={handleRemoveVideo}
           imagePreviews={imagePreviews}
           isViewMode={isViewMode}
