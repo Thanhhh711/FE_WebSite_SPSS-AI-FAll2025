@@ -1,14 +1,14 @@
 // MedicalReportModal.tsx
 
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { toast } from 'react-toastify'
 // Assumed imports: types, API, and Modal UI component
 import { reportApi } from '../../api/report.api'
 import { MedicalReportForm, ReportStatus } from '../../types/report.type'
-import ModalRegistration from '../RegistrationModal/ModalRegistration'
-import { Appointment } from '../../types/appoinment.type'
 import { uploadFile } from '../../utils/supabaseStorage'
+import ModalRegistration from '../RegistrationModal/ModalRegistration'
+import { appointmentApi } from '../../api/appointment.api'
 
 // ----------------------------------------------------------------------
 // ✅ SUPABASE UPLOAD UTILITIES (Giả định import từ file khác, ví dụ: '../../utils/supabaseUtils')
@@ -45,7 +45,7 @@ interface MedicalReportModalProps {
   isOpen: boolean
   onClose: () => void
   customerId: string
-  appoimentsData: Appointment[]
+  appoimentId: string
 }
 
 const initialFormState: MedicalReportForm = {
@@ -66,30 +66,14 @@ const initialFormState: MedicalReportForm = {
 const baseInputClass =
   'w-full rounded-lg border border-gray-300 p-2.5 text-sm focus:border-indigo-500 focus:ring-indigo-500'
 
-// ----------------------------------------------------------------------
-// // GIẢ ĐỊNH HÀM UPLOAD (THAY THẾ BẰNG HÀM THỰC TẾ CỦA BẠN)
-// // Hàm này là Mock, bạn cần thay bằng hàm uploadFile thực tế và import supabase
-// const mockUploadFile = async (
-//   bucket: string,
-//   file: File,
-//   folder?: string
-// ): Promise<{ publicUrl: string; path: string }> => {
-//   // Simulate API call delay and success
-//   console.log(`Simulating upload for file: ${file.name} to bucket: ${bucket}`)
-//   await new Promise((resolve) => setTimeout(resolve, 500))
-//   // Return a mock URL
-//   return {
-//     publicUrl: `https://mock-cdn.com/${folder}/${file.name.replace(/\s/g, '-')}`,
-//     path: `${folder}/${file.name}`
-//   }
-// }
-// ----------------------------------------------------------------------
-
-export default function MedicalReportModal({ isOpen, onClose, customerId, appoimentsData }: MedicalReportModalProps) {
+export default function MedicalReportModal({ isOpen, onClose, customerId, appoimentId }: MedicalReportModalProps) {
   const [form, setForm] = useState<MedicalReportForm>({
     ...initialFormState,
     customerId
   })
+
+  console.log('appoimentsData', appoimentId)
+
   const queryClient = useQueryClient()
 
   useEffect(() => {
@@ -134,6 +118,13 @@ export default function MedicalReportModal({ isOpen, onClose, customerId, appoim
       console.error(error)
     }
   })
+
+  const { data: appoimentsData } = useQuery({
+    queryKey: ['appoiment'],
+    queryFn: () => appointmentApi.getAppoinmentsById(appoimentId as string)
+  })
+
+  const appoiment = appoimentsData?.data.data
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -361,18 +352,15 @@ export default function MedicalReportModal({ isOpen, onClose, customerId, appoim
               </div>
               <div>
                 <label className='mb-1.5 block text-sm font-medium text-gray-700'>Appointment</label>
-                <select
-                  name='appointmentId'
-                  value={form.appointmentId}
-                  onChange={handleChange}
-                  className={baseInputClass}
-                >
+                <select name='appointmentId' value={appoimentId} className={baseInputClass}>
                   <option value=''>Select an appointment (optional)</option>
-                  {appoimentsData.map((appt) => (
-                    <option key={appt.id} value={appt.id}>
-                      {appt.service?.name || 'Unnamed Service'} — {new Date(appt.startDateTime).toLocaleString()}
+
+                  {appoiment && (
+                    <option key={appoiment.id} value={appoiment.id}>
+                      {appoiment.service?.name || 'Unnamed Service'} —
+                      {new Date(appoiment.startDateTime).toLocaleString()}
                     </option>
-                  ))}
+                  )}
                 </select>
               </div>
             </div>

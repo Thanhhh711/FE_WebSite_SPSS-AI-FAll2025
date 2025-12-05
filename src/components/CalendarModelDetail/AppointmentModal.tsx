@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useQuery } from '@tanstack/react-query'
-import React, { useMemo } from 'react'
-import { useNavigate } from 'react-router'
+import React, { useMemo, useState } from 'react'
+import { useNavigate, useParams } from 'react-router'
 import { serviceApi } from '../../api/services.api'
 
 import { APPOINTMENT_STATUS_LIST, AppointmentStatus, AppointmentStatusCode } from '../../constants/AppointmentConstants'
@@ -12,6 +12,7 @@ import { Service } from '../../types/service.type'
 import { TreatmentSession } from '../../types/treatmentSession.type'
 import { AuthUser, User } from '../../types/user.type'
 import { Modal } from '../ui/modal'
+import MedicalReportModal from '../report/MedicalReportModal'
 
 // interface Schedule {
 //   id: string
@@ -76,6 +77,7 @@ interface EventModalFormProps {
   doctorId: string
   setDoctorId: (id: string) => void
   onNavigate: (id: string) => void
+  appoimentId: string
 }
 
 const EventModalForm: React.FC<EventModalFormProps> = ({
@@ -110,16 +112,18 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
   setDoctorId,
 
   setEventLocation,
-
+  appoimentId,
   endDateTime,
   profile
 }) => {
   const isEditing = !!selectedEvent
-
+  const { id: customerId } = useParams<{ id: string }>()
   console.log('Data User', pagingData)
 
   console.log('sessionData', sesionData)
   console.log('eventRoom', eventRoom)
+
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
   const { data: servicesData, isLoading: isServicesLoading } = useQuery({
     queryKey: ['allServices'],
@@ -130,22 +134,6 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
 
   const allServices: Service[] = servicesData?.data.data || []
 
-  // const { data: schedulesData } = useQuery({
-  //   queryKey: ['allSchedules', appointmentDate, selectedServiceId, doctorId],
-
-  //   queryFn: () => scheduleApi.getScheduleByIdBeautyAdvisor(doctorId),
-
-  //   staleTime: 1000 * 60,
-
-  //   enabled: isOpen && !!appointmentDate && !!selectedServiceId && !!doctorId
-  // })
-
-  // const allSchedules: ScheduleWork[] = schedulesData?.data.data
-  //   ? schedulesData.data.data.filter(
-  //       (schedule) => schedule.appointments.length === 0 && schedule.status !== WorkScheduleStatus.Booked
-  //     )
-  //   : []
-
   const selectedService = useMemo(() => {
     return allServices.find((s) => s.id === selectedServiceId)
   }, [allServices, selectedServiceId])
@@ -154,52 +142,16 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
   const durationMinutes = selectedService?.durationMinutes || 0
   const navigate = useNavigate()
 
-  // const handleServiceChange = (id: string) => {
-  //   setSelectedServiceId(id)
-  //   const selected = allServices.find((s) => s.id === id)
-  //   if (selected) {
-  //     setDurationMinutes(selected.durationMinutes)
-  //     setEventTitle(selected.name)
-  //   } else {
-  //     setEventTitle('')
-  //   }
-  // }
-
-  // const handleScheduleChange = (id: string) => {
-  //   console.log('id', id)
-
-  //   setSelectedScheduleId(id)
-
-  //   if (!id) {
-  //     setEventRoom('')
-  //     setEventLocation('')
-
-  //     return
-  //   }
-
-  //   const schedule = allSchedules.find((s) => s.id === id)
-
-  //   if (schedule) {
-  //     const start = new Date(schedule.startTime)
-
-  //     setAppointmentDate(start.toISOString().split('T')[0])
-  //     setStartDateTime(
-  //       `${start.getHours().toString().padStart(2, '0')}:${start.getMinutes().toString().padStart(2, '0')}`
-  //     )
-
-  //     setEventRoom(schedule.room?.roomName || 'N/A')
-  //     setEventLocation(schedule.room?.location || 'N/A')
-  //   }
-  // }
-
   const handleViewMedicalRecord = (id: string) => {
     navigate(`${AppPath.PROFILE}/${id}`)
   }
 
+  const handleOpenCreate = () => setIsCreateModalOpen(true)
+
   const IconPlaceholder = ({ color }: { color: string }) => <div className={`w-4 h-4 rounded-full ${color}`}></div>
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} className='max-w-[800px] p-0'>
+    <Modal isOpen={isOpen} onClose={isCreateModalOpen ? () => {} : onClose} className='max-w-[800px] p-0'>
       <div className='flex flex-col h-full bg-white dark:bg-gray-900 rounded-xl'>
         {/* HEADER */}
         <div className='flex items-center justify-between p-6 border-b border-gray-100 dark:border-gray-800'>
@@ -214,18 +166,10 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
               Manage appointment details, services, and schedules.
             </p>
           </div>
-          <button onClick={onClose} className='p-2 text-gray-400 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800'>
-            <svg className='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-              <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M6 18L18 6M6 6l12 12'></path>
-            </svg>
-          </button>
         </div>
 
         {/* BODY */}
-        <div
-          className='p-6 space-y-8 overflow-y-auto custom-scrollbar lg:p-8 overflow-y-auto'
-          style={{ maxHeight: '80vh' }}
-        >
+        <div className='p-6 space-y-8 overflow-y-auto custom-scrollbar lg:p-8' style={{ maxHeight: '80vh' }}>
           <div className='p-5 border border-gray-200 rounded-lg dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50'>
             <h6 className='mb-4 text-lg font-semibold text-gray-700 dark:text-white'> Main Information</h6>
 
@@ -245,7 +189,7 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
                   if (selectedService) {
                     return (
                       <div className='h-11 w-full rounded-lg border border-gray-300 bg-gray-50 dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-800 dark:text-white/90'>
-                        {selectedService.name} ({selectedService.durationMinutes} phút)
+                        {selectedService.name} ({selectedService.durationMinutes} minutes)
                       </div>
                     )
                   }
@@ -330,25 +274,44 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
 
                       {/* ACTIONS: View Record & Change Button */}
                       <div className='flex items-center space-x-3'>
+                        {/* Nút View Patient Record */}
                         {[Role.ADMIN, Role.BEAUTY_ADVISOR].includes(profile?.role) && (
                           <button
                             onClick={() => handleViewMedicalRecord(patientId)}
                             type='button'
-                            className='text-sm font-medium text-indigo-500 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors'
+                            // ✅ Đã thay đổi: px-3 py-1.5 và text-sm
+                            className='px-3 py-1.5 text-sm font-semibold text-indigo-600 bg-indigo-50 border border-indigo-200 rounded-lg shadow-sm hover:bg-indigo-100 transition-colors dark:text-indigo-400 dark:bg-gray-700 dark:hover:bg-gray-600'
                             title='View Medical Record'
                           >
-                            View Record
+                            View Patient Record
                           </button>
                         )}
 
-                        {/* <button
-                          onClick={() => setPatientId('')}
-                          type='button'
-                          className='text-sm font-medium text-indigo-500 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors'
-                          title='Change/Re-select Customer'
-                        >
-                          Change
-                        </button> */}
+                        {/* Nút Create New Report (Chỉ hiển thị cho BEAUTY_ADVISOR và khi modal chưa mở) */}
+                        {profile?.role === Role.BEAUTY_ADVISOR && !isCreateModalOpen && (
+                          <button
+                            onClick={handleOpenCreate}
+                            // ✅ Đã thay đổi: px-3 py-1.5 và text-sm
+                            className='flex items-center px-3 py-1.5 text-sm font-semibold text-white bg-green-500 rounded-lg shadow-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 transition'
+                            title='Create New Report'
+                          >
+                            <svg
+                              xmlns='http://www.w3.org/2000/svg'
+                              className='w-4 h-4 mr-2' // Giảm kích thước icon từ w-5 h-5 xuống w-4 h-4
+                              fill='none'
+                              viewBox='0 0 24 24'
+                              stroke='currentColor'
+                            >
+                              <path
+                                strokeLinecap='round'
+                                strokeLinejoin='round'
+                                strokeWidth={2}
+                                d='M12 4v16m8-8H4' // Icon Plus
+                              />
+                            </svg>
+                            Create New Report
+                          </button>
+                        )}
                       </div>
                     </div>
                   )
@@ -377,39 +340,6 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
               <IconPlaceholder color='bg-orange-500' />
               <span className='ml-2'>Time Slot</span>
             </label>
-            {/* <h6 className='mb-4 text-lg font-semibold text-gray-700 dark:text-white'>Schedule & Time</h6>
-
-            <div className='mb-6'>
-              <select
-                value={selectedScheduleId}
-                onChange={(e) => handleScheduleChange(e.target.value)}
-                className='h-11 w-full rounded-lg border border-gray-300 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm text-gray-800 dark:text-white/90 focus:border-brand-500 focus:ring-1 focus:ring-brand-500'
-                disabled={isSlotsLoading || !selectedServiceId || !appointmentDate}
-              >
-                <option value=''>
-                  {isSlotsLoading
-                    ? 'Loading slots...'
-                    : !selectedServiceId || !appointmentDate
-                      ? 'Select service & date'
-                      : allSchedules.length === 0
-                        ? 'No available slots'
-                        : 'Select a slot'}
-                </option>
-                {allSchedules.map((schedule) => {
-                  const startTime = schedule.startTime
-                  const endTime = schedule.endTime
-
-                  const roomName = schedule.room?.roomName || 'N/A'
-                  const location = schedule.room?.location || 'N/A'
-
-                  return (
-                    <option key={schedule.id} value={schedule.id}>
-                      {startTime} - {endTime} | Phòng: {roomName} ({location})
-                    </option>
-                  )
-                })}
-              </select>
-            </div> */}
 
             <div className='grid grid-cols-2 gap-4 sm:grid-cols-3'>
               <div>
@@ -598,20 +528,32 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
           <button
             onClick={onClose}
             type='button'
-            className='flex w-full justify-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] sm:w-auto'
+            className={`
+                  flex w-full justify-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] sm:w-auto
+                  ${isCreateModalOpen ? 'opacity-50 cursor-not-allowed hover:bg-white dark:hover:bg-gray-800' : ''}
+              `}
+            disabled={isCreateModalOpen}
           >
             Close
           </button>
 
-          {profile.role === Role.BEAUTY_ADVISOR && (
+          {/* {profile.role === Role.BEAUTY_ADVISOR && (
             <button
               onClick={onSave}
               type='button'
               className='btn btn-success flex w-full justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white shadow-brand-xs hover:bg-brand-600 sm:w-auto'
+              disabled={isCreateModalOpen}
             >
               {isEditing ? 'Update Appointment' : 'Add Appointment'}
             </button>
-          )}
+          )} */}
+          {/* Create Report Modal */}
+          <MedicalReportModal
+            isOpen={isCreateModalOpen}
+            onClose={() => setIsCreateModalOpen(false)}
+            customerId={customerId as string}
+            appoimentId={appoimentId}
+          />
         </div>
       </div>
     </Modal>

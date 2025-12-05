@@ -1,14 +1,11 @@
 // MedicalReportList.tsx
 
-import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Report, ReportStatus } from '../../types/report.type'
-import { reportApi } from '../../api/report.api'
-import MedicalReportModal from '../../components/report/MedicalReportModal'
-import MedicalReportDetail from '../../components/report/MedicalReportDetail'
+import { useState } from 'react'
 import { useParams } from 'react-router'
-import { appointmentApi } from '../../api/appointment.api'
-import { Appointment } from '../../types/appoinment.type'
+import { reportApi } from '../../api/report.api'
+import MedicalReportDetail from '../../components/report/MedicalReportDetail'
+import { Report, ReportStatus } from '../../types/report.type'
 
 // Helper function to format date
 const formatDateToDDMMYYYY = (date: string): string => new Date(date).toLocaleDateString('en-GB')
@@ -46,7 +43,7 @@ const ReportCard = ({ report, onDetailView }: { report: Report; onDetailView: (r
 }
 
 export default function MedicalReportList() {
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  // const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null)
   const { id: customerId } = useParams<{ id: string }>()
@@ -61,17 +58,18 @@ export default function MedicalReportList() {
     enabled: !!customerId
   })
 
-  const { data: appoimentsData } = useQuery({
-    queryKey: ['appoiment', customerId],
-    queryFn: () => appointmentApi.getAppoinments()
-  })
-
-  console.log('appoimentsData', appoimentsData)
+  // const { data: appoimentsData } = useQuery({
+  //   queryKey: ['appoiment', customerId],
+  //   queryFn: () => appointmentApi.getAppoinments(),
+  //   enabled: !!customerId
+  // })
 
   const reportsList: Report[] =
     reportsResponse?.data.data && Array.isArray(reportsResponse.data.data) ? reportsResponse.data.data : []
 
-  const handleOpenCreate = () => setIsCreateModalOpen(true)
+  // const appoimentList: Appointment[] =
+  //   appoimentsData?.data.data && Array.isArray(appoimentsData.data.data) ? appoimentsData.data.data : []
+  // const handleOpenCreate = () => setIsCreateModalOpen(true)
 
   const handleDetailView = (reportId: string) => {
     setSelectedReportId(reportId)
@@ -88,26 +86,6 @@ export default function MedicalReportList() {
 
   return (
     <div className='p-6 bg-white rounded-lg shadow'>
-      {/* Header & Create Button */}
-      <div className='flex justify-between items-center mb-6 border-b border-gray-200 pb-4'>
-        <h2 className='text-xl font-bold text-gray-800'>Medical Records & Reports</h2>
-        <button
-          onClick={handleOpenCreate}
-          className='flex items-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow-md hover:bg-indigo-700 transition'
-        >
-          <svg
-            xmlns='http://www.w3.org/2000/svg'
-            className='w-4 h-4 mr-1'
-            fill='none'
-            viewBox='0 0 24 24'
-            stroke='currentColor'
-          >
-            <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M12 6v6m0 0v6m0-6h6m-6 0H6' />
-          </svg>
-          Create New Report
-        </button>
-      </div>
-
       {/* Reports List */}
       <div className='space-y-4'>
         {reportsList.length > 0 ? (
@@ -115,20 +93,17 @@ export default function MedicalReportList() {
         ) : (
           <div className='text-center p-12 border border-dashed border-gray-300 rounded-lg text-gray-500'>
             <p>This patient currently has no medical reports.</p>
-            <button onClick={handleOpenCreate} className='mt-3 text-indigo-600 font-medium hover:text-indigo-700'>
-              Start by creating the first report
-            </button>
           </div>
         )}
       </div>
 
       {/* Create Report Modal */}
-      <MedicalReportModal
+      {/* <MedicalReportModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         customerId={customerId as string}
-        appoimentsData={appoimentsData?.data.data as Appointment[]}
-      />
+        appoimentsData={appoimentList}
+      /> */}
 
       {/* Report Detail Modal */}
       {isDetailModalOpen && (

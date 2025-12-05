@@ -102,6 +102,9 @@ export default function TreatmentSessionModal({
 
   const queryEndDate = form.sessionDate
 
+  console.log('queryStartDate', queryStartDate)
+  console.log('queryEndDate', queryEndDate)
+
   const { data: scheduleResponse, isLoading: isScheduleLoading } = useQuery({
     queryKey: ['staffSchedules', form.staffId, queryStartDate, queryEndDate],
     queryFn: () => scheduleApi.getScheduleByStaffIdAndDateRange(form.staffId, queryStartDate, queryEndDate),
@@ -109,7 +112,7 @@ export default function TreatmentSessionModal({
     enabled: !!form.staffId && !!form.sessionDate && !isEditing
   })
 
-  console.log('scheduleResponse', scheduleResponse?.data.data)
+  console.log('scheduleResponse', scheduleResponse)
 
   const availableSchedules = scheduleResponse?.data.data.filter(
     (s) => s.status === 1 && (!s.appointments || s.appointments.length === 0)

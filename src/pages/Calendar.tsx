@@ -73,6 +73,7 @@ const AppointmentCalendar: React.FC = () => {
   const selectedUserId = selectedEvent?.extendedProps.userId
   const selectedStaffId = selectedEvent?.extendedProps.staffId
   const selectedSessionId = selectedEvent?.extendedProps.sessionId || ''
+  const slectedAppoimentId = selectedEvent?.id || ''
 
   console.log('selectedSessionId', selectedSessionId)
 
@@ -465,6 +466,7 @@ const AppointmentCalendar: React.FC = () => {
           doctorId={selectedStaffId || doctorId}
           onNavigate={(id) => handleNavigateToDetail(id)}
           profile={profile as AuthUser}
+          appoimentId={slectedAppoimentId as string}
         />
 
         <ConfirmModal
