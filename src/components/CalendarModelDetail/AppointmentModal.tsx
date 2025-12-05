@@ -11,8 +11,8 @@ import { Role } from '../../constants/Roles'
 import { Service } from '../../types/service.type'
 import { TreatmentSession } from '../../types/treatmentSession.type'
 import { AuthUser, User } from '../../types/user.type'
-import { Modal } from '../ui/modal'
 import MedicalReportModal from '../report/MedicalReportModal'
+import { Modal } from '../ui/modal'
 
 // interface Schedule {
 //   id: string
@@ -84,7 +84,6 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
   isOpen,
   onClose,
   selectedEvent,
-  onSave,
 
   notes,
   setNotes,
