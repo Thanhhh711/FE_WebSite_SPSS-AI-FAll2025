@@ -1,2 +1,18 @@
+[build]
+  publish = "dist"
+
 [functions]
   directory = "netlify/functions"
+
+# Redirect API → backend
+[[redirects]]
+  from = "/api/*"
+  to = "https://spss-api-gateway.runasp.net/:splat"
+  status = 200
+  force = true
+
+# Redirect tất cả routes React Router → index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
