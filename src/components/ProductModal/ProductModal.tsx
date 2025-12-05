@@ -1,23 +1,23 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import React, { useEffect, useState } from 'react'
 import { toast } from 'react-toastify'
 // Giả định path:
-import ModalRegistration from '../RegistrationModal/ModalRegistration'
-import { Product, ProductForm, ProductImage, ProductImageForm, ProductStatusEnum } from '../../types/product.type'
-import { skinConditionApi, skinTypeApi } from '../../api/skin.api'
-import { SkinCondition, SkinType } from '../../types/skin.type'
-import { categoryApi } from '../../api/category.api'
-import { Category } from '../../types/category.type'
-import variationApi from '../../api/variation.api'
-import { Variation, VarionOptionInResponse } from '../../types/variation.type'
-import { productApi } from '../../api/product.api'
-import { uploadFile, UploadResult } from '../../utils/supabaseStorage'
-import ProductFormFields, { NewUploadedImage, ProductFormState } from './ProductFormFields'
 import brandApi from '../../api/brand.api'
+import { categoryApi } from '../../api/category.api'
+import { productApi } from '../../api/product.api'
+import { skinConditionApi, skinTypeApi } from '../../api/skin.api'
+import variationApi from '../../api/variation.api'
 import { Brand } from '../../types/brands.type'
+import { Category } from '../../types/category.type'
+import { Product, ProductForm, ProductImage, ProductImageForm, ProductStatusEnum } from '../../types/product.type'
+import { SkinCondition, SkinType } from '../../types/skin.type'
+import { Variation, VarionOptionInResponse } from '../../types/variation.type'
+import { uploadFile, UploadResult } from '../../utils/supabaseStorage'
 import { validateProductForm } from '../../utils/validForm'
+import ModalRegistration from '../RegistrationModal/ModalRegistration'
+import ProductFormFields, { NewUploadedImage, ProductFormState } from './ProductFormFields'
 
 // ---------------------------------------------------
 
@@ -123,8 +123,6 @@ const useProductDependencies = () => {
 // ----------------------------------------------------
 
 export default function ProductModal({ isOpen, onClose, product, onSave, isViewMode }: ProductModalProps) {
-  const [images, setImages] = useState<ProductImage[]>([])
-
   const isEditing = !!product && !isViewMode
   const isCreating = !product && !isViewMode
   const productId = product?.id
