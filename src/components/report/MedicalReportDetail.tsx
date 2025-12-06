@@ -3,20 +3,18 @@
 import { useQuery } from '@tanstack/react-query'
 // Assumed imports: types, API, and helpers
 import { reportApi } from '../../api/report.api'
-import { Appointment, Report, ReportStatus } from '../../types/report.type' // Cần đảm bảo Appointment được import
+import { Appointment, Report, ReportStatus } from '../../types/report.type'
 import { formatDateToDDMMYYYY } from '../../utils/validForm'
 // Assumed Modal component exists
 import StaffEmailLookup from '../../utils/StaffEmailLookup'
-import ModalRegistration from '../RegistrationModal/ModalRegistration' // Sử dụng ModalRegistration cho modal full-screen
+import ModalRegistration from '../RegistrationModal/ModalRegistration'
 
 interface MedicalReportDetailProps {
   isOpen: boolean
-  onClose: () => void // Close the modal
-  reportId: string | null // ID of the report to view
-  // Thêm handler cho việc xem chi tiết cuộc hẹn nếu cần (ví dụ: onHandleViewAppointment)
+  onClose: () => void
+  reportId: string | null
 }
 
-// Helper function to format DateTime string (HH:mm - DD/MM/YYYY)
 const formatDateTime = (isoString: string) => {
   if (!isoString) return 'N/A'
   const date = new Date(isoString)
@@ -61,12 +59,8 @@ export default function MedicalReportDetail({ isOpen, onClose, reportId }: Medic
     enabled: !!reportId && isOpen
   })
 
-  // Dựa trên kiểu dữ liệu bạn cung cấp, report.appointment chứa thông tin cuộc hẹn
   const report: Report | undefined = reportResponse?.data.data
   const appointmentData: Appointment | undefined = report?.appointment
-
-  // Bỏ query appoimentsData không cần thiết nếu data đã có trong report object
-  // const { data: appoimentsData } = useQuery(...)
 
   const statusInfo = REPORT_STATUS_MAP[report?.status ?? 0] || REPORT_STATUS_MAP[0]
   const staffEmailElement = <StaffEmailLookup staffId={report?.staffId || ''} />

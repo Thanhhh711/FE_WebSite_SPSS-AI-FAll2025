@@ -50,9 +50,8 @@ export default function TreatmentPlanTab({ customerId }: TreatmentPlanTabProps) 
     onError: (error) => {
       toast.error(error.message)
     }
-  })
+  }) // ✅ 2. MUTATION CHO CẬP NHẬT (UPDATE)
 
-  // ✅ 2. MUTATION CHO CẬP NHẬT (UPDATE)
   const updateTreatmentPlanMutation = useMutation({
     mutationFn: ({ planId, body }: { planId: string; body: CreateTreatmentPlanDto }) =>
       treatmentPlanApi.updateTreateMent(planId, body),
@@ -66,19 +65,6 @@ export default function TreatmentPlanTab({ customerId }: TreatmentPlanTabProps) 
     }
   })
 
-  // const deleteTreatmentPlanMutation = useMutation({
-  //   mutationFn: (planId: string) => treatmentPlanApi.deleteTreateMent(planId),
-  //   onSuccess: (data) => {
-  //     refetch()
-  //     toast.success(data.data.message)
-  //     setIsConfirmDeleteOpen(false)
-  //     setPlanToDelete(null)
-  //   },
-  //   onError: (error) => {
-  //     toast.error(error.message)
-  //   }
-  // })
-
   const handleSave = (data: CreateTreatmentPlanDto, planId?: string) => {
     console.log('form', data)
 
@@ -91,9 +77,8 @@ export default function TreatmentPlanTab({ customerId }: TreatmentPlanTabProps) 
       // Logic CẬP NHẬT
       updateTreatmentPlanMutation.mutate({ planId, body })
     } else {
-      console.log('create')
+      console.log('create') // Logic TẠO MỚI
 
-      // Logic TẠO MỚI
       createTreatmentPlanMutation.mutate(body)
     }
   }
@@ -105,23 +90,13 @@ export default function TreatmentPlanTab({ customerId }: TreatmentPlanTabProps) 
     setIsConfirmDeleteOpen(true)
   }
 
-  // 2. Hàm Xóa thực tế (gọi khi bấm Confirm trong Popup)
-  // Trong TreatmentPlanTab.tsx
-
-  // const confirmDeleteAction = async () => {
-  //   if (!planToDelete) return
-  //   // Sử dụng mutation đã định nghĩa để gọi API xóa
-  //   deleteTreatmentPlanMutation.mutate(planToDelete)
-  // }
-
-  // Luôn đóng popup và reset state sau khi hoàn tất
   setIsConfirmDeleteOpen(false)
   setPlanToDelete(null)
 
   return (
-    <div className='p-6 bg-white rounded-xl shadow-lg min-h-[500px]'>
+    <div className='p-6 bg-white dark:bg-gray-900 rounded-xl shadow-lg min-h-[500px]'>
       <div className='flex justify-between items-center mb-6'>
-        <h3 className='text-xl font-bold text-gray-900'>Treatment Plans ({treatmentPlans.length})</h3>
+        <h3 className='text-xl font-bold text-gray-900 dark:text-white'>Treatment Plans ({treatmentPlans.length})</h3>
         <button
           onClick={handleOpenCreate}
           className='flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg shadow-md hover:bg-green-700 transition'
@@ -138,22 +113,24 @@ export default function TreatmentPlanTab({ customerId }: TreatmentPlanTabProps) 
           Create New Plan
         </button>
       </div>
-
       <div className='space-y-6'>
         {treatmentPlans.length > 0 ? (
           treatmentPlans.map((plan) => (
             <TreatmentPlanCard key={plan.id} plan={plan} onViewDetails={handleViewOrEdit} onDelete={handleDeletePlan} />
           ))
         ) : (
-          <div className='text-center p-12 border border-dashed border-gray-300 rounded-lg text-gray-500'>
+          <div
+            // Empty State: border-gray-300, text-gray-500 -> dark:border-gray-700, dark:text-gray-400
+            className='text-center p-12 border border-dashed border-gray-300 dark:border-gray-700 rounded-lg text-gray-500 dark:text-gray-400'
+          >
             <p>This patient currently has no treatment plan.</p>
-            <button onClick={handleOpenCreate} className='mt-3 text-green-600 font-medium hover:text-green-700'>
-              Start a new plan now
-            </button>
+            <button
+              onClick={handleOpenCreate}
+              className='mt-3 text-green-600 font-medium hover:text-green-700'
+            ></button>
           </div>
         )}
       </div>
-
       <TreatmentPlanModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}

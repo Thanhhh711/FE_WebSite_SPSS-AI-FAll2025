@@ -25,11 +25,11 @@ export default function TreatmentPlanCard({ plan, onViewDetails, onDelete }: Tre
   const totalSessions = plan.totalSessions || plan.treatmentSessions.length
   const canDelete = plan.status === TreatmentPlanStatus.Draft
   return (
-    <div className='border border-gray-200 p-5 rounded-xl shadow-sm bg-white hover:shadow-md transition duration-300'>
+    <div className='border dark:bg-gray-900  border-gray-200 p-5 rounded-xl shadow-sm bg-white hover:shadow-md transition duration-300'>
       <div className='flex justify-between items-start border-b pb-3 mb-3'>
         {/* Title & Dates */}
         <div className='flex-1 min-w-0'>
-          <h4 className='text-lg font-bold text-gray-800 truncate'>
+          <h4 className='text-lg font-bold  dark:text-white text-gray-800 truncate'>
             Treatment Plan: {plan.diagnosis || 'No Diagnosis'}
           </h4>
           <div className='text-sm text-gray-500 mt-1'>
@@ -47,8 +47,8 @@ export default function TreatmentPlanCard({ plan, onViewDetails, onDelete }: Tre
       {/* Details Grid */}
       <div className='grid grid-cols-2 md:grid-cols-4 gap-4 text-sm'>
         <div className='flex flex-col'>
-          <span className='text-xs font-medium text-gray-500 uppercase'>Goal</span>
-          <span className='font-semibold text-gray-800 line-clamp-2'>{plan.goal || 'N/A'}</span>
+          <span className='text-xs font-medium text-gray-500  uppercase'>Goal</span>
+          <span className='font-semibold  dark:text-white text-gray-800 line-clamp-2'>{plan.goal || 'N/A'}</span>
         </div>
         <div className='flex flex-col'>
           <span className='text-xs font-medium text-gray-500 uppercase'>Cost</span>
@@ -56,11 +56,11 @@ export default function TreatmentPlanCard({ plan, onViewDetails, onDelete }: Tre
         </div>
         <div className='flex flex-col'>
           <span className='text-xs font-medium text-gray-500 uppercase'>Duration</span>
-          <span className='font-semibold text-gray-800'>{plan.durationWeeks} Weeks</span>
+          <span className='font-semibold  dark:text-white text-gray-800'>{plan.durationWeeks} Weeks</span>
         </div>
         <div className='flex flex-col'>
           <span className='text-xs font-medium text-gray-500 uppercase'>Sessions</span>
-          <span className='font-semibold text-gray-800'>
+          <span className='font-semibold text-gray-800  dark:text-white'>
             {completedSessions} / {totalSessions} Completed
           </span>
         </div>

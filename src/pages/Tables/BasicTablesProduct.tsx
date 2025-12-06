@@ -8,9 +8,11 @@ import ProductReviewsModal from '../../components/ProductModal/ProductReviewsMod
 export default function BasicTablesProduct() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedProductItemId, setSelectedProductItemId] = useState<string | null>(null)
+  const [selectedProductName, setSelectedProductName] = useState<string | null>(null)
 
-  const openReviewsModal = (productItemId: string) => {
+  const openReviewsModal = (productItemId: string, productName: string) => {
     setSelectedProductItemId(productItemId)
+    setSelectedProductName(productName)
     setIsModalOpen(true)
   }
 
@@ -33,7 +35,11 @@ export default function BasicTablesProduct() {
       </div>
 
       {isModalOpen && selectedProductItemId && (
-        <ProductReviewsModal productItemId={selectedProductItemId} onClose={closeReviewsModal} />
+        <ProductReviewsModal
+          productName={selectedProductName as string}
+          productItemId={selectedProductItemId}
+          onClose={closeReviewsModal}
+        />
       )}
     </>
   )

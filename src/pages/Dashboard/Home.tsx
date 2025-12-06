@@ -1,4 +1,4 @@
-// src/pages/Home.tsx (Sử dụng Bar Chart và Time Selectors)
+// src/pages/Home.tsx (Using Bar Chart and Time Filters)
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
@@ -8,33 +8,34 @@ import dashboardApi from '../../api/dashboard.api'
 import PageMeta from '../../components/common/PageMeta'
 import PageBreadcrumb from '../../components/common/PageBreadCrumb'
 import MetricCard from '../../components/dashboard/MetricCard'
-import CombinedBarChart from '../../components/dashboard/CombinedBarChart' // NEW IMPORT
+import CombinedBarChart from '../../components/dashboard/CombinedBarChart'
 import { DashboardData, DashboardMetric } from '../../types/dashboard.type'
 
-// Initial state for metrics
+// Default values for each metric
 const initialMetric: DashboardMetric = { currentValue: 0, previousValue: 0, percentageChange: 0, trend: 0 }
 const initialDashboardData: DashboardData = {
   totalProducts: initialMetric,
   totalOrders: initialMetric,
-  totalRevenue: initialMetric
+  totalRevenue: initialMetric,
+  totalProfit: initialMetric
 }
 
 export default function Dashboard() {
   const currentDate = new Date()
   const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear())
-  const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth() + 1) // 1-indexed
+  const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth() + 1) // Months start at 1
 
   const [userMetric, setUserMetric] = useState<DashboardMetric>(initialMetric)
   const [businessData, setBusinessData] = useState<DashboardData>(initialDashboardData)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Hàm fetch data chính, phụ thuộc vào tháng/năm đã chọn
+  // Main fetch function, depends on selected month/year
   const fetchData = useCallback(async (year: number, month: number) => {
     setIsLoading(true)
     setError(null)
     try {
-      // Fetch User Metrics và Business Metrics cho thời gian đã chọn
+      // Fetch User Metrics and Business Metrics for the selected time range
       const [userResponse, businessResponse] = await Promise.all([
         dashboardApi.getDashboardUsers(year, month),
         dashboardApi.getDashboardBusiness(year, month)
@@ -43,58 +44,63 @@ export default function Dashboard() {
       setUserMetric(userResponse.data.data)
       setBusinessData(businessResponse.data.data)
     } catch (e: any) {
-      console.error('Lỗi khi tải dữ liệu Dashboard:', e)
-      setError(e.message || `Lỗi khi tải dữ liệu cho ${month}/${year}. Vui lòng thử lại.`)
+      console.error('Error loading Dashboard data:', e)
+      setError(e.message || `Failed to load data for ${month}/${year}. Please try again.`)
     } finally {
       setIsLoading(false)
     }
   }, [])
 
+  // Re-fetch when month/year changes
   useEffect(() => {
     fetchData(selectedYear, selectedMonth)
-  }, [fetchData, selectedYear, selectedMonth]) // Chạy lại khi tháng/năm thay đổi
+  }, [fetchData, selectedYear, selectedMonth])
 
-  // Chuyển đổi dữ liệu Business Metric thành định dạng cho biểu đồ cột
+  // Transform Business Metrics into chart-friendly format
   const combinedChartData = useMemo(() => {
     return [
       {
         name: 'Total Products',
         value: businessData.totalProducts.currentValue,
-        color: '#8884d8', // Tím
+        color: '#8884d8',
         isCurrency: false
       },
       {
         name: 'Total Orders',
         value: businessData.totalOrders.currentValue,
-        color: '#82ca9d', // Xanh lá
+        color: '#82ca9d',
         isCurrency: false
       },
       {
         name: 'Total Revenue',
         value: businessData.totalRevenue.currentValue,
-        color: '#ffc658', // Vàng
+        color: '#ffc658',
+        isCurrency: true
+      },
+      {
+        name: 'Total Profit',
+        value: businessData.totalProfit.currentValue,
+        color: '#ffc658',
         isCurrency: true
       }
     ]
   }, [businessData])
 
-  // Handlers và Options cho selectors
+  // Time filter handlers
   const handleTimeChange = (type: 'year' | 'month', value: number) => {
-    if (type === 'year') {
-      setSelectedYear(value)
-    } else {
-      setSelectedMonth(value)
-    }
+    if (type === 'year') setSelectedYear(value)
+    else setSelectedMonth(value)
   }
-  const yearOptions = Array.from({ length: 5 }, (_, i) => currentDate.getFullYear() - i) // 5 năm gần nhất
-  const monthOptions = Array.from({ length: 12 }, (_, i) => i + 1) // 1 đến 12
+
+  const yearOptions = Array.from({ length: 5 }, (_, i) => currentDate.getFullYear() - i)
+  const monthOptions = Array.from({ length: 12 }, (_, i) => i + 1)
 
   const renderContent = () => {
     if (isLoading) {
       return (
         <div className='p-8 text-center text-lg text-blue-500'>
           <div className='animate-spin inline-block w-8 h-8 border-4 border-t-4 border-blue-500 border-gray-200 rounded-full'></div>
-          <p className='mt-2'>Đang tải dữ liệu Dashboard...</p>
+          <p className='mt-2'>Loading dashboard data...</p>
         </div>
       )
     }
@@ -102,7 +108,7 @@ export default function Dashboard() {
     if (error) {
       return (
         <div className='p-4 mb-6 text-sm text-red-800 rounded-lg bg-red-100 dark:bg-red-900/20 dark:text-red-400'>
-          Lỗi: {error}
+          Error: {error}
         </div>
       )
     }
@@ -113,22 +119,22 @@ export default function Dashboard() {
         <div className='flex flex-wrap items-center gap-6 mb-8 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg border dark:border-gray-700'>
           <div className='flex items-center gap-2'>
             <Calendar className='w-5 h-5 text-gray-500 dark:text-gray-400' />
-            <span className='text-sm font-semibold text-gray-700 dark:text-gray-300'>Chọn Thời Gian:</span>
+            <span className='text-sm font-semibold text-gray-700 dark:text-gray-300'>Select Time:</span>
           </div>
 
           <div className='flex items-center gap-2'>
             <label htmlFor='month-select' className='text-sm font-medium text-gray-700 dark:text-gray-300'>
-              Tháng:
+              Month:
             </label>
             <select
               id='month-select'
               value={selectedMonth}
               onChange={(e) => handleTimeChange('month', parseInt(e.target.value))}
-              className='rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-1.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
+              className='rounded-lg border  text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-1.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
             >
               {monthOptions.map((m) => (
                 <option key={m} value={m}>
-                  Tháng {m}
+                  Month {m}
                 </option>
               ))}
             </select>
@@ -136,13 +142,13 @@ export default function Dashboard() {
 
           <div className='flex items-center gap-2'>
             <label htmlFor='year-select' className='text-sm font-medium text-gray-700 dark:text-gray-300'>
-              Năm:
+              Year:
             </label>
             <select
               id='year-select'
               value={selectedYear}
               onChange={(e) => handleTimeChange('year', parseInt(e.target.value))}
-              className='rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-1.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
+              className='rounded-lg border  text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-1.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
             >
               {yearOptions.map((y) => (
                 <option key={y} value={y}>
@@ -153,8 +159,8 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* METRIC CARDS GRID */}
-        <div className='grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4'>
+        {/* METRIC CARDS */}
+        <div className='flex flex-row gap-4'>
           <MetricCard title='Total Users' metric={userMetric} icon={<Users className='w-5 h-5' />} />
           <MetricCard
             title='Total Products'
@@ -172,9 +178,15 @@ export default function Dashboard() {
             icon={<DollarSign className='w-5 h-5' />}
             isCurrency={true}
           />
+          <MetricCard
+            title='Total Profit'
+            metric={businessData.totalProfit}
+            icon={<DollarSign className='w-5 h-5' />}
+            isCurrency={true}
+          />
         </div>
 
-        {/* CHART SECTION: Combined Bar Chart */}
+        {/* CHART SECTION */}
         <div className='mt-8'>
           <CombinedBarChart data={combinedChartData} selectedMonth={selectedMonth} selectedYear={selectedYear} />
         </div>

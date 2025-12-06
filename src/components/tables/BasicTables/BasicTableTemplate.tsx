@@ -146,7 +146,7 @@ export default function BasicTableTemplate() {
             setSearchTerm(e.target.value)
             setCurrentPage(1) // Reset page on search
           }}
-          className='w-1/3 min-w-[200px] rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500'
+          className='dark:text-white w-1/3 min-w-[200px] rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500'
         />
 
         {/* Create Button */}
@@ -169,7 +169,7 @@ export default function BasicTableTemplate() {
         <div className='max-w-full overflow-x-auto'>
           <Table>
             {/* Table Header */}
-            <TableHeader className='border-b border-gray-100 dark:border-white/[0.05] bg-gray-50 dark:bg-white/[0.05]'>
+            <TableHeader className='dark:text-gray-300 border-b border-gray-100 dark:border-white/[0.05] bg-gray-50 dark:bg-white/[0.05]'>
               <TableRow>
                 <TableCell isHeader className='px-5 py-3 text-start'>
                   Name
@@ -196,7 +196,7 @@ export default function BasicTableTemplate() {
                 </TableRow>
               ) : (
                 filteredAndPaginatedTemplates.data.map((template) => (
-                  <TableRow key={template.id}>
+                  <TableRow key={template.id} className='dark:text-gray-300'>
                     <TableCell className='px-5 py-4 font-medium truncate max-w-[150px]'>{template.name}</TableCell>
                     <TableCell className='px-4 py-3 text-start truncate max-w-[300px]'>
                       {template.description || 'N/A'}

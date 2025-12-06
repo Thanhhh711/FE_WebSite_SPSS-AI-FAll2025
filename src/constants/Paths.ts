@@ -8,7 +8,7 @@ export enum AppPath {
 
   // ==== DASHBOARD / HOME ====
   HOME = '/',
-
+  DASHBOARD_APPOINTMENTS = '/appointments/dashboard',
   // ==== TABLES ====
   BASIC_TABLES = '/basic-tables',
   BASIC_TABLES_ORDER = '/basic-tables-order',
@@ -45,7 +45,7 @@ export enum AppPath {
   PROFILE = '/profile',
   CALENDAR = '/calendar',
   FORM_ELEMENTS = '/form-elements',
-  BLANK = '/blank',
+  BLOGS = '/blogs',
   PATIENTS = '/patients',
   PATIENT_DETAIL = '/medical-record',
   REPORT = '/report',

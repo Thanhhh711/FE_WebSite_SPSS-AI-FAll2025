@@ -27,7 +27,6 @@ export default function TreatmentPlanTab() {
     enabled: !!id
   })
 
-  // Mock Filter (Nếu API không hỗ trợ filter)
   const treatmentPlans: TreatmentPlan[] = plansResponse?.data.data?.filter((p) => p.customerId === id) || []
 
   const handleOpenCreate = () => {
@@ -127,13 +126,15 @@ export default function TreatmentPlanTab() {
   }
 
   if (isLoading) {
+    console.log('11')
+
     return <div className='p-6 text-center text-gray-500'>Loading treatment plans...</div>
   }
 
   return (
-    <div className='p-6 bg-white rounded-xl shadow-lg min-h-[500px]'>
+    <div className='p-6 bg-white dark:bg-gray-900 rounded-xl shadow-lg min-h-[500px]'>
       <div className='flex justify-between items-center mb-6'>
-        <h3 className='text-xl font-bold text-gray-900'>Treatment Plans ({treatmentPlans.length})</h3>
+        <h3 className='text-xl font-bold dark:text-white text-gray-900'>Treatment Plans ({treatmentPlans.length})</h3>
         <button
           onClick={handleOpenCreate}
           className='flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg shadow-md hover:bg-green-700 transition'

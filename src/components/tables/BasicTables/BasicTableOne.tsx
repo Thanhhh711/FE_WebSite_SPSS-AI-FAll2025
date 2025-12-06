@@ -268,7 +268,7 @@ export default function BasicTableUsers() {
             setSearchTerm(e.target.value)
             setCurrentPage(1)
           }}
-          className='w-full max-w-xs rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500'
+          className=' text-gray-900 dark:text-gray-100 w-full max-w-xs rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500'
         />
 
         {/* Total Users Found */}
@@ -282,7 +282,7 @@ export default function BasicTableUsers() {
         <div className='max-w-full overflow-x-auto'>
           <Table>
             {/* Table Header (Cột gọn gàng hơn) */}
-            <TableHeader className='border-b border-gray-100 dark:border-white/[0.05] bg-gray-50 dark:bg-white/[0.05]'>
+            <TableHeader className=' text-gray-900 dark:text-gray-100 border-b border-gray-100 dark:border-white/[0.05] bg-gray-50 dark:bg-white/[0.05]'>
               <TableRow>
                 <TableCell isHeader className='min-w-[180px] px-4 py-3 text-start'>
                   User

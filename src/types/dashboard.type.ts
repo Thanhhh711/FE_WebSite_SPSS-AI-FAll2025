@@ -9,6 +9,7 @@ export interface DashboardData {
   totalProducts: DashboardMetric
   totalOrders: DashboardMetric
   totalRevenue: DashboardMetric
+  totalProfit: DashboardMetric
 }
 
 export interface MonthlyRevenue {

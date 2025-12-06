@@ -139,7 +139,7 @@ export default function ServiceManagementTable() {
             setSearchTerm(e.target.value)
             setCurrentPage(1) // Reset trang khi tìm kiếm
           }}
-          className='w-1/3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm'
+          className='w-1/3 dark:text-white rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm'
         />
 
         {/* Nút Tạo mới */}

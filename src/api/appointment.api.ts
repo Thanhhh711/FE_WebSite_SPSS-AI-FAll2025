@@ -1,4 +1,4 @@
-import { Appointment, AppointmentForm, AppointmentResponse } from '../types/appoinment.type'
+import { Appointment, AppointmentDashboard, AppointmentForm, AppointmentResponse } from '../types/appoinment.type'
 import http from '../utils/http'
 import { SuccessResponse } from '../utils/utils.type'
 
@@ -15,6 +15,16 @@ export const appointmentApi = {
   getAppoinmentScheduleId: (scheduleId: string) =>
     http.get<SuccessResponse<Appointment[]>>(`${APPOINTMENTS}/schedule/${scheduleId}`),
 
+  getAppoinmentByStaticsDateRange: (startDate: string, endDate: string, BeatyAdvisorId?: string) => {
+    let url = `${APPOINTMENTS}/statistics/date-range?startDate=${startDate}&endDate=${endDate}`
+
+    if (BeatyAdvisorId) {
+      url += `&staffId=${BeatyAdvisorId}`
+    }
+
+    return http.get<SuccessResponse<AppointmentDashboard>>(url)
+  },
+
   createAppoinments: (body: AppointmentForm) => http.post<AppointmentResponse>(`${APPOINTMENTS}`, body),
 
   updateAppoinments: (apppoimentId: string, appoinmentForm: AppointmentForm) =>
@@ -24,14 +34,4 @@ export const appointmentApi = {
 
   updateStatusAppoiment: (apppoimentId: string, status: number) =>
     http.put<AppointmentResponse>(`${APPOINTMENTS}/${apppoimentId}/status/${status}`)
-  //   createUser: (body: UserForm) => http.post<PagingData<User>>(USERS, body),
-
-  //   getUsersById: (userId: string) => http.get<UserByIdResponse>(`${USERS}/${userId}`),
-
-  //   updateUser: (userId: string, body: UserForm) => http.put<UserByIdResponse>(`${USERS}/${userId}`, body),
-
-  //   // deleteUser: (userId: string) => http.delete(`${USERS}/${userId}`, body)
-  //   lockUser: (userId: string, banReason: string) =>
-  //     http.patch<UserByIdResponse>(`${USERS}/${userId}/lock`, { banReason }),
-  //   unLockUser: (userId: string) => http.patch<UserByIdResponse>(`${USERS}/${userId}/unlock`)
 }

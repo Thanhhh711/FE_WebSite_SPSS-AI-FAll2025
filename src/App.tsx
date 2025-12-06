@@ -19,10 +19,10 @@ import NotFound from './pages/OtherPage/NotFound'
 import ProductDetail from './pages/Product/ProductDetail'
 // import BasicTables from './pages/Tables/BasicTables'
 import { ProtectedRoute } from './components/ProtectedRoute'
-import BasicTableRegistration from './components/tables/BasicTables/BasicTableRegistration'
 
 import WorkSchedulesManagement from './components/tables/BasicTables/BasicTableSchedule'
 import ManageBlogs from './pages/Blogs/ManageBlogs'
+import AppoimentDashboard from './pages/Dashboard/AppoimentDashboard'
 import TreatmentPlanTab from './pages/Patients/PatientDetail'
 import MedicalReportList from './pages/Report/MedicalReportList'
 import BasicTablesBrand from './pages/Tables/BasicTablesBrand'
@@ -31,6 +31,7 @@ import BasicTablesCountries from './pages/Tables/BasicTablesCountries'
 import BasicTablesOrder from './pages/Tables/BasicTablesOrder'
 import BasicTablesPatients from './pages/Tables/BasicTablesPatients'
 import BasicTablesProduct from './pages/Tables/BasicTablesProduct'
+import BasicTablesRegistration from './pages/Tables/BasicTablesRegistration'
 import BasicTablesRoom from './pages/Tables/BasicTablesRoom'
 import BasicTablesService from './pages/Tables/BasicTablesService'
 import BasicTablesSkinCondition from './pages/Tables/BasicTablesSkinCondition'
@@ -69,6 +70,7 @@ export default function App() {
         <Route element={<ProtectedRoute allowedRoles={[Role.ADMIN]} userRole={userRole} />}>
           <Route element={<AppLayout />}>
             <Route index path={AppPath.HOME} element={<Home />} />
+            <Route index path={AppPath.DASHBOARD_APPOINTMENTS} element={<AppoimentDashboard />} />
             {/* Tables */}
             <Route path={AppPath.BASIC_TABLES} element={<BasicTables />} />
 
@@ -105,7 +107,7 @@ export default function App() {
             {/* <Route path={AppPath.CALENDAR} element={<Calendar />} /> */}
             <Route path={AppPath.FORM_ELEMENTS} element={<FormElements />} />
             {/* Content */}
-            <Route path={AppPath.BLANK} element={<ManageBlogs />} />
+            <Route path={AppPath.BLOGS} element={<ManageBlogs />} />
           </Route>
         </Route>
 
@@ -121,7 +123,7 @@ export default function App() {
           <Route element={<AppLayout />}>
             <Route path={AppPath.CALENDAR} element={<Calendar />} />
             <Route path={AppPath.BASIC_TABLES_SHEDULES} element={<WorkSchedulesManagement />} />
-            <Route path={AppPath.BASIC_TABLES_REGISTRATION} element={<BasicTableRegistration />} />
+            <Route path={AppPath.BASIC_TABLES_REGISTRATION} element={<BasicTablesRegistration />} />
           </Route>
         </Route>
 

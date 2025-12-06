@@ -73,3 +73,13 @@ export interface AppointmentForm {
   sessionId: string | null
   notes: string
 }
+
+export interface AppointmentDashboard {
+  totalAppointments: number
+  pendingAppointments: number
+  confirmedAppointments: number
+  completedAppointments: number
+  cancelledAppointments: number
+  totalRevenue: number
+  appointmentsByDate: Record<string, number>
+}

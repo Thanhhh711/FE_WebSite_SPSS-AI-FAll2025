@@ -137,7 +137,7 @@ export default function BasicTableBrands() {
             setSearchTerm(e.target.value)
             setCurrentPage(1)
           }}
-          className='w-1/3 min-w-[200px] rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500'
+          className='dark:text-white w-1/3 min-w-[200px] rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500'
         />
 
         {/* Create New Button */}
@@ -162,7 +162,7 @@ export default function BasicTableBrands() {
         <div className='max-w-full overflow-x-auto'>
           <Table>
             {/* Table Header */}
-            <TableHeader className='border-b border-gray-100 dark:border-white/[0.05] bg-gray-50 dark:bg-white/[0.05]'>
+            <TableHeader className='dark:text-white border-b border-gray-100 dark:border-white/[0.05] bg-gray-50 dark:bg-white/[0.05]'>
               <TableRow>
                 <TableCell isHeader className='px-5 py-3 text-start'>
                   Name
@@ -185,13 +185,13 @@ export default function BasicTableBrands() {
             <TableBody>
               {filteredAndPaginatedBrands.data.length === 0 ? (
                 <TableRow>
-                  <TableCell className='py-4 text-center text-gray-500'>
+                  <TableCell className='py-4 text-center text-gray-500 dark:text-white'>
                     {searchTerm ? 'No brands found.' : 'No brands have been registered yet.'}
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredAndPaginatedBrands.data.map((brand) => (
-                  <TableRow key={brand.id}>
+                  <TableRow key={brand.id} className='dark:text-white'>
                     <TableCell className='px-5 py-4 font-medium truncate max-w-[150px]'>{brand.name}</TableCell>
                     <TableCell className='px-4 py-3 text-start truncate max-w-[150px]'>{brand.title}</TableCell>
                     <TableCell className='px-4 py-3 text-start'>{brand.country?.countryName || 'N/A'}</TableCell>

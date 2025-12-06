@@ -453,7 +453,7 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
                     htmlFor={`status-${s.code}`}
                     className={`
           relative flex items-center justify-center p-3 rounded-lg text-sm font-medium border cursor-pointer 
-          transition duration-150 ease-in-out
+          transition duration-150 ease-in-out dark:text-white
           ${s.dotColor.replace('bg-', 'text-')}-700 
           ${s.dotColor.replace('bg-', 'bg-')}-50/50 
           ${

@@ -108,7 +108,7 @@ export default function RoomModal({ isOpen, onClose, room, onSave, isViewMode }:
       <div className='p-6'>
         {/* VIEW MODE */}
         {room && isViewMode && (
-          <div className='space-y-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
+          <div className='space-y-3 p-4 bg-gray-50 dark:bg-gray-800  dark:text-white rounded-lg'>
             <p>
               <span className='font-semibold'>Room Name:</span> {room.roomName}
             </p>

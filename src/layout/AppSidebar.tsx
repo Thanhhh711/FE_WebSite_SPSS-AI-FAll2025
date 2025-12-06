@@ -21,7 +21,10 @@ const navItems: NavItem[] = [
   {
     icon: <GridIcon />,
     name: 'Dashboard',
-    subItems: [{ name: 'Ecommerce', path: AppPath.HOME, pro: false, allowedRoles: [Role.ADMIN] }],
+    subItems: [
+      { name: 'Ecommerce', path: AppPath.HOME, pro: false, allowedRoles: [Role.ADMIN] },
+      { name: 'Appoiments', path: AppPath.DASHBOARD_APPOINTMENTS, pro: false, allowedRoles: [Role.ADMIN] }
+    ],
     allowedRoles: [Role.ADMIN]
   },
   {
@@ -136,9 +139,9 @@ const navItems: NavItem[] = [
   },
 
   {
-    name: 'Blank',
+    name: 'Blogs',
     icon: <DocsIcon />,
-    path: AppPath.BLANK,
+    path: AppPath.BLOGS,
     allowedRoles: [Role.ADMIN]
   }
 

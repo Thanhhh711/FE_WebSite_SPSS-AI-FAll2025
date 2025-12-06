@@ -98,8 +98,8 @@ const ServiceModal: React.FC<ServiceModalProps> = ({ isOpen, onClose, service, o
       <form onSubmit={handleSubmit}>
         {/* HEADER */}
         <div className='px-6 pt-10 pb-2 sm:pt-14 sm:pb-4 border-b border-gray-100 dark:border-gray-800'>
-          <h3 className='text-2xl font-bold text-gray-900 dark:text-white'>{modalTitle}</h3>
-          <p className='text-sm text-gray-500 dark:text-gray-400 mt-1'>
+          <h3 className='text-2xl font-bold text-gray-900  '>{modalTitle}</h3>
+          <p className='text-sm text-gray-500   mt-1'>
             {service ? 'Update the information of this service.' : 'Add a new service to the system.'}
           </p>
         </div>

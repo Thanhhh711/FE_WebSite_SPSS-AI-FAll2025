@@ -15,7 +15,7 @@ export default function ModalRegistration({ isOpen, onClose, title, children }: 
       onClick={onClose}
     >
       <div
-        className='bg-white dark:bg-gray-900 rounded-xl shadow-2xl max-w-lg w-full m-4 transform transition-transform duration-300 scale-100 overflow-hidden'
+        className='bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-lg w-full m-4 transform transition-transform duration-300 scale-100 overflow-hidden'
         onClick={(e) => e.stopPropagation()}
       >
         <div className='flex justify-between items-center p-6 border-b border-gray-100 dark:border-gray-800'>

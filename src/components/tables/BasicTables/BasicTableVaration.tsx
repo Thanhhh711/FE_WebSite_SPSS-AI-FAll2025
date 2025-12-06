@@ -126,7 +126,7 @@ export default function BasicTableVariations() {
 
   return (
     <>
-      <div className='flex justify-between items-center mb-5'>
+      <div className='flex justify-between items-center mb-5  '>
         {/* Search Bar */}
         <input
           type='text'
@@ -136,7 +136,7 @@ export default function BasicTableVariations() {
             setSearchTerm(e.target.value)
             setCurrentPage(1)
           }}
-          className='w-1/3 min-w-[200px] rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500'
+          className='w-1/3 dark:text-white min-w-[200px] rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500'
         />
 
         {/* Create New Button */}
@@ -159,7 +159,7 @@ export default function BasicTableVariations() {
         <div className='max-w-full overflow-x-auto'>
           <Table>
             {/* Table Header */}
-            <TableHeader className='border-b border-gray-100 dark:border-white/[0.05] bg-gray-50 dark:bg-white/[0.05]'>
+            <TableHeader className='dark:text-white border-b border-gray-100 dark:border-white/[0.05] bg-gray-50 dark:bg-white/[0.05]'>
               <TableRow>
                 <TableCell isHeader className='px-5 py-3 text-start'>
                   Variation Name
@@ -190,7 +190,7 @@ export default function BasicTableVariations() {
                   const isDisabled = isDeleting || hasOptions
 
                   return (
-                    <TableRow key={variation.id}>
+                    <TableRow key={variation.id} className='dark:text-gray-300'>
                       <TableCell className='px-5 py-4 font-medium truncate max-w-[200px]'>{variation.name}</TableCell>
                       <TableCell className='px-4 py-3 text-start truncate max-w-[150px]'>
                         {getCategoryName(variation.productCategoryId)}
@@ -217,7 +217,7 @@ export default function BasicTableVariations() {
                           {/* Delete Button */}
                           <button
                             onClick={() => handleDeleteClick(variation)}
-                            className={`text-red-500 hover:text-red-700 dark:hover:text-red-300 text-sm p-1 ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            className={`text-red-500 hover:text-red-700 dark:hover:text-red-900 text-sm p-1 ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
                             title={hasOptions ? 'Cannot delete: Variation still has options.' : 'Delete Variation'}
                             disabled={isDisabled}
                           >

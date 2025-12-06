@@ -367,11 +367,11 @@ const AppointmentCalendar: React.FC = () => {
               console.log('statusMap', statusMap)
 
               const STATUS_CLASS_MAP: Record<number, string> = {
-                [AppointmentStatusCode.Pending]: 'bg-warning-500/10 border-warning-500',
+                [AppointmentStatusCode.Pending]: 'bg-warning-500 border-warning-500',
                 [AppointmentStatusCode.Confirmed]: 'bg-success-500/10 border-success-500',
                 [AppointmentStatusCode.InProgress]: 'bg-primary-500/10 border-primary-500',
                 [AppointmentStatusCode.Completed]: 'bg-primary-500/10 border-indigo-500',
-                [AppointmentStatusCode.Cancelled]: 'bg-danger-500/10 border-danger-500',
+                [AppointmentStatusCode.Cancelled]: 'bg-danger-500 border-danger-500',
                 [AppointmentStatusCode.NoShow]: 'bg-danger-800/10 border-red-800',
                 [AppointmentStatusCode.Rescheduled]: 'bg-orange-500/10 border-orange-500'
               }
@@ -379,6 +379,8 @@ const AppointmentCalendar: React.FC = () => {
               // Loại bỏ space, special character
               // const colorKey = statusMap.calendar.replace(/\s+/g, '').toLowerCase()
               const color = STATUS_CLASS_MAP[statusCode] || 'bg-gray-500/10 border-gray-500'
+
+              console.log('color', color)
 
               return (
                 <div

@@ -1,125 +1,32 @@
 // ProductReviewsModal.tsx
 
-import React, { useState, useEffect, useCallback } from 'react'
-import { Review, ReviewReply } from '../../types/media.type'
-import type { ReplyForm } from '../../types/media.type'
+import React, { useCallback, useEffect, useState } from 'react'
 import { repliesApi, reviewsApi } from '../../api/media.api'
+import { Review } from '../../types/media.type'
 import { formatDateToDDMMYYYY } from '../../utils/validForm'
-import { Product } from '../../types/product.type'
-import { productApi } from '../../api/product.api'
+import { ReplyFormModal } from './ReplyForm'
+import { toast } from 'react-toastify'
+import { useAppContext } from '../../context/AuthContext'
+import { Role } from '../../constants/Roles'
 
 interface ProductReviewsModalProps {
   productItemId: string
+  productName: string
   onClose: () => void
 }
 
-// Internal component for the Reply Form
-interface ReplyFormProps {
-  reviewId: string
-  existingReply: ReviewReply | null // Null for Create, object for Update
-  onReplySuccess: () => void
-  onCancel: () => void
-}
-
-const ReplyForm: React.FC<ReplyFormProps> = ({ reviewId, existingReply, onReplySuccess, onCancel }) => {
-  // const {product} = use
-  const [replyContent, setReplyContent] = useState(existingReply?.replyContent || '')
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError(null)
-    if (replyContent.trim().length < 5) {
-      setError('Reply content must be at least 5 characters.')
-      return
-    }
-
-    setIsSubmitting(true)
-    const body: ReplyForm = { reviewId, replyContent }
-
-    try {
-      if (existingReply) {
-        console.log('id Reppy', existingReply.id)
-
-        await repliesApi.updateReply(existingReply.id, body)
-        alert('Reply updated successfully!')
-      } else {
-        await repliesApi.createReply(body)
-        alert('Reply created successfully!')
-      }
-      onReplySuccess()
-      onCancel() // Close the form after success
-    } catch (err) {
-      console.error('Reply submission failed:', err)
-      setError(`Failed to ${existingReply ? 'update' : 'submit'} reply.`)
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className='mt-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-md'>
-      <h5 className='font-semibold text-sm text-gray-700 dark:text-gray-200 mb-2'>
-        {existingReply ? 'Edit Reply' : 'Reply to Review'}
-      </h5>
-      <textarea
-        value={replyContent}
-        onChange={(e) => setReplyContent(e.target.value)}
-        rows={3}
-        placeholder='Write your reply here...'
-        className='w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm dark:bg-gray-600 dark:border-gray-500 dark:text-white'
-      />
-      {error && <p className='text-xs text-red-500 mt-1'>{error}</p>}
-      <div className='flex justify-end space-x-2 mt-2'>
-        <button
-          type='button'
-          onClick={onCancel}
-          className='px-3 py-1 text-sm border rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-        >
-          Cancel
-        </button>
-        <button
-          type='submit'
-          disabled={isSubmitting}
-          className={`px-3 py-1 text-sm rounded-md text-white ${
-            isSubmitting ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'
-          }`}
-        >
-          {isSubmitting ? 'Submitting...' : existingReply ? 'Update Reply' : 'Post Reply'}
-        </button>
-      </div>
-    </form>
-  )
-}
-
-const ProductReviewsModal: React.FC<ProductReviewsModalProps> = ({ productItemId, onClose }) => {
+const ProductReviewsModal: React.FC<ProductReviewsModalProps> = ({ productItemId, onClose, productName }) => {
   const [reviews, setReviews] = useState<Review[]>([])
-  const [product, setProduct] = useState<Product>()
+  const [refetchTrigger, setRefetchTrigger] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [replyingTo, setReplyingTo] = useState<string | null>(null)
-
-  const productReviews = useCallback(async () => {
-    setIsLoading(true)
-    setError(null)
-    try {
-      const responseProduct = await productApi.getProductById(productItemId)
-      setProduct(responseProduct.data.data)
-    } catch (err) {
-      console.error('Failed to fetch reviews:', err)
-      setError('Failed to load reviews for this product.')
-    } finally {
-      setIsLoading(false)
-    }
-  }, [productItemId])
+  const { profile } = useAppContext()
 
   const fetchReviews = useCallback(async () => {
     setIsLoading(true)
     setError(null)
     try {
-      const responseProduct = await productApi.getProductById(productItemId)
-      setProduct(responseProduct.data.data)
       // API CALL: GET REVIEWS BY PRODUCT ITEM ID
       const response = await reviewsApi.getReviewsByProductItemId(productItemId)
       setReviews(response.data.data)
@@ -129,20 +36,21 @@ const ProductReviewsModal: React.FC<ProductReviewsModalProps> = ({ productItemId
     } finally {
       setIsLoading(false)
     }
-  }, [productItemId])
+  }, [productItemId, refetchTrigger])
 
   useEffect(() => {
     fetchReviews()
-    productReviews()
-  }, [fetchReviews, productReviews])
+  }, [fetchReviews])
 
   // Function to handle reply deletion
   const handleDeleteReply = async (replyId: string) => {
     if (window.confirm('Are you sure you want to delete this reply?')) {
       try {
         // API CALL: DELETE REPLY
-        await repliesApi.deleteReply(replyId)
-        alert('Reply deleted successfully!')
+        const res = await repliesApi.deleteReply(replyId)
+
+        setRefetchTrigger((prev) => prev + 1)
+        toast.error(res.data.message)
         fetchReviews() // Refresh reviews list
       } catch (error) {
         console.error('Failed to delete reply:', error)
@@ -156,7 +64,7 @@ const ProductReviewsModal: React.FC<ProductReviewsModalProps> = ({ productItemId
       <div className='bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full p-6 max-h-[90vh] overflow-y-auto'>
         <div className='flex justify-between items-center border-b pb-3 mb-4'>
           <h2 className='text-2xl font-semibold text-gray-900 dark:text-white truncate'>
-            Product Reviews (Name: {product?.name})
+            Product Reviews (Name: {productName})
           </h2>
           <button
             onClick={onClose}
@@ -225,7 +133,9 @@ const ProductReviewsModal: React.FC<ProductReviewsModalProps> = ({ productItemId
               )}
 
               {/* Review Reply Section */}
+              {/* Khối chính kiểm tra xem đã có reply hay chưa */}
               {review.reply ? (
+                // --- 1. ĐÃ CÓ REPLY ---
                 <div className='mt-4 ml-8 p-3 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-md'>
                   <div className='flex items-center space-x-2'>
                     <p className='font-semibold text-indigo-700 dark:text-indigo-300'>
@@ -237,36 +147,41 @@ const ProductReviewsModal: React.FC<ProductReviewsModalProps> = ({ productItemId
                   </div>
                   <p className='text-gray-700 dark:text-gray-300 mt-1'>{review.reply.replyContent}</p>
 
-                  {/* Action Buttons for Reply (ALWAYS SHOW FOR ADMIN IF REPLY EXISTS) */}
-                  <div className='flex space-x-3 mt-2'>
-                    <button
-                      onClick={() => setReplyingTo(review.id)}
-                      className='text-xs text-indigo-600 hover:text-indigo-800 font-medium'
-                    >
-                      Edit Reply
-                    </button>
-                    <button
-                      onClick={() => handleDeleteReply(review.reply!.id)}
-                      className='text-xs text-red-600 hover:text-red-800 font-medium'
-                    >
-                      Delete Reply
-                    </button>
-                  </div>
+                  {/* Action Buttons: CHỈ HIỂN THỊ KHI LÀ ADMIN (điều kiện này đã đúng) */}
+                  {profile?.role === Role.ADMIN && (
+                    <div className='flex space-x-3 mt-2'>
+                      <button
+                        onClick={() => setReplyingTo(review.id)}
+                        className='text-xs text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium'
+                      >
+                        Edit Reply
+                      </button>
+                      <button
+                        onClick={() => handleDeleteReply(review.reply!.id)}
+                        className='text-xs text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 font-medium'
+                      >
+                        Delete Reply
+                      </button>
+                    </div>
+                  )}
                 </div>
               ) : (
-                <div className='mt-4 flex justify-end'>
-                  <button
-                    onClick={() => setReplyingTo(review.id)}
-                    className='text-sm text-indigo-600 hover:text-indigo-800 font-medium'
-                  >
-                    Reply to this Review
-                  </button>
-                </div>
+                profile?.role === Role.ADMIN && (
+                  <div className='mt-4 flex justify-end'>
+                    <button
+                      onClick={() => setReplyingTo(review.id)}
+                      // Thêm Dark Mode styles để nhất quán
+                      className='text-sm text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium'
+                    >
+                      Reply to this Review
+                    </button>
+                  </div>
+                )
               )}
-
               {/* Render the form if this review is selected for reply or edit */}
               {replyingTo === review.id && (
-                <ReplyForm
+                <ReplyFormModal
+                  setRefetchTrigger={setRefetchTrigger}
                   reviewId={review.id}
                   existingReply={review.reply}
                   onReplySuccess={fetchReviews}

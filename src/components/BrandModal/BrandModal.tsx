@@ -184,17 +184,17 @@ export default function BrandModal({ isOpen, onClose, brand, onSave, isViewMode,
   }
 
   return (
-    <div className='fixed inset-0 z-50 overflow-y-auto bg-gray-900 bg-opacity-75 flex items-center justify-center p-4'>
-      <div className='bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col'>
+    <div className=' fixed inset-0 z-50 overflow-y-auto bg-gray-900 bg-opacity-75 flex items-center justify-center p-4'>
+      <div className='bg-white dark:bg-gray-800  rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col'>
         <div className='p-6 border-b border-gray-200'>
-          <h3 className='text-xl font-bold text-gray-900'>{title}</h3>
+          <h3 className='text-xl font-bold text-gray-900 dark:text-white '>{title}</h3>
         </div>
 
         <form onSubmit={handleSubmit} className='flex-grow overflow-y-auto p-6 space-y-5'>
           {/* Name and Title */}
           <div className='grid grid-cols-2 gap-4'>
             <div>
-              <label className='mb-1.5 block text-sm font-medium text-gray-700'>Name</label>
+              <label className='mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300'>Name</label>
               <input
                 type='text'
                 name='name'
@@ -207,7 +207,7 @@ export default function BrandModal({ isOpen, onClose, brand, onSave, isViewMode,
               {renderError('name')}
             </div>
             <div>
-              <label className='mb-1.5 block text-sm font-medium text-gray-700'>Title</label>
+              <label className='mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300'>Title</label>
               <input
                 type='text'
                 name='title'
@@ -225,7 +225,7 @@ export default function BrandModal({ isOpen, onClose, brand, onSave, isViewMode,
           <div className='grid grid-cols-2 gap-4'>
             {/* Image Upload */}
             <div>
-              <label className='mb-1.5 block text-sm font-medium text-gray-700'>
+              <label className='mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300'>
                 Brand Logo (Optional when editing)
               </label>
               <input
@@ -245,7 +245,7 @@ export default function BrandModal({ isOpen, onClose, brand, onSave, isViewMode,
                     <p className='text-sm text-gray-500'>Selected: **{selectedFile.name}**</p>
                   ) : (
                     <>
-                      <p className='text-sm text-gray-500 mb-1'>Current Image:</p>
+                      <p className='text-sm text-gray-500 mb-1 dark:text-gray-300'>Current Image:</p>
                       <img
                         src={form.imageUrl}
                         alt='Current Brand Logo'
@@ -259,7 +259,7 @@ export default function BrandModal({ isOpen, onClose, brand, onSave, isViewMode,
 
             {/* Country */}
             <div>
-              <label className='mb-1.5 block text-sm font-medium text-gray-700'>Country</label>
+              <label className='mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300'>Country</label>
               <select
                 name='countryId'
                 value={form.countryId}
@@ -283,7 +283,7 @@ export default function BrandModal({ isOpen, onClose, brand, onSave, isViewMode,
 
           {/* Description */}
           <div>
-            <label className='mb-1.5 block text-sm font-medium text-gray-700'>Description</label>
+            <label className='mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300'>Description</label>
             <textarea
               name='description'
               rows={5}

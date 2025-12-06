@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { DashboardMetric } from '../../types/dashboard.type'
+import { formatVND } from '../../utils/validForm'
 
 interface MetricCardProps {
   title: string
@@ -34,16 +35,19 @@ const MetricCard: React.FC<MetricCardProps> = ({ title, metric, icon, isCurrency
 
       {/* Current Value */}
       <div className='mt-1'>
-        <p className='text-3xl font-bold text-gray-900 dark:text-white'>{formatValue(currentValue)}</p>
+        <p className='text-3xl font-bold text-gray-900 dark:text-white'>{formatVND(currentValue)}</p>
       </div>
 
       {/* Comparison and Trend */}
       <div className='mt-3 flex items-center justify-between'>
-        <span className={`flex items-center text-sm font-semibold ${trendColor}`}>
-          <span className='mr-1'>{trendIcon}</span>
+        <span className={`flex items-center gap-1 text-sm font-semibold ${trendColor}`}>
+          {trendIcon}
           {Math.abs(percentageChange).toFixed(2)}%
         </span>
-        <p className='text-sm text-gray-500 dark:text-gray-400'>vs. {formatValue(previousValue)} last period</p>
+
+        <p className='text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap'>
+          vs. {formatValue(previousValue)} last period
+        </p>
       </div>
     </div>
   )

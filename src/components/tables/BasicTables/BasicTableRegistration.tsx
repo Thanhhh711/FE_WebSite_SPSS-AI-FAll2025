@@ -330,13 +330,13 @@ export default function BasicTableRegistration() {
               setSearchTerm(e.target.value)
               setCurrentPage(1)
             }}
-            className='w-1/3 min-w-[200px] rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500'
+            className='dark:text-white w-1/3 min-w-[200px] rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500'
           />
 
           {/* SELECT CHỌN BEAUTY ADVISOR */}
           {!isBeautyAdvisor && (
             <select
-              className='w-[200px] rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none'
+              className='w-[200px] dark:text-white rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none'
               value={selectedBAId || 'all'}
               onChange={(e) => {
                 setSelectedBAId(e.target.value)
@@ -364,7 +364,7 @@ export default function BasicTableRegistration() {
               setFilterStartDate(e.target.value)
               setCurrentPage(1)
             }}
-            className='w-[150px] rounded-lg border border-gray-300 dark:border-gray-700 
+            className='dark:text-white  w-[150px] rounded-lg border border-gray-300 dark:border-gray-700 
       bg-white dark:bg-gray-900 px-4 py-2.5 text-sm 
       focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
           />
@@ -380,7 +380,7 @@ export default function BasicTableRegistration() {
               setFilterEndDate(e.target.value)
               setCurrentPage(1)
             }}
-            className='w-[150px] rounded-lg border border-gray-300 dark:border-gray-700 
+            className='dark:text-white w-[150px] rounded-lg border border-gray-300 dark:border-gray-700 
       bg-white dark:bg-gray-900 px-4 py-2.5 text-sm 
       focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
           />

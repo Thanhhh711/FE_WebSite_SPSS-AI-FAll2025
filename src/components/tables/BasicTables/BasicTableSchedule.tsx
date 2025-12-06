@@ -239,7 +239,7 @@ export default function WorkSchedulesManagement() {
 
   return (
     <>
-      <h2 className='text-2xl font-bold mb-5'>Work Schedule Management</h2>
+      <h2 className='text-2xl font-bold mb-5 dark:text-white'>Work Schedule Management</h2>
 
       <div className='flex justify-between items-center mb-5'>
         <div className='flex items-center gap-3'>
@@ -252,13 +252,13 @@ export default function WorkSchedulesManagement() {
               setSearchTerm(e.target.value)
               setCurrentPage(1)
             }}
-            className='w-1/3 min-w-[200px] rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
+            className=' dark:text-gray-300 w-1/3 min-w-[200px] rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
           />
 
           {/* SELECT CHỌN BEAUTY ADVISOR */}
           {CURRENT_USER_ROLE !== Role.BEAUTY_ADVISOR && (
             <select
-              className='w-[200px] rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none'
+              className='w-[200px] dark:text-gray-300 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none'
               value={selectedBAId || 'all'}
               onChange={(e) => {
                 setSelectedBAId(e.target.value)
@@ -283,12 +283,12 @@ export default function WorkSchedulesManagement() {
               setFilterDate(e.target.value)
               setCurrentPage(1)
             }}
-            className='w-[150px] rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
+            className='dark:text-gray-300 w-[150px] rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
           />
 
           {/* Lọc Trạng thái */}
           <select
-            className='w-[150px] rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none'
+            className='dark:text-gray-300 w-[150px] rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none'
             value={filterStatus === undefined ? '' : filterStatus.toString()}
             onChange={(e) => {
               const value = e.target.value
@@ -337,7 +337,7 @@ export default function WorkSchedulesManagement() {
         <div className='max-w-full overflow-x-auto'>
           <Table>
             {/* Table Header */}
-            <TableHeader className='border-b border-gray-100 dark:border-white/[0.05] bg-gray-50 dark:bg-white/[0.05]'>
+            <TableHeader className='dark:text-gray-300 border-b border-gray-100 dark:border-white/[0.05] bg-gray-50 dark:bg-white/[0.05]'>
               <TableRow>
                 <TableCell isHeader className='px-5 py-3 text-start'>
                   Staff Email
@@ -371,7 +371,7 @@ export default function WorkSchedulesManagement() {
                 </TableRow>
               ) : (
                 filteredAndPaginatedSchedules.data.map((schedule) => (
-                  <TableRow key={schedule.id}>
+                  <TableRow key={schedule.id} className='dark:text-white'>
                     <TableCell className='px-5 py-4 font-medium truncate max-w-[150px]'>
                       <StaffEmailLookup staffId={schedule.staffId} />
                     </TableCell>

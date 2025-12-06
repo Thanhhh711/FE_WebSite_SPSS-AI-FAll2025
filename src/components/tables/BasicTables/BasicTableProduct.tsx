@@ -19,7 +19,7 @@ const ITEMS_PER_PAGE = 10
 // --- COMPONENT CHÍNH ---
 
 interface BasicTableProductProps {
-  onViewReviews: (productItemId: string) => void
+  onViewReviews: (productItemId: string, productName: string) => void
 }
 
 export default function BasicTableProduct({ onViewReviews }: BasicTableProductProps) {
@@ -271,7 +271,7 @@ export default function BasicTableProduct({ onViewReviews }: BasicTableProductPr
         {/* Table */}
         <div className='overflow-x-auto'>
           <Table>
-            <TableHeader className='border-b border-gray-100 dark:border-white/[0.05] bg-gray-50 dark:bg-white/[0.05]'>
+            <TableHeader className='border-b border-gray-100 dark:border-white/[0.05] bg-gray-50 dark:bg-white/[0.05] dark:text-white'>
               <TableRow>
                 <TableCell isHeader className='min-w-[80px] px-4 py-3 text-start'>
                   Image
@@ -338,7 +338,7 @@ export default function BasicTableProduct({ onViewReviews }: BasicTableProductPr
                         </button>
 
                         <button
-                          onClick={() => onViewReviews(product.id)}
+                          onClick={() => onViewReviews(product.id, product.name)}
                           className='text-blue-600 hover:text-blue-900 mr-2 border border-blue-600 px-3 py-1 rounded-md text-xs transition duration-150'
                         >
                           View Reviews

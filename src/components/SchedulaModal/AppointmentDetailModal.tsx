@@ -115,7 +115,7 @@ const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
           {!isLoading && appointments.length > 0 && (
             <div className='overflow-x-auto'>
               <table className='min-w-full divide-y divide-gray-200 dark:divide-gray-700'>
-                <thead className='bg-gray-50 dark:bg-gray-700/50 sticky top-0'>
+                <thead className='bg-gray-50 dark:bg-gray-700/50 sticky top-0 dark:text-gray-300'>
                   <tr>
                     <th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                       Time
@@ -137,7 +137,7 @@ const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                     </th>
                   </tr>
                 </thead>
-                <tbody className='bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700'>
+                <tbody className='bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700 dark:text-white'>
                   {appointments.map((appt) => (
                     <tr key={appt.id} className='hover:bg-gray-50 dark:hover:bg-gray-700/70 transition-colors my-5'>
                       {/* Time Slot (Start Time + End Time) */}

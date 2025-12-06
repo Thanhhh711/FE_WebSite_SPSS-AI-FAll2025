@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useMemo, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 
 import { toast } from 'react-toastify'
 import { skinConditionApi } from '../../../api/skin.api'
@@ -115,8 +115,8 @@ export default function BasicTableSkinCondition() {
   if (isError) return <div className='p-6 text-center text-lg text-red-500'>Failed to load skin conditions.</div>
 
   return (
-    <>
-      <div className='flex justify-between items-center mb-5'>
+    <Fragment>
+      <div className=' flex justify-between items-center mb-5'>
         <input
           type='text'
           placeholder='Search by Skin Condition Name...'
@@ -125,7 +125,7 @@ export default function BasicTableSkinCondition() {
             setSearchTerm(e.target.value)
             setCurrentPage(1)
           }}
-          className='w-1/3 min-w-[200px] rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500'
+          className='dark:text-white w-1/3 min-w-[200px] rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500'
         />
 
         <button
@@ -145,7 +145,7 @@ export default function BasicTableSkinCondition() {
 
         <div className='max-w-full overflow-x-auto'>
           <Table>
-            <TableHeader className='border-b border-gray-100 dark:border-white/[0.05] bg-gray-50 dark:bg-white/[0.05]'>
+            <TableHeader className='border-b dark:text-white border-gray-100 dark:border-white/[0.05] bg-gray-50 dark:bg-white/[0.05]'>
               <TableRow>
                 {/* Cột 1: Condition Name - Rộng nhất (25%) */}
                 <TableCell isHeader className='px-5 py-3 text-start w-[25%]'>
@@ -189,7 +189,7 @@ export default function BasicTableSkinCondition() {
                 </TableRow>
               ) : (
                 filteredAndPaginatedConditions.data.map((condition) => (
-                  <TableRow key={condition.id}>
+                  <TableRow key={condition.id} className='dark:text-gray-300'>
                     <TableCell className='px-5 py-4 font-medium max-w-[200px] truncate'>{condition.name}</TableCell>
 
                     <TableCell className='px-4 py-3 text-center'>{condition.severityLevel}</TableCell>
@@ -198,10 +198,11 @@ export default function BasicTableSkinCondition() {
                       {formatDateToDDMMYYYY(condition.createdTime)}
                     </TableCell>
                     <TableCell className='px-4 py-3 text-center'>
-                      {formatDateToDDMMYYYY(condition.deletedTime || undefined)}
+                      {condition.deletedTime ? formatDateToDDMMYYYY(condition.deletedTime) : 'None'}
                     </TableCell>
+
                     <TableCell className='px-4 py-3 text-center'>
-                      {formatDateToDDMMYYYY(condition.deletedTime || undefined)}
+                      {condition.deletedTime ? formatDateToDDMMYYYY(condition.deletedTime) : 'None'}
                     </TableCell>
 
                     <TableCell className='px-5 py-3 text-end'>
@@ -264,6 +265,6 @@ export default function BasicTableSkinCondition() {
         title='Confirm Condition Deletion'
         message={`Are you sure you want to delete the skin condition "${selectedCondition?.name}"? This action cannot be undone.`}
       />
-    </>
+    </Fragment>
   )
 }

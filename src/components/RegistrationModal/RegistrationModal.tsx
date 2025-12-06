@@ -238,26 +238,26 @@ export default function RegistrationModal({
         {registration && isViewMode && (
           <div className='space-y-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
             <p className='text-sm text-gray-700 dark:text-gray-300'>
-              <span className='font-semibold'>Staff Email:</span>
+              <span className='font-semibold'>Staff Email: </span>
               {registration.staffId ? userData || registration.staffId : 'N/A'}
             </p>
             <p className='text-sm text-gray-700 dark:text-gray-300'>
-              <span className='font-semibold'>Template Name:</span> {registration.template.name}
+              <span className='font-semibold'>Template Name: </span> {registration.template.name}
             </p>
             <p className='text-sm text-gray-700 dark:text-gray-300'>
-              <span className='font-semibold'>Slot Configuration:</span> {registration.slot.slotMinutes} minutes /
+              <span className='font-semibold'>Slot Configuration: </span> {registration.slot.slotMinutes} minutes /
               Break: {registration.slot.breakMinutes} minutes
             </p>
             <p className='text-sm text-gray-700 dark:text-gray-300'>
-              <span className='font-semibold'>Time Range:</span> {formatDateToDDMMYYYY(registration.startDate)} -
+              <span className='font-semibold'>Time Range: </span> {formatDateToDDMMYYYY(registration.startDate)} -
               {formatDateToDDMMYYYY(registration.endDate)} ({registration.startTime} - {registration.endTime})
             </p>
             <p className='text-sm text-gray-700 dark:text-gray-300'>
-              <span className='font-semibold'>Weekdays:</span>
+              <span className='font-semibold'>Weekdays: </span>
               {registration.registrationWeekdays.map((w) => WEEKDAY_NAMES[w.weekday]).join(', ')}
             </p>
             <p className='text-sm text-gray-700 dark:text-gray-300'>
-              <span className='font-semibold'>Notes:</span> {registration.notes || 'N/A'}
+              <span className='font-semibold'>Notes: </span> {registration.notes || 'N/A'}
             </p>
           </div>
         )}
