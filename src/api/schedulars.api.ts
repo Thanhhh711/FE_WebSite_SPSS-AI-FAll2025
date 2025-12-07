@@ -1,5 +1,5 @@
 import { Schedule, ScheduleWork } from '../types/appoinment.type'
-import { FormUpdateSchedular, ScheduleRequest } from '../types/schedula.type'
+import { BookingPayload, FormUpdateSchedular, ScheduleRequest } from '../types/schedula.type'
 import http from '../utils/http'
 import { SuccessResponse } from '../utils/utils.type'
 
@@ -25,6 +25,8 @@ export const scheduleApi = {
     ),
 
   createSchedule: (body: ScheduleRequest) => http.post<SuccessResponse<ScheduleWork>>(`${WORK_SCHEDULES}`, body),
+
+  assginRoom: (body: BookingPayload) => http.post<SuccessResponse<ScheduleWork>>(`${WORK_SCHEDULES}/assign-room`, body),
 
   createGenerateSchedule: (registrationId: string) =>
     http.post<SuccessResponse<ScheduleWork>>(`${WORK_SCHEDULES}/generate/registration/${registrationId}`),

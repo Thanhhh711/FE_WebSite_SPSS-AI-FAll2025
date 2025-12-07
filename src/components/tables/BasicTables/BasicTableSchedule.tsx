@@ -121,12 +121,14 @@ export default function WorkSchedulesManagement() {
   })
   const allSchedules = schedulesResponse?.data.data || []
 
-  // CẬP NHẬT LOGIC LỌC
   const filteredAndPaginatedSchedules = useMemo(() => {
     const schedules = allSchedules as ScheduleWork[]
 
     const lowercasedSearchTerm = searchTerm.toLowerCase()
-    let filtered = schedules.filter((schedule) => schedule.room.roomName.toLowerCase().includes(lowercasedSearchTerm))
+
+    let filtered = schedules.filter((schedule) =>
+      (schedule.room?.roomName ?? '').toLowerCase().includes(lowercasedSearchTerm)
+    )
 
     if (filterStatus !== undefined) {
       filtered = filtered.filter((schedule) => schedule.status === filterStatus)
@@ -144,7 +146,7 @@ export default function WorkSchedulesManagement() {
       totalItems: filtered.length,
       data: filtered.slice(startIndex, endIndex)
     }
-  }, [allSchedules, searchTerm, filterStatus, filterDate, currentPage]) // THÊM filterDate vào dependency
+  }, [allSchedules, searchTerm, filterStatus, filterDate, currentPage])
 
   const totalPages = Math.ceil(filteredAndPaginatedSchedules.totalItems / ITEMS_PER_PAGE)
 
@@ -382,13 +384,12 @@ export default function WorkSchedulesManagement() {
                     <TableCell className='px-4 py-3 text-start'>
                       {schedule.startTime} - {schedule.endTime}
                     </TableCell>
-                    <TableCell className='px-4 py-3 text-start'>{schedule.room.roomName}</TableCell>
+                    <TableCell className='px-4 py-3 text-start'>{schedule.room?.roomName || 'Not room'}</TableCell>
                     <TableCell className='px-4 py-3 text-start'>{getStatusTag(schedule)}</TableCell>
                     <TableCell className='px-4 py-3 text-start truncate max-w-[100px]'>{schedule.notes}</TableCell>
 
                     <TableCell className='px-4 py-3 text-end'>
                       <div className='flex justify-end gap-2'>
-                        {/* 🔑 Nút gọi Modal AppointmentDetailModal */}
                         <button
                           onClick={() => handleViewAppointmentsClick(schedule)}
                           className='text-sky-500 hover:text-sky-700 text-sm p-1'

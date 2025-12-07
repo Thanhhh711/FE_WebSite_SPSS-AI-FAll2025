@@ -10,6 +10,9 @@ import ConfirmModal from '../../CalendarModelDetail/ConfirmModal'
 import Pagination from '../../pagination/Pagination'
 import RoomModal from '../../RoomModel/RoomModal'
 import { Table, TableBody, TableCell, TableHeader, TableRow } from '../../ui/table'
+import AssignRoomModal from '../../RoomModel/AssignRoomModal'
+import { BookingPayload } from '../../../types/schedula.type'
+import { scheduleApi } from '../../../api/schedulars.api'
 
 const ITEMS_PER_PAGE = 10
 
@@ -23,7 +26,7 @@ export default function BasicTableRoom() {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null)
   const [isViewMode, setIsViewMode] = useState(false)
-
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false)
   const {
     data: roomsResponse,
     isLoading,
@@ -32,6 +35,21 @@ export default function BasicTableRoom() {
     queryKey: ['rooms'],
     queryFn: roomApi.getRooms,
     staleTime: 1000 * 60 * 5
+  })
+
+  const { mutate: assignRoomMutation } = useMutation({
+    mutationFn: (data: BookingPayload) => scheduleApi.assginRoom(data), // Sử dụng API assginRoom bạn cung cấp
+    onSuccess: (res) => {
+      toast.success(res.data.message || 'Room assigned successfully!')
+      // Tùy chọn: invalidateQueries nếu việc gán phòng ảnh hưởng đến dữ liệu khác
+      // queryClient.invalidateQueries({ queryKey: ['someOtherQueryKey'] })
+
+      setIsAssignModalOpen(false) // Đóng modal
+    },
+    onError: (error: any) => {
+      // Giả định error.data?.res là thông báo lỗi từ server
+      toast.error(error.data?.res || 'Error assigning room.')
+    }
   })
 
   const allRooms = roomsResponse?.data.data || []
@@ -98,6 +116,13 @@ export default function BasicTableRoom() {
     setIsRoomModalOpen(true)
   }
 
+  const handleAssginRoom = () => {
+    setSelectedRoom(null) // Không cần thiết lập selectedRoom nếu modal gán phòng không phụ thuộc vào phòng đã chọn trước đó
+    setIsViewMode(false) // Giữ nguyên
+    // setIsRoomModalOpen(true) // Xóa dòng này
+    setIsAssignModalOpen(true) // <-- Dùng trạng thái mới
+  }
+
   const handleDeleteClick = (room: Room) => {
     setSelectedRoom(room)
     setIsConfirmOpen(true)
@@ -137,6 +162,15 @@ export default function BasicTableRoom() {
             className='btn btn-primary flex justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white shadow-brand-xs hover:bg-brand-600 transition-colors'
           >
             Add New Room
+          </button>
+        )}
+
+        {profile?.role === Role.SCHEDULE_MANAGER && (
+          <button
+            onClick={handleAssginRoom}
+            className='btn btn-primary flex justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white shadow-brand-xs hover:bg-brand-600 transition-colors'
+          >
+            Assign Room
           </button>
         )}
       </div>
@@ -251,6 +285,14 @@ export default function BasicTableRoom() {
           room={selectedRoom}
           onSave={saveRoom}
           isViewMode={isViewMode}
+        />
+      )}
+
+      {isAssignModalOpen && (
+        <AssignRoomModal
+          isOpen={isAssignModalOpen}
+          onClose={() => setIsAssignModalOpen(false)}
+          onAssign={assignRoomMutation} // Truyền mutation để xử lý việc nộp form
         />
       )}
       {/* --- MODAL XÁC NHẬN XÓA --- */}

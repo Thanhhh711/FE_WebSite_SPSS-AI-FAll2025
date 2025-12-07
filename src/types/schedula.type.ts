@@ -19,3 +19,10 @@ export interface ScheduleRequest {
   roomId: string
   notes: string
 }
+
+export interface BookingPayload {
+  roomId: string
+  staffId: string
+  startDate: string
+  endDate: string
+}
