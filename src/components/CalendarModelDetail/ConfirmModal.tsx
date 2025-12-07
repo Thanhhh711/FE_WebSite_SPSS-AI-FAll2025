@@ -8,9 +8,10 @@ interface ConfirmModalProps {
   onConfirm: () => void
   title: string
   message: string
+  is?: boolean
 }
 
-const ConfirmModal: React.FC<ConfirmModalProps> = ({ isOpen, onClose, onConfirm, title, message }) => {
+const ConfirmModal: React.FC<ConfirmModalProps> = ({ isOpen, onClose, onConfirm, title, message, is }) => {
   return (
     <Modal isOpen={isOpen} onClose={onClose} className='max-w-md p-0'>
       <div className='p-6'>
@@ -27,13 +28,23 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({ isOpen, onClose, onConfirm,
           Cancel
         </button>
 
-        <button
-          onClick={onConfirm}
-          type='button'
-          className='flex justify-center rounded-lg bg-red-500 px-4 py-2.5 text-sm font-medium text-white shadow-red-xs hover:bg-red-600'
-        >
-          Delete
-        </button>
+        {is ? (
+          <button
+            onClick={onConfirm}
+            type='button'
+            className='flex justify-center rounded-lg bg-success-500 px-4 py-2.5 text-sm font-medium text-white shadow-red-xs hover:bg-red-600'
+          >
+            Confirm
+          </button>
+        ) : (
+          <button
+            onClick={onConfirm}
+            type='button'
+            className='flex justify-center rounded-lg bg-red-500 px-4 py-2.5 text-sm font-medium text-white shadow-red-xs hover:bg-red-600'
+          >
+            Delete
+          </button>
+        )}
       </div>
     </Modal>
   )

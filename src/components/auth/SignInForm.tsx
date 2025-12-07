@@ -12,6 +12,7 @@ import Label from '../form/Label'
 import Checkbox from '../form/input/Checkbox'
 import Input from '../form/input/InputField'
 import Button from '../ui/button/Button'
+import logo from '/public/images/logo/SPSS.png'
 
 interface FormData {
   usernameOrEmail: string
@@ -85,7 +86,7 @@ export default function SignInForm() {
         <div className='mb-8 text-center'>
           <div className='inline-block mb-4 p-3 rounded-full bg-pink-100 dark:bg-pink-900/50'>
             <span className='text-3xl font-light text-pink-600 dark:text-pink-400'>
-              <img width={40} height={40} src='/public/images/logo/SPSS.png' alt='Logo' />
+              <img width={40} height={40} src={logo} alt='Logo' />
             </span>
           </div>
 

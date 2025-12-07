@@ -441,6 +441,7 @@ export default function BasicTableUsers() {
       />
       {/* --- MODAL XÁC NHẬN UNBAN (ConfirmModal) --- */}
       <ConfirmModal
+        is={true}
         isOpen={isConfirmOpen}
         onClose={() => setIsConfirmOpen(false)}
         onConfirm={handleConfirmAction}
