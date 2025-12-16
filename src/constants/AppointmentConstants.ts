@@ -4,7 +4,7 @@ export const AppointmentStatusCode = {
   InProgress: 2,
   Completed: 3,
   Cancelled: 4,
-  NoShow: 5,
+  Absent: 5,
   Rescheduled: 6
 } as const
 
@@ -34,8 +34,8 @@ export const APPOINTMENT_STATUS_MAP = {
     calendar: 'Danger', // Red
     dotColor: 'bg-red-500'
   },
-  [AppointmentStatusCode.NoShow]: {
-    name: 'No Show',
+  [AppointmentStatusCode.Absent]: {
+    name: 'Absent',
     calendar: 'Danger',
     dotColor: 'bg-red-800'
   },

@@ -767,3 +767,168 @@ span.flatpickr-weekday,
 .simplebar-scrollbar.simplebar-visible:before {
   @apply opacity-100;
 }
+
+/* Ghi đè CSS mặc định của FullCalendar cho chế độ xem Tuần/Ngày */
+/* Xóa viền xanh và bóng mặc định */
+.fc .fc-timegrid-event {
+  /* Quan trọng nhất: Xóa border mặc định của FullCalendar */
+  border: none !important;
+
+  /* Xóa bóng mặc định nếu có */
+  box-shadow: none !important;
+
+  /* Đảm bảo bo góc nhất quán với rounded-xl trong JSX của bạn */
+  border-radius: 12px !important;
+
+  /* Đảm bảo các thuộc tính chuyển đổi hoạt động mượt mà */
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
+}
+
+/* Quy tắc chung cho tất cả các sự kiện lịch */
+a.fc-daygrid-event {
+  /* Bo góc 10px (rõ ràng hơn rounded-md) */
+  border-radius: 10px !important;
+
+  /* Thêm một border nhẹ, trong suốt (Translucent border) để tạo hiệu ứng 3D tinh tế */
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+
+  /* Thiết lập chuyển đổi mượt mà cho hiệu ứng hover */
+  transition:
+    background-color 0.2s,
+    filter 0.2s;
+
+  /* Đảm bảo chữ trắng trên nền đậm (Chỉ áp dụng khi sử dụng CSS này) */
+  color: #fff !important;
+}
+
+fc .fc-timegrid-event {
+  /* Quan trọng nhất: Xóa border mặc định của FullCalendar */
+  border: none !important;
+
+  /* Xóa bóng mặc định nếu có */
+  box-shadow: none !important;
+
+  /* Đảm bảo bo góc nhất quán với rounded-xl trong JSX của bạn */
+  border-radius: 12px !important;
+
+  /* Đảm bảo các thuộc tính chuyển đổi hoạt động mượt mà */
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
+}
+
+/* Hiệu ứng Hover: Sáng hơn một chút */
+/* Quy tắc chung cho tất cả các sự kiện lịch */
+a.fc-daygrid-event {
+  /* Giữ nguyên bo góc và border nhẹ, mờ */
+  border-radius: 10px !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  transition:
+    background-color 0.2s,
+    filter 0.2s;
+
+  /* Đảm bảo chữ trắng trên nền đậm */
+  color: #fff !important;
+}
+
+/* Quy tắc chung cho tất cả các sự kiện lịch */
+a.fc-daygrid-event {
+  /* Bo góc 10px */
+  border-radius: 10px !important;
+
+  /* Border mỏng hơn, nhẹ hơn */
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+
+  transition:
+    background-color 0.2s,
+    filter 0.2s;
+
+  /* LOẠI BỎ CHỮ TRẮNG - ĐỂ màu chữ được định nghĩa theo màu nền/viền của từng trạng thái */
+  /* color: #fff !important; */
+}
+
+/* 1. QUY TẮC CHUNG - Đảm bảo màu chữ mặc định là đen cho các nền nhạt */
+a.fc-daygrid-event {
+  /* Bo góc 10px */
+  border-radius: 10px !important;
+
+  /* Border mỏng, nhẹ */
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+
+  transition:
+    background-color 0.2s,
+    filter 0.2s;
+
+  /* Đặt màu chữ chung là xám đậm, sẽ bị ghi đè bởi quy tắc trạng thái */
+  color: #1f2937 !important; /* Màu xám đậm (Gray-800) */
+}
+
+/* Hiệu ứng Hover: Dùng shadow và transform để nổi bật */
+a.fc-daygrid-event:hover {
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -2px rgba(0, 0, 0, 0.06); /* shadow-md */
+  transform: translateY(-1px);
+}
+
+/* ---------------------------------------------------- */
+/* 2. ĐỊNH NGHĨA MÀU SẮC TRẠNG THÁI (Đã tăng độ đậm chữ) */
+/* ---------------------------------------------------- */
+
+/* 0: Pending (Amber - Nền 100, Chữ 800) */
+a.fc-daygrid-event.status-pending {
+  background-color: #fef3c7 !important; /* Amber-100 */
+  border-color: #d97706 !important; /* Amber-600 */
+  color: #92400e !important; /* CHỮ: Amber-800 */
+}
+
+/* 1: Confirmed (Emerald - Nền 100, Chữ 800) */
+a.fc-daygrid-event.status-confirmed {
+  background-color: #d1fae5 !important; /* Emerald-100 */
+  border-color: #059669 !important; /* Emerald-600 */
+  color: #065f46 !important; /* CHỮ: Emerald-800 */
+}
+
+/* 2: InProgress (Blue - Nền 100, Chữ 800) */
+a.fc-daygrid-event.status-inprogress {
+  background-color: #dbeafe !important; /* Blue-100 */
+  border-color: #2563eb !important; /* Blue-600 */
+  color: #1e40af !important; /* CHỮ: Blue-800 */
+}
+
+/* 3: Completed (Violet - Nền 100, Chữ 800) */
+a.fc-daygrid-event.status-completed {
+  background-color: #ede9fe !important; /* Violet-100 */
+  border-color: #7c3aed !important; /* Violet-600 */
+  color: #5b21b6 !important; /* CHỮ: Violet-800 */
+}
+
+/* 4: Cancelled (Red - Ngoại lệ: Nền đậm, Chữ trắng) */
+a.fc-daygrid-event.status-cancelled {
+  background-color: #b91c1c !important; /* Red-700 (Nền đậm) */
+  border-color: #b91c1c !important;
+  color: #fff !important; /* Chữ trắng */
+}
+
+/* 5: Absent (Gray - Nền 100, Chữ 800) */
+a.fc-daygrid-event.status-absent {
+  background-color: #f3f4f6 !important; /* Gray-100 */
+  border-color: #4b5563 !important; /* Gray-600 */
+  color: #1f2937 !important; /* CHỮ: Gray-800 */
+}
+
+/* 6: Rescheduled (Orange - Nền 100, Chữ 800) */
+a.fc-daygrid-event.status-rescheduled {
+  background-color: #ffedd5 !important; /* Orange-100 */
+  border-color: #ea580c !important; /* Orange-600 */
+  color: #9a3412 !important; /* CHỮ: Orange-800 */
+}
+
+/* Default (Gray) */
+a.fc-daygrid-event.status-default {
+  background-color: #f3f4f6 !important; /* Gray-100 */
+  border-color: #9ca3af !important; /* Gray-400 */
+  color: #4b5563 !important; /* Gray-600 */
+}

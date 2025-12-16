@@ -13,7 +13,7 @@ import { formatDateToDDMMYYYY } from '../../../utils/validForm'
 import ConfirmModal from '../../CalendarModelDetail/ConfirmModal'
 import RegistrationModal, { WEEKDAY_NAMES } from '../../RegistrationModal/RegistrationModal'
 import StaffEmailLookup from '../../../utils/StaffEmailLookup'
-import userApi from '../../../api/user.api' // Đảm bảo import userApi
+import userApi from '../../../api/user.api'
 
 interface Template {
   id: string
@@ -24,14 +24,16 @@ interface Slot {
   slotMinutes: number
   breakMinutes: number
 }
+
+// SỬA LỖI: Bỏ trường 'id' khỏi RegistrationWeekday để tương thích với type từ API
 interface RegistrationWeekday {
-  id: string
+  // id: string // Đã loại bỏ để giải quyết lỗi Type 'ScheduleRegistration[]' is not assignable...
   weekday: number
 }
 
 interface TableHeaderProps {
   children: ReactNode
-  className?: string // optional, nếu muốn
+  className?: string
 }
 
 export interface ScheduleRegistrationComponent {
@@ -46,6 +48,7 @@ export interface ScheduleRegistrationComponent {
   slotId: string
   template: Template
   slot: Slot
+  // Giữ lại kiểu mảng này sau khi đã sửa định nghĩa RegistrationWeekday ở trên
   registrationWeekdays: RegistrationWeekday[]
 }
 
@@ -60,11 +63,10 @@ interface SchedulePayload {
   weekdays: number[]
 }
 
-// Định nghĩa kiểu dữ liệu cho Beauty Advisor (giả định)
+// Định nghĩa kiểu dữ liệu cho Beauty Advisor
 interface BeautyAdvisor {
   userId: string
   emailAddress: string
-  // ... các trường khác
 }
 
 // HÀM TIỆN ÍCH: Trích xuất phần ngày (YYYY-MM-DD) từ chuỗi ISO Date
@@ -77,7 +79,7 @@ const TableHeader: React.FC<TableHeaderProps> = ({ children, className }) => (
   <thead className={className ?? 'text-left'}>{children}</thead>
 )
 const TableBody: React.FC<TableHeaderProps> = ({ children, className }) => (
-  <tbody className={className ?? 'text-left'}>{children}</tbody> // FIX: Sửa lại thành tbody
+  <tbody className={className ?? 'text-left'}>{children}</tbody>
 )
 const TableRow = ({ children }: { children: React.ReactNode }) => (
   <tr className='hover:bg-gray-50 dark:hover:bg-white/[0.05] transition-colors duration-150 border-b border-gray-100 dark:border-white/[0.05] last:border-b-0'>
@@ -130,7 +132,8 @@ const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages, onPage
   )
 }
 
-type RegistrationForm = SchedulePayload & { id?: string }
+// Cập nhật: Thêm staffId vào RegistrationForm
+type RegistrationForm = SchedulePayload & { id?: string; staffId: string }
 
 export default function BasicTableRegistration() {
   const queryClient = useQueryClient()
@@ -140,8 +143,8 @@ export default function BasicTableRegistration() {
   // STATE LỌC MỚI
   const [beautyAdvisors, setBeautyAdvisors] = useState<BeautyAdvisor[]>([])
   const [selectedBAId, setSelectedBAId] = useState<string | undefined>(undefined)
-  const [filterStartDate, setFilterStartDate] = useState<string>('') // YYYY-MM-DD
-  const [filterEndDate, setFilterEndDate] = useState<string>('') // YYYY-MM-DD
+  const [filterStartDate, setFilterStartDate] = useState<string>('')
+  const [filterEndDate, setFilterEndDate] = useState<string>('')
 
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
@@ -177,8 +180,6 @@ export default function BasicTableRegistration() {
     queryKey: ['slots'],
     queryFn: async () => {
       const res = await slotApi.getSlots()
-      console.log('slot', res.data.data)
-
       return res.data.data
     }
   })
@@ -187,24 +188,21 @@ export default function BasicTableRegistration() {
     queryKey: ['templates'],
     queryFn: async () => {
       const res = await templateApi.getTemplates()
-      console.log('templates', res.data.data)
-
       return res.data.data
     }
   })
 
   const fetchRegistrations = async () => {
-    // Logic fetch giữ nguyên, lọc theo BA/Ngày sẽ xử lý client-side trong useMemo
+    // API trả về kiểu ScheduleRegistration[]
     if (isBeautyAdvisor && profile?.userId) {
-      console.log(`Fetching registrations for Staff ID: ${profile.userId}`)
-      // Giả định API này fetch lịch cho BA hiện tại
       const res = await registrationApi.getRegistrationByBeatyAdvisorId(profile.userId)
-      return res.data.data
+      // Ép kiểu đầu ra thành ScheduleRegistrationComponent[]
+      return res.data.data as ScheduleRegistrationComponent[]
     }
 
-    console.log('Fetching all registrations...')
     const res = await registrationApi.getRegistration()
-    return res.data.data
+    // Ép kiểu đầu ra thành ScheduleRegistrationComponent[]
+    return res.data.data as ScheduleRegistrationComponent[]
   }
 
   const {
@@ -218,7 +216,8 @@ export default function BasicTableRegistration() {
     staleTime: 1000 * 60 * 5
   })
 
-  const allRegistrations = registrationsResponse || []
+  // Đã sửa lỗi type ở trên, nên giờ có thể sử dụng kiểu này
+  const allRegistrations: ScheduleRegistrationComponent[] = registrationsResponse || []
 
   // CẬP NHẬT LOGIC LỌC
   const filteredAndPaginatedData = useMemo(() => {
@@ -232,13 +231,11 @@ export default function BasicTableRegistration() {
 
     // 2. Lọc theo Ngày Bắt đầu
     if (filterStartDate) {
-      // Đảm bảo registration startDate (ISO string) >= filterStartDate (YYYY-MM-DD string)
       filtered = filtered.filter((reg) => getDatePart(reg.startDate) >= filterStartDate)
     }
 
     // 3. Lọc theo Ngày Kết thúc
     if (filterEndDate) {
-      // Đảm bảo registration endDate (ISO string) <= filterEndDate (YYYY-MM-DD string)
       filtered = filtered.filter((reg) => getDatePart(reg.endDate) <= filterEndDate)
     }
 
@@ -249,21 +246,27 @@ export default function BasicTableRegistration() {
       totalItems: filtered.length,
       data: filtered.slice(startIndex, endIndex)
     }
-  }, [allRegistrations, searchTerm, currentPage, selectedBAId, filterStartDate, filterEndDate]) // Thêm dependencies
+  }, [allRegistrations, searchTerm, currentPage, selectedBAId, filterStartDate, filterEndDate])
 
+  // Cập nhật: Logic saveRegistration
   const { mutate: saveRegistration } = useMutation({
     mutationFn: (data: RegistrationForm) => {
-      if (data.id) {
-        return registrationApi.updateRegistration(data.id, data)
+      const { staffId, id, ...payload } = data // Tách staffId và id ra
+
+      if (id) {
+        // Cập nhật: Luôn dùng API update, truyền cả staffId
+        return registrationApi.updateRegistration(id, data)
       }
 
-      const payload: SchedulePayload = data
-
+      // Tạo mới:
       if (profile?.role === Role.BEAUTY_ADVISOR) {
+        // BA tự tạo cho mình (staffId đã có trong context, API này giả định lấy từ đó)
         return registrationApi.createRegistration(payload)
       }
 
-      return registrationApi.createRegistrationByStaff(profile?.userId as string, payload)
+      // Admin/Manager tạo cho nhân viên khác: Truyền staffId đã chọn
+      // SỬA: Truyền staffId đã chọn thay vì profile?.userId
+      return registrationApi.createRegistrationByStaff(staffId, payload)
     },
     onSuccess: (res) => {
       toast.success(res.data.message || 'Registration saved successfully!')
@@ -354,7 +357,6 @@ export default function BasicTableRegistration() {
           )}
 
           {/* START DATE */}
-
           <label className='mb-1 text-sm font-medium text-gray-700 dark:text-gray-300'>Start Date</label>
           <input
             type='date'
@@ -370,7 +372,6 @@ export default function BasicTableRegistration() {
           />
 
           {/* END DATE */}
-
           <label className='mb-1 text-sm font-medium text-gray-700 dark:text-gray-300'>End Date</label>
           <input
             type='date'
@@ -459,6 +460,7 @@ export default function BasicTableRegistration() {
                 filteredAndPaginatedData.data.map((reg) => (
                   <TableRow key={reg.id}>
                     <TableCell className='px-5 py-4 sm:px-6 text-start font-medium text-gray-800 dark:text-white/90 truncate max-w-[100px]'>
+                      {/* Dùng StaffEmailLookup để hiển thị email */}
                       <StaffEmailLookup staffId={reg.staffId} />
                     </TableCell>
                     <TableCell className='px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400 font-semibold'>
@@ -477,7 +479,7 @@ export default function BasicTableRegistration() {
                       <div className='flex justify-end gap-2'>
                         {/* Nút View Detail */}
                         <button
-                          onClick={() => handleOpenDetailModal(reg as any, 'view')}
+                          onClick={() => handleOpenDetailModal(reg, 'view')}
                           className='text-sky-500 hover:text-sky-700 dark:hover:text-sky-300 text-sm p-1'
                           title='View Details'
                         >
@@ -487,7 +489,7 @@ export default function BasicTableRegistration() {
                         {profile?.role !== Role.ADMIN && (
                           <>
                             <button
-                              onClick={() => handleOpenDetailModal(reg as any, 'edit')}
+                              onClick={() => handleOpenDetailModal(reg, 'edit')}
                               className='text-brand-500 hover:text-brand-700 dark:hover:text-brand-300 text-sm p-1'
                               title='Edit Registration'
                             >
@@ -495,7 +497,7 @@ export default function BasicTableRegistration() {
                             </button>
                             {/* Nút Delete */}
                             <button
-                              onClick={() => handleDeleteClick(reg as any)}
+                              onClick={() => handleDeleteClick(reg)}
                               className='text-red-500 hover:text-red-700 dark:hover:text-red-300 text-sm p-1'
                               title='Delete Registration'
                             >
@@ -524,6 +526,7 @@ export default function BasicTableRegistration() {
         )}
       </div>
 
+      {/* Truyền props vào RegistrationModal */}
       <RegistrationModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -532,6 +535,9 @@ export default function BasicTableRegistration() {
         isViewMode={isViewMode}
         templates={templatesData ?? []}
         slots={slotsData || []}
+        beautyAdvisors={beautyAdvisors}
+        initialStaffId={isBeautyAdvisor ? profile?.userId : selectedBAId === 'all' ? undefined : selectedBAId}
+        userRole={profile?.role}
       />
 
       <ConfirmModal

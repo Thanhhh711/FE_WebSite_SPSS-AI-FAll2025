@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { ProductForm, ProductImage, ProductImageForm, ProductStatusEnum } from '../../types/product.type'
+import ModalPhotoViewer from './ModalPhotoViewer'
+import { categoryApi } from '../../api/category.api'
 
 export type NewUploadedImage = ProductImageForm & { imagePath: string }
 export interface ProductFormState extends Omit<ProductForm, 'images' | 'expiryDate'> {
@@ -10,6 +12,12 @@ export interface ProductFormState extends Omit<ProductForm, 'images' | 'expiryDa
 interface SelectOption {
   value: string | number
   label: string
+}
+
+interface Image {
+  id?: number | string
+  imagePath?: string
+  imageUrl: string // URL của ảnh
 }
 // ------------------------------------
 
@@ -134,46 +142,277 @@ export default function ProductFormFields({
   categoryOptions
 }: ProductFormFieldsProps) {
   // --- VIEW MODE --- (Hiển thị tĩnh, không có controls)
+
+  const [currentImageIndex, setCurrentImageIndex] = useState<number>(-1)
+  const [categoryName, setCategoryName] = useState('')
+  const isModalOpen = currentImageIndex !== -1
+  const currentImageUrl = isModalOpen ? form.images[currentImageIndex]?.imageUrl : ''
+
+  // --- 2. HÀM XỬ LÝ SỰ KIỆN ---
+
+  const openImage = (clickedImage: Image) => {
+    // Tìm index của ảnh được click
+    const index = form.images.findIndex(
+      (img) =>
+        ('id' in img && 'id' in clickedImage && img.id === clickedImage.id) || img.imageUrl === clickedImage.imageUrl
+    )
+    if (index !== -1) {
+      setCurrentImageIndex(index)
+    }
+  }
+
+  const closeModal = () => {
+    setCurrentImageIndex(-1)
+  }
+
+  const handlePrev = () => {
+    if (currentImageIndex > 0) {
+      setCurrentImageIndex(currentImageIndex - 1)
+    }
+  }
+
+  const handleNext = () => {
+    if (currentImageIndex < form.images.length - 1) {
+      setCurrentImageIndex(currentImageIndex + 1)
+    }
+  }
+
+  // 2. Dùng useEffect để gọi API
+  useEffect(() => {
+    // Ẩn API call nếu không có ID
+    if (!form.productCategoryId) {
+      setCategoryName('Chưa xác định')
+      return
+    }
+
+    // Định nghĩa hàm fetch
+    const fetchCategory = async () => {
+      try {
+        setCategoryName('Đang tải...') // Đặt trạng thái loading
+        const categoryData = await categoryApi.getCategoryById(form.productCategoryId)
+        setCategoryName(categoryData.data.data.categoryName) // Lưu tên category
+      } catch (error) {
+        console.error('Error fetching category:', error)
+        setCategoryName('Lỗi tải Category')
+      }
+    }
+
+    fetchCategory()
+  }, [form.productCategoryId])
+
   if (isViewMode) {
     return (
-      <div className='space-y-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg text-gray-700 dark:text-gray-300'>
-        <h3 className='text-lg font-bold text-brand-600 dark:text-brand-400 border-b pb-2'>Basic Information</h3>
-        {/* <p>
-          <span className='font-semibold'>ID:</span> {form.id}
-        </p> */}
-        <p>
-          <span className='font-semibold'>Name:</span> {form.name}
-        </p>
-        <p>
-          <span className='font-semibold'>Price:</span> {form.price.toLocaleString('vi-VN')} VND
-        </p>
-        <p>
-          <span className='font-semibold'>Status:</span> {getStatusText(form.status)}
-        </p>
-        <h3 className='text-lg font-bold text-brand-600 dark:text-brand-400 pt-4 border-b pb-2'>Details</h3>
-        <p className='whitespace-pre-wrap'>
-          <span className='font-semibold'>Description:</span> {form.description || 'N/A'}
-        </p>
-
-        {form.images.length > 0 && (
-          <div className='pt-4'>
-            <h4 className='font-semibold'>Images:</h4>
-            <div className='grid grid-cols-4 gap-2'>
-              {form.images.map((image) => (
-                <img
-                  key={'id' in image ? image.id : image.imagePath}
-                  src={image.imageUrl}
-                  alt='Product'
-                  className='w-full h-auto object-cover rounded'
-                />
-              ))}
+      <div className='space-y-6'>
+        {/* -------------------- PHẦN 1: THÔNG TIN CƠ BẢN & GIÁ -------------------- */}
+        <div className='p-6 bg-white dark:bg-gray-800   shadow-xl rounded-xl'>
+          <h3 className='text-2xl font-extrabold text-brand-700 dark:text-brand-300 mb-4 border-b pb-3'>
+            {form.name}
+            {form.englishName && (
+              <span className='text-lg font-light text-gray-500 dark:text-gray-400 ml-2'>({form.englishName})</span>
+            )}
+          </h3>
+          <dl className='grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6 text-gray-700 dark:text-gray-300 border-t border-gray-200 dark:border-gray-700 pt-4'>
+            {/* 1. Category */}
+            <div className='flex items-center'>
+              <dt className='flex items-center font-semibold text-gray-500 dark:text-gray-400 w-1/3 min-w-[120px]'>
+                {/* Icon: Folder */}
+                <svg
+                  className='w-5 h-5 mr-2 text-blue-500'
+                  fill='none'
+                  stroke='currentColor'
+                  viewBox='0 0 24 24'
+                  xmlns='http://www.w3.org/2000/svg'
+                >
+                  <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    strokeWidth='2'
+                    d='M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z'
+                  ></path>
+                </svg>
+                Category:
+              </dt>
+              <dd className='font-bold ml-2 text-gray-800 dark:text-gray-200'>
+                {/* Giả định categoryName được fetch */}
+                {categoryName}
+              </dd>
             </div>
+
+            {/* 2. Tình trạng (Status) */}
+            <div className='flex items-center'>
+              <dt className='flex items-center font-semibold text-gray-500 dark:text-gray-400 w-1/3 min-w-[120px]'>
+                {/* Icon: Check/X */}
+                <svg
+                  className='w-5 h-5 mr-2 text-purple-500'
+                  fill='none'
+                  stroke='currentColor'
+                  viewBox='0 0 24 24'
+                  xmlns='http://www.w3.org/2000/svg'
+                >
+                  <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    strokeWidth='2'
+                    d='M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'
+                  ></path>
+                </svg>
+                Status:
+              </dt>
+              <dd className='ml-2'>{getStatusText(form.status)}</dd>
+            </div>
+
+            {/* 3. Giá Bán (Price) - Highlight mạnh */}
+            <div className='flex items-center col-span-1 sm:col-span-2 border-t border-dashed border-gray-300 dark:border-gray-600 pt-4'>
+              <dt className='flex items-center font-semibold text-gray-600 dark:text-gray-400 w-1/3 min-w-[120px]'>
+                {/* Icon: Tag */}
+                <svg
+                  className='w-6 h-6 mr-2 text-red-500'
+                  fill='none'
+                  stroke='currentColor'
+                  viewBox='0 0 24 24'
+                  xmlns='http://www.w3.org/2000/svg'
+                >
+                  <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    strokeWidth='2'
+                    d='M7 7h.01M12 7v3m-3 0h6m4 12V6a2 2 0 00-2-2H5a2 2 0 00-2 2v14l4-2 4 2 4-2 4 2z'
+                  ></path>
+                </svg>
+                Selling Price:
+              </dt>
+              <dd className='text-3xl font-extrabold text-red-600 dark:text-red-400 ml-2 animate-pulse'>
+                {form.price.toLocaleString('vi-VN')}
+                <span className='text-base font-semibold ml-1'>VND</span>
+              </dd>
+            </div>
+
+            {/* 4. Giá Thị trường (Market Price) */}
+            <div className='flex items-center'>
+              <dt className='flex items-center font-semibold text-gray-500 dark:text-gray-400 w-1/3 min-w-[120px]'>
+                {/* Icon: Shopping Bag */}
+                <svg
+                  className='w-5 h-5 mr-2 text-gray-500'
+                  fill='none'
+                  stroke='currentColor'
+                  viewBox='0 0 24 24'
+                  xmlns='http://www.w3.org/2000/svg'
+                >
+                  <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    strokeWidth='2'
+                    d='M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z'
+                  ></path>
+                </svg>
+                Market Price:
+              </dt>
+              <dd className='text-sm line-through text-gray-400 dark:text-gray-500 ml-2'>
+                {form.marketPrice > 0 ? `${form.marketPrice.toLocaleString('vi-VN')} VND` : 'N/A'}
+              </dd>
+            </div>
+
+            {/* 5. Số lượng tồn kho (Quantity) */}
+            <div className='flex items-center'>
+              <dt className='flex items-center font-semibold text-gray-500 dark:text-gray-400 w-1/3 min-w-[120px]'>
+                {/* Icon: Stock */}
+                <svg
+                  className='w-5 h-5 mr-2 text-green-500'
+                  fill='none'
+                  stroke='currentColor'
+                  viewBox='0 0 24 24'
+                  xmlns='http://www.w3.org/2000/svg'
+                >
+                  <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    strokeWidth='2'
+                    d='M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4'
+                  ></path>
+                </svg>
+                In Stock:
+              </dt>
+              <dd className='font-medium text-lg text-blue-600 dark:text-blue-400 ml-2'>
+                {form.quantityInStock.toLocaleString('vi-VN')}
+              </dd>
+            </div>
+          </dl>
+        </div>
+
+        {/* -------------------- PHẦN 2: MÔ TẢ & HƯỚNG DẪN -------------------- */}
+        <div className='p-6 bg-white dark:bg-gray-800 shadow-xl rounded-xl space-y-4'>
+          <h3 className='text-lg font-bold text-brand-600 dark:text-brand-400 border-b pb-2'>
+            Description & Instructions
+          </h3>
+          {/* Mô tả (Description) */}
+          <div>
+            <h4 className='font-bold text-gray-700 dark:text-gray-300 mb-1'>Description:</h4>
+            <p className='whitespace-pre-wrap text-sm text-gray-600 dark:text-gray-400 p-2 border border-gray-200 dark:border-gray-700 rounded'>
+              {form.description || 'N/A'}
+            </p>
+          </div>
+
+          {/* Hướng dẫn sử dụng (Usage Instruction) */}
+          <div>
+            <h4 className='font-bold text-gray-700 dark:text-gray-300 mb-1'>Usage Instruction:</h4>
+            <p className='whitespace-pre-wrap text-sm text-gray-600 dark:text-gray-400 p-2 border border-gray-200 dark:border-gray-700 rounded'>
+              {form.usageInstruction || 'N/A'}
+            </p>
+          </div>
+        </div>
+
+        {/* -------------------- PHẦN 3: MEDIA (Ảnh & Video) -------------------- */}
+        {(form.images.length > 0 || form.videoUrl) && (
+          <div className='p-6 bg-white dark:bg-gray-800 shadow-xl rounded-xl'>
+            <h3 className='text-lg font-bold text-brand-600 dark:text-brand-400 border-b pb-2 mb-4'>Media Gallery</h3>
+
+            {/* Khu vực Hiển thị Ảnh */}
+            {form.images.length > 0 && (
+              <div className='mb-4'>
+                <h4 className='font-semibold mb-2'>Images:</h4>
+                <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3'>
+                  {form.images.map((image) => (
+                    <img
+                      key={'id' in image ? image.id : image.imagePath}
+                      src={image.imageUrl}
+                      alt='Product'
+                      className='w-full aspect-square object-cover rounded-lg shadow-md hover:shadow-lg transition duration-200 cursor-pointer'
+                      // Thêm onClick để mở modal xem ảnh lớn tại đây
+                      onClick={() => openImage(image)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+            <ModalPhotoViewer
+              isOpen={isModalOpen}
+              onClose={closeModal}
+              imageUrl={currentImageUrl}
+              // Truyền hàm chuyển ảnh cho Modal
+              onPrev={currentImageIndex > 0 ? handlePrev : undefined}
+              onNext={currentImageIndex < form.images.length - 1 ? handleNext : undefined}
+            />
+
+            {/* Khu vực Hiển thị Video */}
+            {form.videoUrl && (
+              <div className='pt-4'>
+                <h4 className='font-semibold mb-2'>Video:</h4>
+                <div className='aspect-video w-full max-w-lg rounded-lg overflow-hidden shadow-lg'>
+                  <video
+                    src={form.videoUrl}
+                    controls
+                    className='w-full h-full object-cover'
+                    // Thêm poster nếu có thumbnail
+                    // poster={form.videoThumbnailUrl}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
     )
   }
-
   // --- EDIT/CREATE MODE ---
   return (
     <div className='space-y-6 p-6'>

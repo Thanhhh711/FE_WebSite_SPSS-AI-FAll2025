@@ -340,7 +340,7 @@ export default function ProductModal({ isOpen, onClose, product, onSave, isViewM
     }
   }
 
-  const title = isCreating ? 'Tạo Sản phẩm mới' : isEditing ? 'Chỉnh sửa Chi tiết Sản phẩm' : 'Chi tiết Sản phẩm'
+  const title = isCreating ? 'Create New Product' : isEditing ? 'Edit Product Details' : 'Product Details'
 
   if (isProductLoading && !isCreating) {
     return (
@@ -354,7 +354,7 @@ export default function ProductModal({ isOpen, onClose, product, onSave, isViewM
               d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'
             ></path>
           </svg>
-          Đang tải chi tiết sản phẩm...
+          Loading product details...
         </div>
       </ModalRegistration>
     )
@@ -376,7 +376,7 @@ export default function ProductModal({ isOpen, onClose, product, onSave, isViewM
           isUploading={isUploading}
           skinConditionsOptions={skinConditionsOptions}
           skinTypesOptions={skinTypesOptions}
-          variationOptions={variationOptions} // Dữ liệu đã được lấy từ API Variations mới
+          variationOptions={variationOptions}
           brandOptions={brandOptions}
           categoryOptions={categoryOptions}
         />

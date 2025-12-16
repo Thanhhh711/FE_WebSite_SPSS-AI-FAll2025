@@ -1,4 +1,4 @@
-// File: ServiceModal.tsx
+// File: ServiceModal.tsx (Cleaned and Styled)
 
 import React, { useState, useEffect } from 'react'
 import { Service, ServiceForm } from '../../types/service.type'
@@ -6,6 +6,7 @@ import { Modal } from '../ui/modal'
 import { useAppContext } from '../../context/AuthContext'
 import { Role } from '../../constants/Roles'
 import { formatVND, parseNumber } from '../../utils/validForm'
+import { X, Clock, DollarSign, Edit3, PlusCircle } from 'lucide-react'
 
 interface ServiceModalProps {
   isOpen: boolean
@@ -31,7 +32,6 @@ const ServiceModal: React.FC<ServiceModalProps> = ({ isOpen, onClose, service, o
     price: ''
   })
 
-  // Reset form when opening modal
   useEffect(() => {
     if (service) {
       setForm({
@@ -56,12 +56,12 @@ const ServiceModal: React.FC<ServiceModalProps> = ({ isOpen, onClose, service, o
     }
 
     if (form.durationMinutes <= 0) {
-      newErrors.durationMinutes = 'Duration must be greater than 0.'
+      newErrors.durationMinutes = 'Duration must be greater than 0 minutes.'
       valid = false
     }
 
     if (!form.description.trim()) {
-      newErrors.durationMinutes = 'Description name is required.'
+      newErrors.description = 'Service description is required.'
       valid = false
     }
 
@@ -87,26 +87,39 @@ const ServiceModal: React.FC<ServiceModalProps> = ({ isOpen, onClose, service, o
   }
 
   const inputClass =
-    'w-full border border-gray-300 dark:border-gray-700 rounded-lg p-2.5 dark:bg-gray-800 dark:text-white/90 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition duration-150'
-  const labelClass = 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'
-  const errorClass = 'text-xs text-red-500 mt-1'
+    'w-full border-gray-200 dark:border-gray-700 rounded-xl p-3 bg-gray-50 dark:bg-gray-800 dark:text-white/90 text-base shadow-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/50 transition duration-200 ease-in-out'
+  const labelClass = 'block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2'
+  const errorClass = 'text-xs text-red-500 font-medium mt-1'
 
   const modalTitle = service ? 'Edit Service' : 'Create New Service'
+  const HeaderIcon = service ? Edit3 : PlusCircle
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose}>
-      <form onSubmit={handleSubmit}>
-        {/* HEADER */}
-        <div className='px-6 pt-10 pb-2 sm:pt-14 sm:pb-4 border-b border-gray-100 dark:border-gray-800'>
-          <h3 className='text-2xl font-bold text-gray-900  '>{modalTitle}</h3>
-          <p className='text-sm text-gray-500   mt-1'>
-            {service ? 'Update the information of this service.' : 'Add a new service to the system.'}
-          </p>
+    <Modal isOpen={isOpen} onClose={onClose} showCloseButton={false}>
+      <form onSubmit={handleSubmit} className='divide-y divide-gray-100 dark:divide-gray-800'>
+        <div className='relative p-6 sm:p-8 flex items-center justify-between'>
+          <div className='flex items-center space-x-3'>
+            <HeaderIcon className='w-6 h-6 text-brand-500' />
+            <div>
+              <h3 className='text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-white'>{modalTitle}</h3>
+              <p className='text-sm text-gray-500 dark:text-gray-400 mt-1'>
+                {service
+                  ? 'Update the detailed information for this service.'
+                  : 'Add a new service to the system list.'}
+              </p>
+            </div>
+          </div>
+          <button
+            type='button'
+            onClick={onClose}
+            className='p-2 rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:text-gray-400 dark:hover:text-white transition'
+            aria-label='Close modal'
+          >
+            <X className='w-5 h-5' />
+          </button>
         </div>
 
-        {/* BODY */}
-        <div className='space-y-5 px-6 pt-8 pb-6'>
-          {/* SERVICE NAME */}
+        <div className='space-y-6 p-6 sm:p-8'>
           <div>
             <label htmlFor='name' className={labelClass}>
               Service Name <span className='text-red-500'>*</span>
@@ -121,78 +134,69 @@ const ServiceModal: React.FC<ServiceModalProps> = ({ isOpen, onClose, service, o
             {errors.name && <p className={errorClass}>{errors.name}</p>}
           </div>
 
-          {/* DESCRIPTION */}
           <div>
             <label htmlFor='description' className={labelClass}>
               Description
             </label>
             <textarea
               id='description'
-              placeholder='Detailed description of steps and benefits'
+              placeholder='Detailed description of steps and benefits...'
               rows={4}
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
-              className={inputClass}
+              className={`${inputClass} resize-y`}
             />
-
-            {errors.name && <p className={errorClass}>{errors.name}</p>}
+            {errors.description && <p className={errorClass}>{errors.description}</p>}
           </div>
 
-          {/* DURATION & PRICE */}
-          <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
-            {/* DURATION */}
+          <div className='grid grid-cols-1 sm:grid-cols-2 gap-6'>
             <div>
               <label htmlFor='durationMinutes' className={labelClass}>
                 Duration (minutes) <span className='text-red-500'>*</span>
               </label>
-              <input
-                id='durationMinutes'
-                type='number'
-                placeholder='Service duration (minutes)'
-                value={form.durationMinutes || ''}
-                onChange={(e) => setForm({ ...form, durationMinutes: parseInt(e.target.value) || 0 })}
-                className={inputClass}
-                min={1}
-              />
+              <div className='relative'>
+                <Clock className='absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500' />
+                <input
+                  id='durationMinutes'
+                  type='number'
+                  placeholder='Example: 60'
+                  value={form.durationMinutes || ''}
+                  onChange={(e) => setForm({ ...form, durationMinutes: parseInt(e.target.value) || 0 })}
+                  className={`${inputClass} pl-10`}
+                  min={1}
+                />
+              </div>
               {errors.durationMinutes && <p className={errorClass}>{errors.durationMinutes}</p>}
             </div>
-
-            {/* PRICE */}
 
             <div>
               <label htmlFor='price' className={labelClass}>
                 Price (VND) <span className='text-red-500'>*</span>
               </label>
-
               <div className='relative'>
-                <span className='absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 font-semibold'>
-                  ₫
-                </span>
-
+                <DollarSign className='absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500' />
                 <input
                   id='price'
                   type='text'
-                  placeholder='Service price'
+                  placeholder='Example: 500,000'
                   value={formatVND(form.price)}
                   onChange={(e) => {
                     const raw = parseNumber(e.target.value)
                     setForm({ ...form, price: raw })
                   }}
-                  className={`${inputClass} pl-6`}
+                  className={`${inputClass} pl-10`}
                 />
               </div>
-
               {errors.price && <p className={errorClass}>{errors.price}</p>}
             </div>
           </div>
         </div>
 
-        {/* FOOTER */}
-        <div className='flex justify-end gap-3 p-4 border-t border-gray-100 dark:border-gray-800'>
+        <div className='flex justify-end gap-3 p-6 sm:p-8'>
           <button
             type='button'
             onClick={onClose}
-            className='flex justify-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03]'
+            className='flex items-center justify-center rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-6 py-3 text-base font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition duration-150'
           >
             Cancel
           </button>
@@ -200,9 +204,9 @@ const ServiceModal: React.FC<ServiceModalProps> = ({ isOpen, onClose, service, o
           {profile?.role === Role.ADMIN && (
             <button
               type='submit'
-              className='flex justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white shadow-brand-xs hover:bg-brand-600'
+              className='flex items-center justify-center rounded-xl bg-brand-600 px-6 py-3 text-base font-semibold text-white shadow-lg shadow-brand-500/30 hover:bg-brand-700 transition duration-150'
             >
-              {service ? 'Update' : 'Create'}
+              {service ? 'Update' : 'Create'} Service
             </button>
           )}
         </div>

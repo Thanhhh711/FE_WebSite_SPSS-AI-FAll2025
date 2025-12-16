@@ -6,12 +6,15 @@ import { treatmentPlanApi } from '../../api/treatmentPlan.api'
 import { CreateTreatmentPlanDto, TreatmentPlan } from '../../types/treatmentPlan.type'
 import TreatmentPlanCard from './TreatmentPlanCard'
 import TreatmentPlanModal from './TreatmentPlanModal'
+import { useAppContext } from '../../context/AuthContext'
+import { Role } from '../../constants/Roles'
 
 interface TreatmentPlanTabProps {
   customerId: string
 }
 
 export default function TreatmentPlanTab({ customerId }: TreatmentPlanTabProps) {
+  const { profile } = useAppContext()
   const [, setIsConfirmDeleteOpen] = useState(false)
   const [, setPlanToDelete] = useState<string | null>(null)
 
@@ -50,7 +53,7 @@ export default function TreatmentPlanTab({ customerId }: TreatmentPlanTabProps) 
     onError: (error) => {
       toast.error(error.message)
     }
-  }) // ✅ 2. MUTATION CHO CẬP NHẬT (UPDATE)
+  })
 
   const updateTreatmentPlanMutation = useMutation({
     mutationFn: ({ planId, body }: { planId: string; body: CreateTreatmentPlanDto }) =>
@@ -97,21 +100,23 @@ export default function TreatmentPlanTab({ customerId }: TreatmentPlanTabProps) 
     <div className='p-6 bg-white dark:bg-gray-900 rounded-xl shadow-lg min-h-[500px]'>
       <div className='flex justify-between items-center mb-6'>
         <h3 className='text-xl font-bold text-gray-900 dark:text-white'>Treatment Plans ({treatmentPlans.length})</h3>
-        <button
-          onClick={handleOpenCreate}
-          className='flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg shadow-md hover:bg-green-700 transition'
-        >
-          <svg
-            xmlns='http://www.w3.org/2000/svg'
-            className='w-4 h-4 mr-1'
-            fill='none'
-            viewBox='0 0 24 24'
-            stroke='currentColor'
+        {profile?.role === Role.BEAUTY_ADVISOR && (
+          <button
+            onClick={handleOpenCreate}
+            className='flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg shadow-md hover:bg-green-700 transition'
           >
-            <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M12 6v6m0 0v6m0-6h6m-6 0H6' />
-          </svg>
-          Create New Plan
-        </button>
+            <svg
+              xmlns='http://www.w3.org/2000/svg'
+              className='w-4 h-4 mr-1'
+              fill='none'
+              viewBox='0 0 24 24'
+              stroke='currentColor'
+            >
+              <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M12 6v6m0 0v6m0-6h6m-6 0H6' />
+            </svg>
+            Create New Plan
+          </button>
+        )}
       </div>
       <div className='space-y-6'>
         {treatmentPlans.length > 0 ? (
@@ -124,10 +129,13 @@ export default function TreatmentPlanTab({ customerId }: TreatmentPlanTabProps) 
             className='text-center p-12 border border-dashed border-gray-300 dark:border-gray-700 rounded-lg text-gray-500 dark:text-gray-400'
           >
             <p>This patient currently has no treatment plan.</p>
-            <button
-              onClick={handleOpenCreate}
-              className='mt-3 text-green-600 font-medium hover:text-green-700'
-            ></button>
+
+            {profile?.role === Role.BEAUTY_ADVISOR && (
+              <button
+                onClick={handleOpenCreate}
+                className='mt-3 text-green-600 font-medium hover:text-green-700'
+              ></button>
+            )}
           </div>
         )}
       </div>

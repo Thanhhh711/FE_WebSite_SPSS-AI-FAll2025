@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { Room, RoomForm } from '../../types/room.type'
 import StaffEmailLookup from '../../utils/StaffEmailLookup'
 import ModalRegistration from '../RegistrationModal/ModalRegistration'
+// THÊM: Icon cho giao diện mới
+import { Home, MapPin, Layers, Users, Edit3, PlusCircle, Calendar, User } from 'lucide-react'
 
 interface RoomModalProps {
   isOpen: boolean
@@ -12,6 +14,8 @@ interface RoomModalProps {
 }
 
 type RoomFormData = RoomForm & { id?: string }
+// Cập nhật kiểu Errors để hỗ trợ Partial
+type RoomErrors = Partial<Record<keyof RoomForm, string>>
 
 export default function RoomModal({ isOpen, onClose, room, onSave, isViewMode }: RoomModalProps) {
   const isEditing = !!room && !isViewMode
@@ -24,12 +28,8 @@ export default function RoomModal({ isOpen, onClose, room, onSave, isViewMode }:
     capacity: room?.capacity || 0
   })
 
-  const [errors, setErrors] = useState({
-    roomName: '',
-    location: '',
-    floorNumber: '',
-    capacity: ''
-  })
+  // Cập nhật kiểu errors
+  const [errors, setErrors] = useState<RoomErrors>({})
 
   useEffect(() => {
     if (room) {
@@ -48,17 +48,12 @@ export default function RoomModal({ isOpen, onClose, room, onSave, isViewMode }:
       })
     }
 
-    setErrors({
-      roomName: '',
-      location: '',
-      floorNumber: '',
-      capacity: ''
-    })
-  }, [room])
+    setErrors({}) // Reset errors
+  }, [room, isOpen]) // Thêm isOpen vào dependency array để reset khi mở modal
 
   const validate = () => {
     let valid = true
-    const newErrors = { roomName: '', location: '', floorNumber: '', capacity: '' }
+    const newErrors: RoomErrors = {}
 
     if (!form.roomName.trim()) {
       newErrors.roomName = 'Room name is required.'
@@ -70,10 +65,8 @@ export default function RoomModal({ isOpen, onClose, room, onSave, isViewMode }:
       valid = false
     }
 
-    if (form.floorNumber < 0 || Number.isNaN(form.floorNumber)) {
-      console.log(11)
-
-      newErrors.floorNumber = 'Floor number cannot be negative.'
+    if (form.floorNumber < 0 || Number.isNaN(form.floorNumber) || form.floorNumber === null) {
+      newErrors.floorNumber = 'Floor number must be 0 or positive.'
       valid = false
     }
 
@@ -97,89 +90,136 @@ export default function RoomModal({ isOpen, onClose, room, onSave, isViewMode }:
   }
 
   const title = isCreating ? 'Create New Room' : isEditing ? 'Edit Room Details' : 'Room Details'
+  const HeaderIcon = isEditing ? Edit3 : PlusCircle
 
+  // --- MODERN UI CLASSES ---
   const baseInputClass =
-    'w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm text-gray-800 dark:text-white/90'
+    'w-full border-gray-200 dark:border-gray-700 rounded-xl p-3 bg-gray-50 dark:bg-gray-800 dark:text-white/90 text-base shadow-sm transition duration-200 ease-in-out'
+  const labelClass = 'block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2'
+  const errorClass = 'text-xs text-red-500 font-medium mt-1'
+  const iconWrapperClass =
+    'absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 pointer-events-none w-4 h-4'
 
-  const errorClass = 'text-red-500 text-xs mt-1'
+  const getInputClass = (fieldName: keyof RoomForm) => {
+    const errorState = errors[fieldName]
+      ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+      : 'focus:border-brand-500 focus:ring-2 focus:ring-brand-500/50'
+    return `${baseInputClass} ${errorState} pl-10`
+  }
+
+  const renderHeader = () => (
+    // HEADER: Sử dụng flex và padding lớn hơn để làm nổi bật
+    <div className='flex items-center justify-between p-6 sm:p-8 border-b border-gray-100 dark:border-gray-800'>
+      <div className='flex items-center space-x-3'>
+        <HeaderIcon className='w-6 h-6 text-brand-500' />
+        <h3 className='text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-white'>{title}</h3>
+      </div>
+      {/* Nút đóng tùy chỉnh */}
+    </div>
+  )
+
+  const renderInputGroup = (
+    id: keyof RoomForm,
+    label: string,
+    Icon: React.ElementType,
+    placeholder: string,
+    inputType: 'text' | 'number' = 'text'
+  ) => {
+    const isNumber = inputType === 'number'
+    const value = form[id]
+
+    // Đảm bảo trường số hiển thị trống khi giá trị là 0 trong chế độ tạo/chỉnh sửa
+    const inputValue = isNumber && (isCreating || isEditing) && value === 0 ? '' : value
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const newValue = isNumber ? parseInt(e.target.value) || 0 : e.target.value
+      setForm((p) => ({ ...p, [id]: newValue }))
+      if (errors[id]) {
+        setErrors((p) => ({ ...p, [id]: undefined }))
+      }
+    }
+
+    return (
+      <div>
+        <label htmlFor={id} className={labelClass}>
+          {label} <span className='text-red-500'>*</span>
+        </label>
+        <div className='relative'>
+          <Icon className={iconWrapperClass} />
+          <input
+            id={id}
+            type={inputType}
+            placeholder={placeholder}
+            value={inputValue}
+            onChange={handleChange}
+            className={getInputClass(id)}
+            min={isNumber ? (id === 'floorNumber' ? 0 : 1) : undefined}
+          />
+        </div>
+        {errors[id] && <p className={errorClass}>{errors[id]}</p>}
+      </div>
+    )
+  }
 
   return (
+    // Thay đổi ModalRegistration để loại bỏ header cũ và cho phép sử dụng header tùy chỉnh
     <ModalRegistration isOpen={isOpen} onClose={onClose} title={title}>
-      <div className='p-6'>
+      {renderHeader()}
+      <div className='p-6 sm:p-8'>
         {/* VIEW MODE */}
         {room && isViewMode && (
-          <div className='space-y-3 p-4 bg-gray-50 dark:bg-gray-800  dark:text-white rounded-lg'>
-            <p>
-              <span className='font-semibold'>Room Name:</span> {room.roomName}
+          // Cải thiện View Mode với nền và icon
+          <div className='space-y-4 p-4 bg-gray-100 dark:bg-gray-800 rounded-xl shadow-inner text-sm'>
+            <p className='text-gray-700 dark:text-gray-300 flex items-center space-x-2'>
+              <Home className='w-4 h-4 text-brand-500' />
+              <span className='font-semibold'>Room Name:</span> <span>{room.roomName}</span>
             </p>
-            <p>
-              <span className='font-semibold'>Location:</span> {room.location}
+            <p className='text-gray-700 dark:text-gray-300 flex items-center space-x-2'>
+              <MapPin className='w-4 h-4 text-brand-500' />
+              <span className='font-semibold'>Location:</span> <span>{room.location}</span>
             </p>
-            <p>
-              <span className='font-semibold'>Floor:</span> {room.floorNumber}
+            <p className='text-gray-700 dark:text-gray-300 flex items-center space-x-2'>
+              <Layers className='w-4 h-4 text-brand-500' />
+              <span className='font-semibold'>Floor:</span> <span>{room.floorNumber}</span>
             </p>
-            <p>
-              <span className='font-semibold'>Capacity:</span> {room.capacity} people
+            <p className='text-gray-700 dark:text-gray-300 flex items-center space-x-2'>
+              <Users className='w-4 h-4 text-brand-500' />
+              <span className='font-semibold'>Capacity:</span> <span>{room.capacity} people</span>
             </p>
-            <p>
-              <span className='font-semibold'>Created Date:</span> {new Date(room.createdTime).toLocaleDateString()}
-            </p>
-            <p>
-              <span className='font-semibold'>Created By: </span>
-              <StaffEmailLookup staffId={room.createdBy} />
-            </p>
+            {/* Metadata (Ngày tạo, Người tạo) */}
+            <div className='grid grid-cols-1 sm:grid-cols-2 gap-y-2 pt-2 border-t border-gray-200 dark:border-gray-700 mt-4'>
+              <p className='text-gray-700 dark:text-gray-300 flex items-center space-x-2'>
+                <Calendar className='w-4 h-4 text-gray-500' />
+                <span className='font-semibold'>Created Date:</span>{' '}
+                <span>{new Date(room.createdTime).toLocaleDateString()}</span>
+              </p>
+              <div className='text-gray-700 dark:text-gray-300 flex items-start space-x-2'>
+                <User className='flex-shrink-0 w-4 h-4 text-gray-500 mt-0.5' />
+                <span className='font-semibold flex-shrink-0'>Created By:</span>
+                {/* Phần StaffEmailLookup được bọc trong <span> có thuộc tính xử lý từ dài */}
+                <span className='min-w-0 break-words'>
+                  <StaffEmailLookup staffId={room.createdBy} />
+                </span>
+              </div>
+            </div>
           </div>
         )}
 
         {/* EDIT / CREATE MODE */}
         {!isViewMode && (
-          <div className='space-y-4'>
+          <div className='space-y-6'>
             {/* Room Name */}
-            <div>
-              <input
-                type='text'
-                placeholder='Room Name (e.g., Meeting Room A)'
-                value={form.roomName}
-                onChange={(e) => setForm((p) => ({ ...p, roomName: e.target.value }))}
-                className={baseInputClass}
-              />
-              {errors.roomName && <p className={errorClass}>{errors.roomName}</p>}
-            </div>
+            {renderInputGroup('roomName', 'Room Name', Home, 'Example: Spa Room 1')}
 
             {/* Location */}
-            <div>
-              <input
-                type='text'
-                placeholder='Location (e.g., East Wing)'
-                value={form.location}
-                onChange={(e) => setForm((p) => ({ ...p, location: e.target.value }))}
-                className={baseInputClass}
-              />
-              {errors.location && <p className={errorClass}>{errors.location}</p>}
-            </div>
+            {renderInputGroup('location', 'Location', MapPin, 'Example: East Wing')}
 
-            {/* Floor Number */}
-            <div>
-              <input
-                type='number'
-                placeholder='Floor Number'
-                value={form.floorNumber === 0 ? '' : form.floorNumber}
-                onChange={(e) => setForm((p) => ({ ...p, floorNumber: parseInt(e.target.value) || 0 }))}
-                className={baseInputClass}
-              />
-              {errors.floorNumber && <p className={errorClass}>{errors.floorNumber}</p>}
-            </div>
-
-            {/* Capacity */}
-            <div>
-              <input
-                type='number'
-                placeholder='Capacity (people)'
-                value={form.capacity === 0 ? '' : form.capacity}
-                onChange={(e) => setForm((p) => ({ ...p, capacity: parseInt(e.target.value) || 0 }))}
-                className={baseInputClass}
-              />
-              {errors.capacity && <p className={errorClass}>{errors.capacity}</p>}
+            {/* Floor Number & Capacity (Gộp lại) */}
+            <div className='grid grid-cols-1 sm:grid-cols-2 gap-6'>
+              {/* Floor Number */}
+              {renderInputGroup('floorNumber', 'Floor Number', Layers, 'Example: 3', 'number')}
+              {/* Capacity */}
+              {renderInputGroup('capacity', 'Capacity (people)', Users, 'Example: 5', 'number')}
             </div>
           </div>
         )}
@@ -190,7 +230,8 @@ export default function RoomModal({ isOpen, onClose, room, onSave, isViewMode }:
         <button
           onClick={onClose}
           type='button'
-          className='flex w-full justify-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 sm:w-auto dark:hover:bg-white/[0.03]'
+          // Cải thiện style nút Hủy/Đóng
+          className='flex w-full justify-center rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-6 py-3 text-base font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition duration-150 sm:w-auto'
         >
           {isViewMode ? 'Close' : 'Cancel'}
         </button>
@@ -199,9 +240,10 @@ export default function RoomModal({ isOpen, onClose, room, onSave, isViewMode }:
           <button
             onClick={handleSave}
             type='button'
-            className='flex w-full justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-600 sm:w-auto'
+            // Cải thiện style nút Lưu/Tạo
+            className='flex w-full justify-center rounded-xl bg-brand-600 px-6 py-3 text-base font-semibold text-white shadow-lg shadow-brand-500/30 hover:bg-brand-700 transition duration-150 sm:w-auto'
           >
-            Save Room
+            {isEditing ? 'Save Changes' : 'Create Room'}
           </button>
         )}
       </div>

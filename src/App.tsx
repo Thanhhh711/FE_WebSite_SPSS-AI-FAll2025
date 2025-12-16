@@ -23,7 +23,7 @@ import { ProtectedRoute } from './components/ProtectedRoute'
 import WorkSchedulesManagement from './components/tables/BasicTables/BasicTableSchedule'
 import ManageBlogs from './pages/Blogs/ManageBlogs'
 import AppoimentDashboard from './pages/Dashboard/AppoimentDashboard'
-import TreatmentPlanTab from './pages/Patients/PatientDetail'
+
 import MedicalReportList from './pages/Report/MedicalReportList'
 import BasicTablesBrand from './pages/Tables/BasicTablesBrand'
 import BasicTablesCategory from './pages/Tables/BasicTablesCategory'
@@ -48,6 +48,7 @@ import Images from './pages/UiElements/Images'
 import Videos from './pages/UiElements/Videos'
 import UserProfiles from './pages/UserProfiles'
 import { ErrorBoundary } from './utils/ErrorBoundary'
+import TreatmentPlanTab from './pages/Patients/PatientDetail'
 
 const BasicTables = lazy(() => import('./pages/Tables/BasicTables'))
 
@@ -153,7 +154,7 @@ export default function App() {
             <Route path={AppPath.BASIC_TABLES_TEMPLATE} element={<BasicTablesTemplate />} />
             <Route path={`${AppPath.PROFILE}/:id`} element={<UserProfiles />} />
 
-            <Route path={`${AppPath.PATIENT_DETAIL}/:id`} element={<TreatmentPlanTab />} />
+            <Route path={`${AppPath.MEDICAL_RECORD}/:id`} element={<TreatmentPlanTab />} />
             <Route path={`${AppPath.REPORT}/:id`} element={<MedicalReportList />} />
           </Route>
         </Route>

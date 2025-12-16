@@ -67,6 +67,8 @@ const baseInputClass =
   'w-full rounded-lg border border-gray-300 p-2.5 text-sm focus:border-indigo-500 focus:ring-indigo-500'
 
 export default function MedicalReportModal({ isOpen, onClose, customerId, appoimentId }: MedicalReportModalProps) {
+  console.log('customerId', customerId)
+
   const [form, setForm] = useState<MedicalReportForm>({
     ...initialFormState,
     customerId
@@ -174,6 +176,8 @@ export default function MedicalReportModal({ isOpen, onClose, customerId, appoim
     // 2. CREATE REPORT with updated image URLs
     const finalForm = {
       ...form,
+      customerId: customerId,
+      appointmentId: appoimentId,
       imageUrls: uploadedImageUrls // Sử dụng danh sách URL đã cập nhật
     }
 

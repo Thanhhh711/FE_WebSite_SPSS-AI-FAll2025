@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { toast } from 'react-toastify' // Added toast for notifications
+import { toast } from 'react-toastify'
 // Assuming types are imported from types file
 import { SchedulePayload } from '../../types/registration.type'
 import ModalRegistration from './ModalRegistration'
@@ -7,8 +7,9 @@ import { ScheduleRegistrationComponent } from '../tables/BasicTables/BasicTableR
 import { useQuery } from '@tanstack/react-query'
 import userApi from '../../api/user.api'
 import { formatDateToDDMMYYYY, formatDateValue } from '../../utils/validForm'
+import { Role } from '../../constants/Roles'
 
-// Interfaces used in this component (Keep these for context)
+// Interfaces used in this component
 interface Template {
   id: string
   name: string
@@ -18,15 +19,27 @@ interface Slot {
   slotMinutes: number
   breakMinutes: number
 }
+// Định nghĩa kiểu dữ liệu cho Beauty Advisor
+interface BeautyAdvisor {
+  userId: string
+  emailAddress: string
+}
 
 interface RegistrationModalProps {
   isOpen: boolean
   onClose: () => void
   registration: ScheduleRegistrationComponent | null
+  // Cập nhật onSave để nhận RegistrationForm (có staffId)
   onSave: (data: RegistrationForm) => void
   isViewMode: boolean
   templates: Template[]
   slots: Slot[]
+  // THÊM: Danh sách BA để chọn
+  beautyAdvisors: BeautyAdvisor[]
+  // THÊM: ID của nhân viên hiện tại/được chọn từ BasicTable (chỉ dùng trong Create)
+  initialStaffId?: string
+  // THÊM: Role của người dùng hiện tại
+  userRole?: string
 }
 
 export const WEEKDAY_NAMES: { [key: number]: string } = {
@@ -39,8 +52,10 @@ export const WEEKDAY_NAMES: { [key: number]: string } = {
   7: 'Sun'
 }
 
-type RegistrationForm = SchedulePayload & { id?: string }
-type RegistrationErrors = Partial<Record<keyof SchedulePayload | 'general', string>>
+// Cập nhật: Thêm staffId vào RegistrationForm
+type RegistrationForm = SchedulePayload & { id?: string; staffId: string }
+// Cập nhật: Thêm staffId vào RegistrationErrors
+type RegistrationErrors = Partial<Record<keyof SchedulePayload | 'general' | 'staffId', string>>
 
 const initialErrors: RegistrationErrors = {}
 
@@ -51,14 +66,21 @@ export default function RegistrationModal({
   onSave,
   isViewMode,
   templates,
-  slots
+  slots,
+  beautyAdvisors,
+  initialStaffId,
+  userRole
 }: RegistrationModalProps) {
   const isEditing = !!registration && !isViewMode
   const isCreating = !registration && !isViewMode
+  const isBA = userRole === Role.BEAUTY_ADVISOR // Kiểm tra role
 
-  const today = new Date().toISOString().split('T')[0] // Get default ID for Create mode (take the first item if available)
+  const today = new Date().toISOString().split('T')[0]
   const defaultTemplateId = templates.length > 0 ? templates[0].id : ''
   const defaultSlotId = slots.length > 0 ? slots[0].id : ''
+
+  // Lấy staffId ban đầu: nếu đang edit thì dùng của registration, nếu create thì dùng initialStaffId (từ BasicTable truyền vào)
+  const defaultStaffId = registration?.staffId || initialStaffId || ''
 
   const { data: userData } = useQuery({
     queryKey: ['userName'],
@@ -67,7 +89,8 @@ export default function RegistrationModal({
     select: (data) => data.data.data.emailAddress
   })
 
-  const [form, setForm] = useState<SchedulePayload>({
+  // Cập nhật: Thêm staffId vào state form
+  const [form, setForm] = useState<SchedulePayload & { staffId: string }>({
     startDate: registration ? formatDateValue(registration.startDate) : today,
     endDate: registration ? formatDateValue(registration.endDate) : today,
     startTime: registration?.startTime || '',
@@ -75,9 +98,10 @@ export default function RegistrationModal({
     templateId: registration?.templateId || defaultTemplateId,
     slotId: registration?.slotId || defaultSlotId,
     notes: registration?.notes || '',
-    weekdays: registration?.registrationWeekdays.map((w) => w.weekday) || []
+    weekdays: registration?.registrationWeekdays.map((w) => w.weekday) || [],
+    staffId: defaultStaffId // THÊM staffId
   })
-  const [errors, setErrors] = useState<RegistrationErrors>(initialErrors) // Reset form/errors when prop 'registration' changes (when opening modal)
+  const [errors, setErrors] = useState<RegistrationErrors>(initialErrors)
 
   useEffect(() => {
     if (registration) {
@@ -89,10 +113,11 @@ export default function RegistrationModal({
         templateId: registration.templateId,
         slotId: registration.slotId,
         notes: registration.notes,
-        weekdays: registration.registrationWeekdays.map((w) => w.weekday)
+        weekdays: registration.registrationWeekdays.map((w) => w.weekday),
+        staffId: registration.staffId // THÊM staffId khi edit
       })
     } else {
-      // Reset form for Create mode, using default IDs
+      // Reset form for Create mode, using default IDs và initialStaffId
       setForm({
         startDate: today,
         endDate: today,
@@ -101,15 +126,23 @@ export default function RegistrationModal({
         templateId: defaultTemplateId,
         slotId: defaultSlotId,
         notes: '',
-        weekdays: []
+        weekdays: [],
+        staffId: initialStaffId || '' // THÊM staffId khi tạo mới
       })
     }
     setErrors(initialErrors) // Reset errors
-  }, [registration, defaultTemplateId, defaultSlotId, today])
+  }, [registration, defaultTemplateId, defaultSlotId, today, initialStaffId])
 
-  const validateForm = (data: SchedulePayload): boolean => {
+  // Validate form (Logic này giữ nguyên)
+  const validateForm = (data: SchedulePayload & { staffId: string }): boolean => {
     const newErrors: RegistrationErrors = {}
     let isValid = true
+
+    // 0. Staff ID (Chỉ cần kiểm tra nếu không phải BA)
+    if (!isBA && !data.staffId) {
+      newErrors.staffId = 'Staff is required.'
+      isValid = false
+    }
 
     // 1. Template ID
     if (!data.templateId) {
@@ -175,13 +208,13 @@ export default function RegistrationModal({
     return isValid
   }
 
+  // Các hàm handleChange, handleWeekdayToggle, handleSave giữ nguyên
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { id, value } = e.target
-    const name = id as keyof SchedulePayload
+    const name = id as keyof (SchedulePayload & { staffId: string })
 
     setForm((p) => ({ ...p, [name]: value }))
 
-    // Clear error on change for the specific field
     if (errors[name]) {
       setErrors((p) => ({ ...p, [name]: undefined }))
     }
@@ -192,7 +225,6 @@ export default function RegistrationModal({
       const isSelected = p.weekdays.includes(day)
       const newWeekdays = isSelected ? p.weekdays.filter((w) => w !== day) : [...p.weekdays, day].sort()
 
-      // Clear weekday error if at least one is selected after the change
       if (newWeekdays.length > 0 && errors.weekdays) {
         setErrors((p) => ({ ...p, weekdays: undefined }))
       }
@@ -210,9 +242,12 @@ export default function RegistrationModal({
       return
     }
 
+    const { staffId, ...schedulePayload } = form
+
     const dataToSave: RegistrationForm = {
-      ...form,
-      id: isEditing ? registration?.id : undefined
+      ...schedulePayload,
+      id: isEditing ? registration?.id : undefined,
+      staffId: staffId
     }
     onSave(dataToSave)
     toast.success(`${isEditing ? 'Updated' : 'Created'} Schedule Registration successfully!`)
@@ -228,19 +263,24 @@ export default function RegistrationModal({
     'w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm text-gray-800 dark:text-white/90'
 
   const errorClass = 'mt-1 text-xs text-red-500'
-  const getInputClass = (fieldName: keyof SchedulePayload) => {
+
+  const getInputClass = (
+    fieldName: keyof SchedulePayload | 'staffId' | 'startDate' | 'endDate' | 'startTime' | 'endTime'
+  ) => {
     return `${baseInputClass} ${errors[fieldName] ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'focus:border-brand-500 focus:ring-1 focus:ring-brand-500'}`
   }
 
   return (
     <ModalRegistration isOpen={isOpen} onClose={onClose} title={title}>
       <div className='p-6'>
+        {/* VIEW MODE (Giữ nguyên) */}
         {registration && isViewMode && (
           <div className='space-y-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
             <p className='text-sm text-gray-700 dark:text-gray-300'>
               <span className='font-semibold'>Staff Email: </span>
               {registration.staffId ? userData || registration.staffId : 'N/A'}
             </p>
+            {/* ... View mode content ... */}
             <p className='text-sm text-gray-700 dark:text-gray-300'>
               <span className='font-semibold'>Template Name: </span> {registration.template.name}
             </p>
@@ -264,121 +304,143 @@ export default function RegistrationModal({
         {/* EDIT/CREATE MODE */}
         {!isViewMode && (
           <div className='space-y-4'>
-            <div>
-              <label htmlFor='templateId' className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>
-                Schedule Template *
-              </label>
+            {/* 1. TRƯỜNG CHỌN STAFF (Chỉ hiển thị nếu không phải Beauty Advisor) */}
+            {!isBA && (
+              <div>
+                <label htmlFor='staffId' className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>
+                  Staff Email *
+                </label>
 
-              <select
-                id='templateId'
-                value={form.templateId}
-                onChange={handleChange}
-                className={getInputClass('templateId')}
-              >
-                <option value='' disabled>
-                  --- Select Schedule Template ---
-                </option>
-                {templates.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}
+                <select
+                  id='staffId'
+                  value={form.staffId}
+                  onChange={handleChange}
+                  className={getInputClass('staffId')}
+                  disabled={isEditing} // Không cho đổi BA khi chỉnh sửa
+                >
+                  <option value='' disabled>
+                    --- Select Staff ---
                   </option>
-                ))}
-              </select>
-              {errors.templateId && <p className={errorClass}>{errors.templateId}</p>}
-            </div>
-            <div>
-              <label htmlFor='slotId' className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>
-                Slot Configuration *
-              </label>
-              <select id='slotId' value={form.slotId} onChange={handleChange} className={getInputClass('slotId')}>
-                <option value='' disabled>
-                  --- Choose Slot ---
-                </option>
-                {slots.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.slotMinutes} minutes / Break: {s.breakMinutes} minutes
+                  {beautyAdvisors
+                    .filter((ba) => ba.userId !== 'all')
+                    .map((ba) => (
+                      <option key={ba.userId} value={ba.userId}>
+                        {ba.emailAddress}
+                      </option>
+                    ))}
+                </select>
+                {errors.staffId && <p className={errorClass}>{errors.staffId}</p>}
+              </div>
+            )}
+
+            {/* 2. TEMPLATE & SLOT (Gộp lại) */}
+            <div className='grid grid-cols-2 gap-4'>
+              {/* Template */}
+              <div>
+                <label htmlFor='templateId' className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>
+                  Schedule Template *
+                </label>
+
+                <select
+                  id='templateId'
+                  value={form.templateId}
+                  onChange={handleChange}
+                  className={getInputClass('templateId')}
+                >
+                  <option value='' disabled>
+                    --- Select Template ---
                   </option>
-                ))}
-              </select>
-              {errors.slotId && <p className={errorClass}>{errors.slotId}</p>}
-            </div>
-            <div className='grid grid-cols-2 gap-4'>
-              <div>
-                <label htmlFor='startDate' className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>
-                  Start Date *
-                </label>
-
-                <input
-                  id='startDate'
-                  type='date'
-                  value={form.startDate}
-                  onChange={handleChange}
-                  className={getInputClass('startDate')}
-                />
-                {errors.startDate && <p className={errorClass}>{errors.startDate}</p>}
+                  {templates.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))}
+                </select>
+                {errors.templateId && <p className={errorClass}>{errors.templateId}</p>}
               </div>
-              <div>
-                <label htmlFor='endDate' className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>
-                  End Date *
-                </label>
 
-                <input
-                  id='endDate'
-                  type='date'
-                  value={form.endDate}
-                  onChange={handleChange}
-                  className={getInputClass('endDate')}
-                />
-                {errors.endDate && <p className={errorClass}>{errors.endDate}</p>}
+              {/* Slot */}
+              <div>
+                <label htmlFor='slotId' className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>
+                  Slot Configuration *
+                </label>
+                <select id='slotId' value={form.slotId} onChange={handleChange} className={getInputClass('slotId')}>
+                  <option value='' disabled>
+                    --- Choose Slot ---
+                  </option>
+                  {slots.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.slotMinutes} min / Break: {s.breakMinutes} min
+                    </option>
+                  ))}
+                </select>
+                {errors.slotId && <p className={errorClass}>{errors.slotId}</p>}
               </div>
             </div>
-            <div className='grid grid-cols-2 gap-4'>
-              <div>
-                <label htmlFor='startTime' className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>
-                  Start Time *
-                </label>
 
-                <input
-                  id='startTime'
-                  type='time'
-                  value={form.startTime}
-                  onChange={handleChange}
-                  className={getInputClass('startTime')}
-                />
-                {errors.startTime && <p className={errorClass}>{errors.startTime}</p>}
-              </div>
-              <div>
-                <label htmlFor='endTime' className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>
-                  End Time *
-                </label>
-
-                <input
-                  id='endTime'
-                  type='time'
-                  value={form.endTime}
-                  onChange={handleChange}
-                  className={getInputClass('endTime')}
-                />
-                {errors.endTime && <p className={errorClass}>{errors.endTime}</p>}
-              </div>
-            </div>
+            {/* 3. START DATE & TIME (Gộp lại) */}
             <div>
-              <label htmlFor='notes' className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>
-                Notes
+              <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>
+                Start (Date & Time) *
               </label>
-
-              <textarea
-                id='notes'
-                rows={3}
-                maxLength={500}
-                value={form.notes}
-                onChange={handleChange}
-                placeholder='Add any necessary notes for this schedule registration...'
-                className={`${getInputClass('notes')} resize-none`}
-              />
-              {errors.notes && <p className={errorClass}>{errors.notes}</p>}
+              <div className='grid grid-cols-2 gap-4'>
+                {/* Start Date */}
+                <div>
+                  <input
+                    id='startDate'
+                    type='date'
+                    value={form.startDate}
+                    onChange={handleChange}
+                    className={getInputClass('startDate')}
+                  />
+                  {errors.startDate && <p className={errorClass}>{errors.startDate}</p>}
+                </div>
+                {/* Start Time */}
+                <div>
+                  <input
+                    id='startTime'
+                    type='time'
+                    value={form.startTime}
+                    onChange={handleChange}
+                    className={getInputClass('startTime')}
+                  />
+                  {errors.startTime && <p className={errorClass}>{errors.startTime}</p>}
+                </div>
+              </div>
             </div>
-            {/* WEEKDAYS */}
+
+            {/* 4. END DATE & TIME (Gộp lại) */}
+            <div>
+              <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>
+                End (Date & Time) *
+              </label>
+              <div className='grid grid-cols-2 gap-4'>
+                {/* End Date */}
+                <div>
+                  <input
+                    id='endDate'
+                    type='date'
+                    value={form.endDate}
+                    onChange={handleChange}
+                    className={getInputClass('endDate')}
+                  />
+                  {errors.endDate && <p className={errorClass}>{errors.endDate}</p>}
+                </div>
+                {/* End Time */}
+                <div>
+                  <input
+                    id='endTime'
+                    type='time'
+                    value={form.endTime}
+                    onChange={handleChange}
+                    className={getInputClass('endTime')}
+                  />
+                  {errors.endTime && <p className={errorClass}>{errors.endTime}</p>}
+                </div>
+              </div>
+            </div>
+
+            {/* 5. WEEKDAYS (Giữ nguyên) */}
             <div>
               <span className='font-semibold text-gray-700 dark:text-gray-300 block mb-2'>
                 Select Days of the Week *
@@ -406,10 +468,28 @@ export default function RegistrationModal({
               </div>
               {errors.weekdays && <p className={errorClass}>{errors.weekdays}</p>}
             </div>
+
+            {/* 6. NOTES (Giữ nguyên) */}
+            <div>
+              <label htmlFor='notes' className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>
+                Notes
+              </label>
+
+              <textarea
+                id='notes'
+                rows={3}
+                maxLength={500}
+                value={form.notes}
+                onChange={handleChange}
+                placeholder='Add any necessary notes for this schedule registration...'
+                className={`${getInputClass('notes')} resize-none`}
+              />
+              {errors.notes && <p className={errorClass}>{errors.notes}</p>}
+            </div>
           </div>
         )}
       </div>
-      {/* FOOTER */}
+      {/* FOOTER giữ nguyên */}
       <div className='flex items-center gap-3 p-6 border-t border-gray-100 dark:border-gray-800 modal-footer sm:justify-end'>
         <button
           onClick={onClose}

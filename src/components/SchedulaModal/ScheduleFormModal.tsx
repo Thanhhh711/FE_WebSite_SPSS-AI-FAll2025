@@ -316,7 +316,7 @@ const ScheduleFormModal: React.FC<ScheduleFormModalProps> = ({
                 ) : (
                   staffList.map((staff) => (
                     <option key={staff.userId} value={staff.userId}>
-                      {staff.emailAddress} ({staff.userId})
+                      {staff.emailAddress}
                     </option>
                   ))
                 )}

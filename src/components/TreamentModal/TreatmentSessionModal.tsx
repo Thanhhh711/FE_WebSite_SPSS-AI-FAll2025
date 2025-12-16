@@ -315,6 +315,8 @@ export default function TreatmentSessionModal({
   const isFieldsLocked = !isEditing && !!selectedSchedule
 
   // Lấy thông tin Room đã chọn
+  // Dòng 268-269:
+  // Lấy thông tin Room đã chọn
   const currentRoom = roomsResponse?.data.data.find((room) => room.id === form.roomId)
   console.log('formRoon', form.roomId)
 

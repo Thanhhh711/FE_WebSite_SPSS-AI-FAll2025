@@ -16,7 +16,7 @@ export default function UserMetaCard({ user }: UserMetaCardProps) {
   const customerId = id as string
 
   const handleViewMedicalRecord = (userId: string) => {
-    navigate(`${AppPath.PATIENT_DETAIL}/${userId}`)
+    navigate(`${AppPath.MEDICAL_RECORD}/${userId}`)
   }
 
   // ✅ HÀM MỚI: Chuyển hướng đến phần Báo cáo Y tế

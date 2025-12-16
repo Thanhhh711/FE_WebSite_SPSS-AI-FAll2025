@@ -1,3 +1,5 @@
+import React from 'react'
+
 interface ModalProps {
   isOpen: boolean
   onClose: () => void
@@ -5,13 +7,15 @@ interface ModalProps {
   children: React.ReactNode
 }
 
-import React from 'react'
-
 export default function ModalRegistration({ isOpen, onClose, title, children }: ModalProps) {
   if (!isOpen) return null
+
+  // Sửa đổi ở đây:
+  // 1. Thay thế 'bg-blur bg-opacity-50' bằng 'bg-black/40' (hoặc màu nền khác tùy chọn)
+  // 2. Thêm 'backdrop-blur-sm' để tạo hiệu ứng mờ cho nội dung phía sau.
   return (
     <div
-      className='fixed inset-0 z-[999] flex items-center justify-center bg-black bg-opacity-50 transition-opacity duration-300'
+      className='fixed inset-0 z-[999] flex items-center justify-center bg-black/40 backdrop-blur-sm transition-opacity duration-300'
       onClick={onClose}
     >
       <div

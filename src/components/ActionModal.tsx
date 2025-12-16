@@ -108,7 +108,7 @@ export default function ActionModal({ isOpen, onClose, user, onConfirm, refetch 
 
   const handleSubmit = async () => {
     if (isBanning && reasonInput.trim() === '') {
-      alert('Vui lòng nhập lý do cấm.')
+      alert('Please enter a reason for banning the user.')
       return
     }
 
@@ -124,22 +124,22 @@ export default function ActionModal({ isOpen, onClose, user, onConfirm, refetch 
       onClose()
     } catch (error) {
       console.error(error)
-      alert('Đã xảy ra lỗi khi cập nhật trạng thái người dùng.')
+      alert('An error occurred while updating the user status.')
     }
   }
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <h3 className='text-xl font-semibold mb-4 text-gray-900 dark:text-white'>
-        {actionText} Người: {user.userName}
+        {actionText}: {user.userName}
       </h3>
       <p className='mb-4 text-gray-600 dark:text-gray-400'>
-        Người dùng hiện tại có trạng thái **{statusText}**. Vui lòng cung cấp lý do để **{actionText.toLowerCase()}**
-        người dùng này.
+        The user currently has a status of <strong>{statusText}</strong>. Please provide a reason to{' '}
+        <strong>{actionText.toLowerCase()}</strong> this user.
       </p>
 
       <label htmlFor='reason' className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>
-        Lý do:
+        Reason:
       </label>
       <textarea
         id='reason'
@@ -153,7 +153,7 @@ export default function ActionModal({ isOpen, onClose, user, onConfirm, refetch 
 
       <div className='flex justify-end space-x-3'>
         <Button onClick={onClose} className='bg-gray-300 hover:bg-gray-400 text-gray-800'>
-          Hủy
+          Cancel
         </Button>
         <Button
           onClick={handleSubmit}

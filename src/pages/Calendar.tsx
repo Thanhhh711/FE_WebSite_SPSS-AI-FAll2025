@@ -42,6 +42,32 @@ interface CalendarEvent extends EventInput {
   }
 }
 
+const STATUS_CLASS_MAP: Record<number, string> = {
+  // Nền Pastel + Viền đậm + CHỮ RẤT ĐẬM (Tone 800/900)
+
+  // 0: Pending (Amber)
+  [AppointmentStatusCode.Pending]: 'bg-amber-100 border-amber-600 text-amber-900',
+
+  // 1: Confirmed (Emerald)
+  [AppointmentStatusCode.Confirmed]: 'bg-emerald-100 border-emerald-600 text-emerald-900',
+
+  // 2: In Progress (Blue)
+  [AppointmentStatusCode.InProgress]: 'bg-blue-100 border-blue-600 text-blue-800',
+
+  // 3: Completed (Violet)
+  [AppointmentStatusCode.Completed]: 'bg-violet-100 border-violet-600 text-violet-800',
+
+  // 4: Cancelled (Ngoại lệ: Nền đậm + Chữ trắng cho độ tương phản tối đa)
+  [AppointmentStatusCode.Cancelled]: 'bg-red-700 border-red-700 text-white shadow-md',
+
+  // 5: Absent (Stone/Gray)
+  [AppointmentStatusCode.Absent]: 'bg-stone-100 border-stone-600 text-stone-800',
+
+  // 6: Rescheduled (Orange)
+  [AppointmentStatusCode.Rescheduled]: 'bg-orange-100 border-orange-600 text-orange-900'
+}
+const DEFAULT_COLOR_CLASS = 'bg-gray-100 border-gray-500 text-gray-800'
+
 const AppointmentCalendar: React.FC = () => {
   const { profile } = useAppContext()
   const isBeautyAdvisor = profile?.role === Role.BEAUTY_ADVISOR
@@ -349,6 +375,7 @@ const AppointmentCalendar: React.FC = () => {
           <FullCalendar
             ref={calendarRef}
             plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+            slotEventOverlap={false}
             initialView='dayGridMonth'
             headerToolbar={{
               left: 'prev,next',
@@ -356,44 +383,51 @@ const AppointmentCalendar: React.FC = () => {
               right: 'dayGridMonth,timeGridWeek,timeGridDay'
             }}
             events={events}
+            // Logic gán class trạng thái (GIỮ NGUYÊN)
+            eventClassNames={(arg) => {
+              const status = Number(arg.event.extendedProps.status)
+
+              switch (status) {
+                case 0:
+                  return ['status-pending']
+                case 1:
+                  return ['status-confirmed']
+                case 2:
+                  return ['status-inprogress']
+                case 3:
+                  return ['status-completed']
+                case 4:
+                  return ['status-cancelled']
+                case 5:
+                  return ['status-absent']
+                case 6:
+                  return ['status-rescheduled']
+                default:
+                  // Class mặc định
+                  return ['status-default']
+              }
+            }}
             selectable={true}
             select={handleDateSelect}
             eventClick={handleEventClick}
             eventContent={(eventInfo) => {
-              const statusCode = eventInfo.event.extendedProps.status as keyof typeof APPOINTMENT_STATUS_MAP
+              const statusCode = Number(eventInfo.event.extendedProps.status) as number // Dùng number thay vì AppointmentStatus
 
-              const statusMap = APPOINTMENT_STATUS_MAP[statusCode] || APPOINTMENT_STATUS_MAP[0]
-
-              console.log('statusMap', statusMap)
-
-              const STATUS_CLASS_MAP: Record<number, string> = {
-                [AppointmentStatusCode.Pending]: 'bg-warning-500 border-warning-500',
-                [AppointmentStatusCode.Confirmed]: 'bg-success-500/10 border-success-500',
-                [AppointmentStatusCode.InProgress]: 'bg-primary-500/10 border-primary-500',
-                [AppointmentStatusCode.Completed]: 'bg-primary-500/10 border-indigo-500',
-                [AppointmentStatusCode.Cancelled]: 'bg-danger-500 border-danger-500',
-                [AppointmentStatusCode.NoShow]: 'bg-danger-800/10 border-red-800',
-                [AppointmentStatusCode.Rescheduled]: 'bg-orange-500/10 border-orange-500'
-              }
-
-              // Loại bỏ space, special character
-              // const colorKey = statusMap.calendar.replace(/\s+/g, '').toLowerCase()
-              const color = STATUS_CLASS_MAP[statusCode] || 'bg-gray-500/10 border-gray-500'
-
-              console.log('color', color)
+              // Lấy class màu từ map (đã định nghĩa ở ngoài component)
+              const colorClass = STATUS_CLASS_MAP[statusCode] || DEFAULT_COLOR_CLASS
 
               return (
                 <div
                   className={`
-                  flex items-center gap-1 p-1 rounded-md border-l-4
-                  ${color}
-                  hover:scale-105 hover:shadow-md transition duration-150
-                  min-w-0
-                `}
+                    flex items-center gap-1 p-1 rounded-xl border-l-4 h-full
+                    shadow-sm
+                    ${colorClass}  
+                    hover:scale-[1.03] hover:shadow-lg transition duration-200
+                    min-w-0
+                  `}
                 >
-                  <span className='fc-event-time text-xs font-semibold text-gray-700 dark:text-gray-200'>
-                    {eventInfo.timeText}
-                  </span>
+                  {/* Loại bỏ các class màu chữ cố định ở đây, để nó thừa hưởng từ div cha */}
+                  <span className='fc-event-time text-xs font-bold'>{eventInfo.timeText}</span>
 
                   <span
                     className='fc-event-title text-xs font-medium truncate flex-1 min-w-0'
@@ -418,14 +452,7 @@ const AppointmentCalendar: React.FC = () => {
             )}
             dayMaxEventRows={1}
             dayMaxEvents={true}
-            customButtons={
-              {
-                // addEventButton: {
-                //   text: 'Add Event +',
-                //   click: openModal
-                // }
-              }
-            }
+            customButtons={{}}
           />
         </div>
 

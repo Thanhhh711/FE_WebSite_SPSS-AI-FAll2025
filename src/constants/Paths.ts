@@ -47,7 +47,7 @@ export enum AppPath {
   FORM_ELEMENTS = '/form-elements',
   BLOGS = '/blogs',
   PATIENTS = '/patients',
-  PATIENT_DETAIL = '/medical-record',
+  MEDICAL_RECORD = '/medical-record',
   REPORT = '/report',
   BASIC_TABLES_COUNTRIES = '/basic-tables-countries',
 

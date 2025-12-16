@@ -20,7 +20,7 @@ import { Modal } from '../ui/modal'
 //   room: { roomName: string; location: string }
 // }
 
-type EditableStatusForBA = typeof AppointmentStatusCode.Completed | typeof AppointmentStatusCode.NoShow
+type EditableStatusForBA = typeof AppointmentStatusCode.Completed | typeof AppointmentStatusCode.Absent
 
 const canEditStatus = (role: Role, code: AppointmentStatus): code is EditableStatusForBA => {
   console.log('role', role)
@@ -29,7 +29,7 @@ const canEditStatus = (role: Role, code: AppointmentStatus): code is EditableSta
   if (role === Role.BEAUTY_ADVISOR) {
     console.log('yes')
 
-    return code === AppointmentStatusCode.Completed || code === AppointmentStatusCode.NoShow
+    return code === AppointmentStatusCode.Completed || code === AppointmentStatusCode.Absent
   }
   return true
 }
@@ -550,7 +550,7 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
           <MedicalReportModal
             isOpen={isCreateModalOpen}
             onClose={() => setIsCreateModalOpen(false)}
-            customerId={customerId as string}
+            customerId={patientId as string}
             appoimentId={appoimentId}
           />
         </div>

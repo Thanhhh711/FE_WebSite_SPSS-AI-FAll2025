@@ -1,12 +1,13 @@
-// AssignRoomModal.tsx
-
 import { useQuery } from '@tanstack/react-query'
-import { useState } from 'react'
+import React, { useState } from 'react' // Đảm bảo import React
 import { roomApi } from '../../api/room.api'
 import { BookingPayload } from '../../types/schedula.type'
 import userApi from '../../api/user.api'
 import { Room } from '../../types/room.type'
 import { User } from '../../types/user.type'
+import { toast } from 'react-toastify' // Import toast cho thông báo lỗi
+// GIẢ ĐỊNH: Import ModalRegistration từ đúng đường dẫn
+import ModalRegistration from '../RegistrationModal/ModalRegistration'
 
 interface AssignRoomModalProps {
   isOpen: boolean
@@ -38,15 +39,52 @@ export default function AssignRoomModal({ isOpen, onClose, onAssign }: AssignRoo
     endDate: new Date().toISOString().split('T')[0] // Mặc định là ngày hiện tại
   })
 
+  // State quản lý lỗi (tuỳ chọn)
+  const [errors, setErrors] = useState<Partial<Record<keyof BookingPayload, string>>>({})
+
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>) => {
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }))
+    const { name, value } = e.target
+    setFormData((prev) => ({ ...prev, [name]: value }))
+    // Xóa lỗi khi người dùng bắt đầu nhập
+    if (errors[name as keyof BookingPayload]) {
+      setErrors((p) => ({ ...p, [name]: undefined }))
+    }
+  }
+
+  const validateForm = (data: BookingPayload) => {
+    const newErrors: Partial<Record<keyof BookingPayload, string>> = {}
+    let isValid = true
+
+    if (!data.roomId) {
+      newErrors.roomId = 'Room is required.'
+      isValid = false
+    }
+    if (!data.staffId) {
+      newErrors.staffId = 'Staff is required.'
+      isValid = false
+    }
+    if (!data.startDate) {
+      newErrors.startDate = 'Start Date is required.'
+      isValid = false
+    }
+    if (!data.endDate) {
+      newErrors.endDate = 'End Date is required.'
+      isValid = false
+    }
+    if (data.startDate && data.endDate && data.startDate > data.endDate) {
+      newErrors.endDate = 'End Date cannot be before Start Date.'
+      isValid = false
+    }
+
+    setErrors(newErrors)
+    return isValid
   }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    // Kiểm tra validation đơn giản
-    if (!formData.roomId || !formData.staffId || !formData.startDate || !formData.endDate) {
-      // Hiển thị toast lỗi hoặc thông báo
+
+    if (!validateForm(formData)) {
+      toast.error('Please correct the form errors before assigning.')
       return
     }
 
@@ -54,63 +92,72 @@ export default function AssignRoomModal({ isOpen, onClose, onAssign }: AssignRoo
     // Không đóng modal ở đây, để mutation onSuccess đóng sau khi thành công
   }
 
-  if (!isOpen) return null // Dùng cơ chế render có điều kiện thay vì modal component nội bộ
+  // --- UI/UX improvements ---
 
+  const baseInputClass =
+    'w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm text-gray-800 dark:text-white/90'
+  const errorClass = 'mt-1 text-xs text-red-500'
+  const getInputClass = (fieldName: keyof BookingPayload) => {
+    return `${baseInputClass} ${errors[fieldName] ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'focus:border-brand-500 focus:ring-1 focus:ring-brand-500'}`
+  }
+
+  // Thay thế div modal nội bộ bằng ModalRegistration component
   return (
-    // Thay thế bằng Modal UI Component thực tế của bạn
-    <div className='fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50'>
-      <div className='bg-white p-6 rounded-lg w-full max-w-md'>
-        <h2 className='text-xl font-bold mb-4'>Assign Room to Staff</h2>
+    <ModalRegistration isOpen={isOpen} onClose={onClose} title='Assign Room to Staff'>
+      <form onSubmit={handleSubmit} className='p-6 space-y-4'>
+        {/* Room Selection */}
+        <div>
+          <label htmlFor='roomId' className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>
+            Room Name *
+          </label>
+          <select
+            id='roomId'
+            name='roomId'
+            value={formData.roomId}
+            onChange={handleChange}
+            className={getInputClass('roomId')}
+            required
+          >
+            <option value=''>--- Select a Room ---</option>
+            {availableRooms.map((room) => (
+              <option key={room.id} value={room.id}>
+                {`${room.roomName} (${room.location} - Floor ${room.floorNumber})`}
+              </option>
+            ))}
+          </select>
+          {errors.roomId && <p className={errorClass}>{errors.roomId}</p>}
+        </div>
 
-        <form onSubmit={handleSubmit}>
-          {/* Room Selection */}
-          <div className='mb-4'>
-            <label htmlFor='roomId' className='block text-sm font-medium text-gray-700'>
-              Room Name
-            </label>
-            <select
-              id='roomId'
-              name='roomId'
-              value={formData.roomId}
-              onChange={handleChange}
-              className='mt-1 block w-full rounded-md border-gray-300 shadow-sm'
-              required
-            >
-              <option value=''>Select a Room</option>
-              {availableRooms.map((room) => (
-                <option key={room.id} value={room.id}>
-                  {`${room.roomName} (${room.location} - Floor ${room.floorNumber})`}
-                </option>
-              ))}
-            </select>
-          </div>
+        {/* Staff Selection */}
+        <div>
+          <label htmlFor='staffId' className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>
+            Staff (Beauty Advisor) *
+          </label>
+          <select
+            id='staffId'
+            name='staffId'
+            value={formData.staffId}
+            onChange={handleChange}
+            className={getInputClass('staffId')}
+            required
+          >
+            <option value=''>--- Select a Staff ---</option>
+            {staffList.map((staff) => (
+              // Giả định User có userId và emailAddress
+              <option key={staff.userId} value={staff.userId}>
+                {staff.emailAddress || staff.userId}
+              </option>
+            ))}
+          </select>
+          {errors.staffId && <p className={errorClass}>{errors.staffId}</p>}
+        </div>
 
-          {/* Staff Selection */}
-          <div className='mb-4'>
-            <label htmlFor='staffId' className='block text-sm font-medium text-gray-700'>
-              Staff (Beauty Advisor)
-            </label>
-            <select
-              id='staffId'
-              name='staffId'
-              value={formData.staffId}
-              onChange={handleChange}
-              className='mt-1 block w-full rounded-md border-gray-300 shadow-sm'
-              required
-            >
-              <option value=''>Select a Staff</option>
-              {staffList.map((staff) => (
-                <option key={staff.userId} value={staff.userId}>
-                  {staff.firstName || staff.emailAddress} {/* Giả định User có fullName/email */}
-                </option>
-              ))}
-            </select>
-          </div>
-
+        {/* Start Date & End Date (Gộp lại) */}
+        <div className='grid grid-cols-2 gap-4'>
           {/* Start Date */}
-          <div className='mb-4'>
-            <label htmlFor='startDate' className='block text-sm font-medium text-gray-700'>
-              Start Date
+          <div>
+            <label htmlFor='startDate' className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>
+              Start Date *
             </label>
             <input
               type='date'
@@ -118,15 +165,16 @@ export default function AssignRoomModal({ isOpen, onClose, onAssign }: AssignRoo
               name='startDate'
               value={formData.startDate}
               onChange={handleChange}
-              className='mt-1 block w-full rounded-md border-gray-300 shadow-sm'
+              className={getInputClass('startDate')}
               required
             />
+            {errors.startDate && <p className={errorClass}>{errors.startDate}</p>}
           </div>
 
           {/* End Date */}
-          <div className='mb-6'>
-            <label htmlFor='endDate' className='block text-sm font-medium text-gray-700'>
-              End Date
+          <div>
+            <label htmlFor='endDate' className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>
+              End Date *
             </label>
             <input
               type='date'
@@ -134,28 +182,29 @@ export default function AssignRoomModal({ isOpen, onClose, onAssign }: AssignRoo
               name='endDate'
               value={formData.endDate}
               onChange={handleChange}
-              className='mt-1 block w-full rounded-md border-gray-300 shadow-sm'
+              className={getInputClass('endDate')}
               required
             />
+            {errors.endDate && <p className={errorClass}>{errors.endDate}</p>}
           </div>
+        </div>
 
-          <div className='flex justify-end gap-3'>
-            <button
-              type='button'
-              onClick={onClose}
-              className='px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300'
-            >
-              Cancel
-            </button>
-            <button
-              type='submit'
-              className='px-4 py-2 text-sm font-medium text-white bg-brand-500 rounded-lg shadow-brand-xs hover:bg-brand-600 transition-colors'
-            >
-              Confirm Assignment
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <div className='flex justify-end gap-3 pt-2 border-t border-gray-100 dark:border-gray-800'>
+          <button
+            type='button'
+            onClick={onClose}
+            className='px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-400 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors'
+          >
+            Cancel
+          </button>
+          <button
+            type='submit'
+            className='px-4 py-2.5 text-sm font-medium text-white bg-brand-500 rounded-lg shadow-brand-xs hover:bg-brand-600 transition-colors'
+          >
+            Confirm Assignment
+          </button>
+        </div>
+      </form>
+    </ModalRegistration>
   )
 }

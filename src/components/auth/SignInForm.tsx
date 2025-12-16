@@ -74,7 +74,7 @@ export default function SignInForm() {
           navigate(redirectPath)
         },
         onError: (error) => {
-          toast.error(error.message)
+          console.log('errror', error)
         }
       }
     )

@@ -324,8 +324,10 @@ export default function BasicTableProduct({ onViewReviews }: BasicTableProductPr
                       {product.name}
                     </TableCell>
 
-                    <TableCell className='px-4 py-3'>{product.price.toLocaleString('vi-VN')}</TableCell>
-                    <TableCell className='px-4 py-3'>{product.quantityInStock}</TableCell>
+                    <TableCell className='px-4 py-3  dark:text-white'>
+                      {product.price.toLocaleString('vi-VN')}
+                    </TableCell>
+                    <TableCell className='px-4 py-3  dark:text-white'>{product.quantityInStock}</TableCell>
                     <TableCell className='px-4 py-3'>{getStatusBadge(product.status)}</TableCell>
                     <TableCell className='px-4 py-3 text-end whitespace-nowrap'>
                       <div className='flex justify-end space-x-2'>
