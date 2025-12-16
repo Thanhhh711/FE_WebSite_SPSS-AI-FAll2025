@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useQuery } from '@tanstack/react-query'
 import React, { useMemo, useState } from 'react'
-import { useNavigate, useParams } from 'react-router'
+import { useNavigate } from 'react-router'
 import { serviceApi } from '../../api/services.api'
 
 import { APPOINTMENT_STATUS_LIST, AppointmentStatus, AppointmentStatusCode } from '../../constants/AppointmentConstants'
@@ -116,7 +116,7 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
   profile
 }) => {
   const isEditing = !!selectedEvent
-  const { id: customerId } = useParams<{ id: string }>()
+  // const { id: customerId } = useParams<{ id: string }>()
   console.log('Data User', pagingData)
 
   console.log('sessionData', sesionData)

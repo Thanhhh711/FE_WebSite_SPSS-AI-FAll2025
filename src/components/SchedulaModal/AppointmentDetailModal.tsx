@@ -37,7 +37,7 @@ const getStatusClass = (status: number): string => {
     case AppointmentStatusCode.Completed:
       return 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300'
     case AppointmentStatusCode.Cancelled:
-    case AppointmentStatusCode.NoShow:
+    case AppointmentStatusCode.Absent:
       return 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300'
     case AppointmentStatusCode.Pending:
     case AppointmentStatusCode.Rescheduled:
