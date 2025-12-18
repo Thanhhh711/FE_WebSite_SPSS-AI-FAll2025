@@ -232,11 +232,9 @@ export default function ProductModal({ isOpen, onClose, product, onSave, isViewM
 
   const handleRemoveExistingImage = (imageUrl: string) => {
     setForm((prevForm) => {
-      // Lọc ra ảnh có imageUrl khớp
       const newImages = prevForm.images.filter((img) => img.imageUrl !== imageUrl)
-      // Nếu ảnh bị xóa là thumbnail, ta cần đặt lại thumbnail cho ảnh đầu tiên còn lại (nếu có)
+
       if (newImages.length > 0 && !newImages.some((img) => img.isThumbnail)) {
-        // Đặt ảnh đầu tiên còn lại làm thumbnail mới
         newImages[0] = { ...newImages[0], isThumbnail: true }
       }
       return {
@@ -246,7 +244,6 @@ export default function ProductModal({ isOpen, onClose, product, onSave, isViewM
     })
   }
 
-  // Change Handler (giữ nguyên)
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { id, value, type } = e.target
     setForm((p) => {
@@ -265,7 +262,6 @@ export default function ProductModal({ isOpen, onClose, product, onSave, isViewM
     })
   }
 
-  // Save Logic (giữ nguyên)
   const handleSave = async () => {
     if (!validateProductForm(form)) return
 

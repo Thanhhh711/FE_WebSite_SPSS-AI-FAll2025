@@ -1,230 +1,307 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
-
 import { toast } from 'react-toastify'
-import brandApi from '../../../api/brand.api'
-import Pagination from '../../pagination/Pagination' // Giả định path
-import { Table, TableBody, TableCell, TableHeader, TableRow } from '../../ui/table' // Giả định path
+import { Search, Plus, Globe, Building2, Edit3, Trash2, Eye, Info, FilterX } from 'lucide-react'
 
+import brandApi from '../../../api/brand.api'
 import countriesApi from '../../../api/country.api'
 import { Role } from '../../../constants/Roles'
 import { useAppContext } from '../../../context/AuthContext'
 import { Brand, BrandForm } from '../../../types/brands.type'
 import BrandModal from '../../BrandModal/BrandModal'
-import ConfirmModal from '../../CalendarModelDetail/ConfirmModal' // Giả định path
+import ConfirmModal from '../../CalendarModelDetail/ConfirmModal'
+import { Table, TableBody, TableCell, TableHeader, TableRow } from '../../ui/table'
+import { Country } from '../../../types/contries.type'
 
-const ITEMS_PER_PAGE = 10
+const ITEMS_PER_PAGE = 8
 
 export default function BasicTableBrands() {
   const queryClient = useQueryClient()
   const { profile } = useAppContext()
 
+  // --- STATES ---
   const [searchTerm, setSearchTerm] = useState('')
+  const [selectedCountry, setSelectedCountry] = useState<string>('all')
   const [currentPage, setCurrentPage] = useState(1)
   const [isBrandModalOpen, setIsBrandModalOpen] = useState(false)
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
   const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null)
   const [isViewMode, setIsViewMode] = useState(false)
 
-  const {
-    data: brandsResponse,
-    isLoading,
-    isError,
-    refetch
-  } = useQuery({
+  // --- FETCH DATA ---
+  const { data: brandsResponse, isLoading: isBrandsLoading } = useQuery({
     queryKey: ['brands'],
-    queryFn: brandApi.getBrands,
-    staleTime: 1000 * 60 * 5
+    queryFn: () => brandApi.getBrands()
   })
 
   const { data: countriesResponse } = useQuery({
     queryKey: ['countries'],
-    queryFn: countriesApi.getCountries,
-    staleTime: 1000 * 60 * 5
+    queryFn: () => countriesApi.getCountries()
   })
 
-  const allBrands = brandsResponse?.data.data || []
-  const allCountries = countriesResponse?.data.data || []
+  const allBrands = brandsResponse?.data?.data || []
+  const allCountries = countriesResponse?.data?.data || []
 
-  const filteredAndPaginatedBrands = useMemo(() => {
-    const lowercasedSearchTerm = searchTerm.toLowerCase()
-    const filtered = allBrands.filter(
-      (brand: Brand) =>
-        brand.name.toLowerCase().includes(lowercasedSearchTerm) ||
-        brand.title.toLowerCase().includes(lowercasedSearchTerm) ||
-        brand.country?.countryName.toLowerCase().includes(lowercasedSearchTerm)
-    )
+  console.log('countriesResponse', allCountries)
+  // --- LOGIC LỌC DỮ LIỆU (SEARCH + COUNTRY FILTER) ---
+  const filteredBrands = useMemo(() => {
+    const term = searchTerm.toLowerCase().trim()
+    return allBrands.filter((brand: Brand) => {
+      const matchesSearch = brand.name.toLowerCase().includes(term)
+      const matchesCountry = selectedCountry === 'all' || brand.countryId === Number(selectedCountry)
+      return matchesSearch && matchesCountry
+    })
+  }, [allBrands, searchTerm, selectedCountry])
 
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
-    const endIndex = startIndex + ITEMS_PER_PAGE
+  // --- LOGIC PHÂN TRANG ---
+  const paginatedData = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE
+    return filteredBrands.slice(start, start + ITEMS_PER_PAGE)
+  }, [filteredBrands, currentPage])
 
-    return {
-      totalItems: filtered.length,
-      data: filtered.slice(startIndex, endIndex)
-    }
-  }, [allBrands, searchTerm, currentPage])
+  const totalPages = Math.ceil(filteredBrands.length / ITEMS_PER_PAGE)
 
-  const { mutate: saveBrand } = useMutation({
+  // --- MUTATIONS (SAVE & DELETE) ---
+  const saveBrandMutation = useMutation({
     mutationFn: (data: BrandForm & { id?: string }) => {
-      if (data.id) {
-        return brandApi.updateBrand(data.id, data)
-      }
-      return brandApi.createBrand(data)
+      return data.id ? brandApi.updateBrand(data.id, data) : brandApi.createBrand(data)
     },
-    onSuccess: (res) => {
-      toast.success(res.data.message || 'Brand saved successfully!')
+    onSuccess: (_, vars) => {
       queryClient.invalidateQueries({ queryKey: ['brands'] })
-      refetch()
+      toast.success(vars.id ? 'Updated Brand successfully!' : 'Created Brand successfully!')
       setIsBrandModalOpen(false)
-      setSelectedBrand(null)
     },
     onError: (error: any) => {
-      toast.error(error.data?.res || 'Error saving brand.')
+      toast.error(error?.response?.data?.message || 'Operation failed!')
     }
   })
 
-  const { mutate: deleteBrand, isPending: isDeleting } = useMutation({
+  const deleteBrandMutation = useMutation({
     mutationFn: (id: string) => brandApi.deleteBrand(id),
-    onSuccess: (res) => {
-      toast.success(res.data.message || 'Brand deleted successfully!')
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['brands'] })
-      refetch()
-      setSelectedBrand(null)
+      toast.success('Brand removed successfully!')
+      setIsConfirmOpen(false)
     },
-    onError: (error: any) => {
-      toast.error(error.data?.res || 'Error deleting brand.')
-    }
+    onError: () => toast.error('Could not delete brand. It might be linked to products.')
   })
 
-  // --- EVENT HANDLERS ---
-  const handleOpenDetailModal = (brand: Brand, mode: 'view' | 'edit') => {
-    setSelectedBrand(brand)
-    setIsViewMode(mode === 'view')
-    setIsBrandModalOpen(true)
+  // --- HANDLERS ---
+  const handleResetFilters = () => {
+    setSearchTerm('')
+    setSelectedCountry('all')
+    setCurrentPage(1)
   }
-
-  const handleCreateNew = () => {
-    setSelectedBrand(null)
-    setIsViewMode(false)
-    setIsBrandModalOpen(true)
-  }
-
-  const handleDeleteClick = (brand: Brand) => {
-    setSelectedBrand(brand)
-    setIsConfirmOpen(true)
-  }
-
-  const handleConfirmDelete = () => {
-    if (selectedBrand?.id) {
-      deleteBrand(selectedBrand.id)
-      setIsConfirmOpen(false)
-    }
-  }
-
-  if (isLoading) return <div className='p-6 text-center text-lg text-brand-500'>Loading Brands...</div>
-  if (isError) return <div className='p-6 text-center text-lg text-red-500'>Error loading brand list.</div>
 
   return (
-    <>
-      <div className='flex justify-between items-center mb-5'>
-        {/* Search Bar */}
-        <input
-          type='text'
-          placeholder='Search by Name, Title, or Country...'
-          value={searchTerm}
-          onChange={(e) => {
-            setSearchTerm(e.target.value)
-            setCurrentPage(1)
-          }}
-          className='dark:text-white w-1/3 min-w-[200px] rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500'
-        />
+    <div className='p-4 space-y-8 max-w-[1600px] mx-auto animate-in fade-in duration-500'>
+      {/* STATS HEADER */}
+      <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+        <div className='bg-white dark:bg-white/[0.03] p-6 rounded-[2.5rem] border border-gray-100 dark:border-white/[0.05] flex items-center gap-6 shadow-sm'>
+          <div className='p-4 bg-brand-50 text-brand-600 rounded-3xl'>
+            <Building2 size={28} />
+          </div>
+          <div>
+            <p className='text-[10px] font-black uppercase tracking-widest text-gray-400'>Total Brand Partners</p>
+            <h3 className='text-3xl font-black dark:text-white'>{allBrands.length}</h3>
+          </div>
+        </div>
+        <div className='bg-white dark:bg-white/[0.03] p-6 rounded-[2.5rem] border border-gray-100 dark:border-white/[0.05] flex items-center gap-6 shadow-sm'>
+          <div className='p-4 bg-emerald-50 text-emerald-600 rounded-3xl'>
+            <Globe size={28} />
+          </div>
+          <div>
+            <p className='text-[10px] font-black uppercase tracking-widest text-gray-400'>Origin Countries</p>
+            <h3 className='text-3xl font-black dark:text-white'>{allCountries.length}</h3>
+          </div>
+        </div>
+      </div>
 
-        {/* Create New Button */}
+      {/* TOOLBAR: SEARCH + FILTER + ADD */}
+      <div className='flex flex-col xl:flex-row justify-between items-center gap-4 bg-white dark:bg-white/[0.02] p-4 rounded-[2rem] border border-gray-100 dark:border-white/[0.05]'>
+        <div className='flex flex-col sm:flex-row w-full xl:w-auto gap-4 flex-1'>
+          {/* Search Box */}
+          <div className='relative flex-1 max-w-md group'>
+            <Search
+              className='absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-brand-500'
+              size={18}
+            />
+            <input
+              type='text'
+              placeholder='Search by brand name...'
+              className='w-full pl-12 pr-4 py-3 dark:text-white bg-gray-50 dark:bg-gray-900 border-none rounded-2xl outline-none focus:ring-2 focus:ring-brand-500/50 font-bold text-sm transition-all'
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value)
+                setCurrentPage(1)
+              }}
+            />
+          </div>
+
+          {/* Country Filter */}
+          <div className='relative w-full sm:w-64 group'>
+            <Globe
+              className='absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-brand-500'
+              size={18}
+            />
+            <select
+              className='w-full pl-12 pr-10 py-3 dark:text-white bg-gray-50 dark:bg-gray-900 border-none rounded-2xl outline-none focus:ring-2 focus:ring-brand-500/50 font-bold text-sm appearance-none cursor-pointer'
+              value={selectedCountry}
+              onChange={(e) => {
+                setSelectedCountry(e.target.value)
+                setCurrentPage(1)
+              }}
+            >
+              <option value='all'>All Countries</option>
+              {allCountries.map((c: Country) => (
+                <option key={c.id} value={c.id}>
+                  {c.countryName}
+                </option>
+              ))}
+            </select>
+            <div className='absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400'>
+              <svg width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='3'>
+                <path d='m6 9 6 6 6-6' />
+              </svg>
+            </div>
+          </div>
+
+          {/* Reset Button */}
+          {(searchTerm || selectedCountry !== 'all') && (
+            <button
+              onClick={handleResetFilters}
+              className='flex items-center gap-2 px-4 text-rose-500 hover:bg-rose-50 rounded-xl transition-all font-black text-[10px] uppercase tracking-tighter'
+            >
+              <FilterX size={16} /> Clear
+            </button>
+          )}
+        </div>
 
         {profile?.role === Role.STORE_STAFF && (
           <button
-            onClick={handleCreateNew}
-            className='btn btn-primary flex justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white shadow-brand-xs hover:bg-brand-600 transition-colors'
+            onClick={() => {
+              setSelectedBrand(null)
+              setIsViewMode(false)
+              setIsBrandModalOpen(true)
+            }}
+            className='w-full xl:w-auto flex items-center justify-center gap-2 px-8 py-3 bg-brand-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.15em] hover:bg-brand-700 shadow-lg shadow-brand-500/20 active:scale-95 transition-all'
           >
-            Add New Brand
+            <Plus size={20} /> Add Brand Partner
           </button>
         )}
       </div>
 
-      <div className='overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] shadow-lg'>
-        <div className='px-4 py-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg text-end'>
-          <span className='text-sm font-semibold text-indigo-700 dark:text-indigo-400'>
-            Total: **{filteredAndPaginatedBrands.totalItems}**
-          </span>
-        </div>
-
-        <div className='max-w-full overflow-x-auto'>
+      {/* MAIN TABLE */}
+      <div className='bg-white dark:bg-white/[0.02] rounded-[2.5rem] border border-gray-100 dark:border-white/[0.05] overflow-hidden shadow-sm'>
+        <div className='overflow-x-auto overflow-y-hidden'>
           <Table>
-            {/* Table Header */}
-            <TableHeader className='dark:text-white border-b border-gray-100 dark:border-white/[0.05] bg-gray-50 dark:bg-white/[0.05]'>
+            <TableHeader className='bg-gray-50/50 dark:bg-white/[0.01]'>
               <TableRow>
-                <TableCell isHeader className='px-5 py-3 text-start'>
-                  Name
+                <TableCell
+                  isHeader
+                  className='py-6 px-8 text-[10px] font-black uppercase tracking-widest text-gray-400'
+                >
+                  Brand Information
                 </TableCell>
-                <TableCell isHeader className='px-5 py-3 text-start'>
-                  Title
+                <TableCell
+                  isHeader
+                  className='py-6 px-4 text-[10px] font-black uppercase tracking-widest text-gray-400 text-center'
+                >
+                  Origin
                 </TableCell>
-                <TableCell isHeader className='px-5 py-3 text-start'>
-                  Country
-                </TableCell>
-                <TableCell isHeader className='px-5 py-3 text-start'>
-                  Products
-                </TableCell>
-                <TableCell isHeader className='px-5 py-3 text-end'>
-                  Actions
+                <TableCell
+                  isHeader
+                  className='py-6 px-8 text-[10px] font-black uppercase tracking-widest text-gray-400 text-right'
+                >
+                  Control
                 </TableCell>
               </TableRow>
             </TableHeader>
-
             <TableBody>
-              {filteredAndPaginatedBrands.data.length === 0 ? (
+              {isBrandsLoading ? (
                 <TableRow>
-                  <TableCell className='py-4 text-center text-gray-500 dark:text-white'>
-                    {searchTerm ? 'No brands found.' : 'No brands have been registered yet.'}
+                  <TableCell className='py-20 text-center font-bold text-gray-400 animate-pulse uppercase tracking-widest'>
+                    Synchronizing Data...
+                  </TableCell>
+                </TableRow>
+              ) : paginatedData.length === 0 ? (
+                <TableRow>
+                  <TableCell className='py-24 text-center'>
+                    <div className='bg-gray-50 dark:bg-white/[0.02] w-20 h-20 rounded-[2rem] flex items-center justify-center mx-auto mb-4 text-gray-300'>
+                      <Info size={40} />
+                    </div>
+                    <p className='text-sm font-black text-gray-400 uppercase tracking-widest'>
+                      No records match your filters.
+                    </p>
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredAndPaginatedBrands.data.map((brand) => (
-                  <TableRow key={brand.id} className='dark:text-white'>
-                    <TableCell className='px-5 py-4 font-medium truncate max-w-[150px]'>{brand.name}</TableCell>
-                    <TableCell className='px-4 py-3 text-start truncate max-w-[150px]'>{brand.title}</TableCell>
-                    <TableCell className='px-4 py-3 text-start'>{brand.country?.countryName || 'N/A'}</TableCell>
-                    <TableCell className='px-4 py-3 text-start'>{brand.products?.length || 0}</TableCell>
-                    <TableCell className='px-4 py-3 text-end'>
-                      <div className='flex justify-end gap-2'>
-                        {/* View Button */}
-                        <button
-                          onClick={() => handleOpenDetailModal(brand, 'view')}
-                          className='text-sky-500 hover:text-sky-700 dark:hover:text-sky-300 text-sm p-1'
-                          title='View Details'
-                        >
-                          View
-                        </button>
+                paginatedData.map((brand: Brand) => (
+                  <TableRow
+                    key={brand.id}
+                    className='group hover:bg-brand-50/20 dark:hover:bg-brand-500/5 transition-all border-b border-gray-50 dark:border-white/[0.02]'
+                  >
+                    <TableCell className='py-5 px-8'>
+                      <div className='flex items-center gap-4'>
+                        {brand.imageUrl ? (
+                          <div className='w-12 h-12 rounded-2xl overflow-hidden border border-gray-100 dark:border-white/[0.1] shadow-sm'>
+                            <img src={brand.imageUrl} alt={brand.name} className='w-full h-full object-cover' />
+                          </div>
+                        ) : (
+                          <div className='w-12 h-12 bg-brand-50 dark:bg-brand-500/10 text-brand-600 rounded-2xl flex items-center justify-center font-black text-xs uppercase'>
+                            {brand.name.substring(0, 2)}
+                          </div>
+                        )}
+                        <div>
+                          <p className='font-black text-gray-900 dark:text-white leading-tight'>{brand.name}</p>
+                          <p className='text-[10px] text-gray-400 font-bold uppercase mt-0.5 tracking-tighter line-clamp-1'>
+                            {brand.title}
+                          </p>
+                        </div>
+                      </div>
+                    </TableCell>
 
+                    <TableCell className='px-4 text-center'>
+                      <div className='inline-flex items-center gap-2 px-4 py-1.5 rounded-xl bg-gray-100 dark:bg-white/[0.05] border border-gray-200 dark:border-white/[0.05]'>
+                        <span className='text-[11px] font-black text-gray-600 dark:text-gray-300 uppercase tracking-tighter'>
+                          {allCountries.find((c) => c.id === brand.countryId)?.countryName || `ID: ${brand.countryId}`}
+                        </span>
+                      </div>
+                    </TableCell>
+
+                    <TableCell className='px-8 text-right'>
+                      <div className='flex justify-end gap-1 sm:opacity-0 group-hover:opacity-100 transition-all'>
+                        <button
+                          onClick={() => {
+                            setSelectedBrand(brand)
+                            setIsViewMode(true)
+                            setIsBrandModalOpen(true)
+                          }}
+                          className='p-2.5 text-gray-400 hover:text-brand-500 hover:bg-brand-50 rounded-xl transition-colors'
+                        >
+                          <Eye size={18} />
+                        </button>
                         {profile?.role === Role.STORE_STAFF && (
                           <>
-                            {/* Edit Button */}
                             <button
-                              onClick={() => handleOpenDetailModal(brand, 'edit')}
-                              className='text-brand-500 hover:text-brand-700 dark:hover:text-brand-300 text-sm p-1'
-                              title='Edit Brand'
+                              onClick={() => {
+                                setSelectedBrand(brand)
+                                setIsViewMode(false)
+                                setIsBrandModalOpen(true)
+                              }}
+                              className='p-2.5 text-amber-500 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition-colors'
                             >
-                              Edit
+                              <Edit3 size={18} />
                             </button>
-                            {/* Delete Button */}
                             <button
-                              onClick={() => handleDeleteClick(brand)}
-                              className='text-red-500 hover:text-red-700 dark:hover:text-red-300 text-sm p-1'
-                              title='Delete Brand'
-                              disabled={isDeleting}
+                              onClick={() => {
+                                setSelectedBrand(brand)
+                                setIsConfirmOpen(true)
+                              }}
+                              className='p-2.5 text-rose-500 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors'
                             >
-                              Delete
+                              <Trash2 size={18} />
                             </button>
                           </>
                         )}
@@ -237,37 +314,56 @@ export default function BasicTableBrands() {
           </Table>
         </div>
 
-        {/* Pagination */}
-        {filteredAndPaginatedBrands.totalItems > ITEMS_PER_PAGE && (
-          <div className='p-4 border-t border-gray-100 dark:border-white/[0.05] flex justify-center'>
-            <Pagination
-              currentPage={currentPage}
-              totalPages={Math.ceil(filteredAndPaginatedBrands.totalItems / ITEMS_PER_PAGE)}
-              onPageChange={setCurrentPage}
-            />
+        {/* PAGINATION FOOTER */}
+        <div className='p-6 bg-gray-50/50 dark:bg-white/[0.01] border-t border-gray-100 dark:border-white/[0.05] flex flex-col sm:flex-row justify-between items-center gap-4'>
+          <p className='text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]'>
+            Showing Page {currentPage} of {totalPages || 1}
+          </p>
+          <div className='flex gap-2'>
+            <button
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage((p) => p - 1)}
+              className='px-6 py-2.5 text-[10px] font-black bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl disabled:opacity-30 shadow-sm hover:bg-gray-50 active:scale-95 transition-all uppercase'
+            >
+              Prev
+            </button>
+            <button
+              disabled={currentPage >= totalPages}
+              onClick={() => setCurrentPage((p) => p + 1)}
+              className='px-6 py-2.5 text-[10px] font-black bg-brand-600 text-white rounded-xl disabled:opacity-30 shadow-lg shadow-brand-500/20 hover:bg-brand-700 active:scale-95 transition-all uppercase'
+            >
+              Next
+            </button>
           </div>
-        )}
+        </div>
       </div>
 
-      {/* --- MODAL VIEW/CREATE/EDIT DETAILS --- */}
+      {/* SYSTEM INFO */}
+      <div className='flex justify-center items-center gap-3 opacity-30 py-4'>
+        <div className='h-[1px] w-12 bg-gray-400'></div>
+        <p className='text-[9px] font-black uppercase tracking-[0.4em] text-gray-500'>Global Brand Registry System</p>
+        <div className='h-[1px] w-12 bg-gray-400'></div>
+      </div>
+
+      {/* MODALS */}
       {isBrandModalOpen && (
         <BrandModal
-          countries={allCountries || []}
+          countries={allCountries}
           isOpen={isBrandModalOpen}
           onClose={() => setIsBrandModalOpen(false)}
           brand={selectedBrand}
-          onSave={saveBrand}
+          onSave={(data: any) => saveBrandMutation.mutate(data)}
           isViewMode={isViewMode}
         />
       )}
-      {/* --- CONFIRM DELETE MODAL --- */}
+
       <ConfirmModal
         isOpen={isConfirmOpen}
         onClose={() => setIsConfirmOpen(false)}
-        onConfirm={handleConfirmDelete}
-        title='Confirm Brand Deletion'
-        message={`Are you sure you want to delete the brand "${selectedBrand?.name}"? This action cannot be undone.`}
+        onConfirm={() => selectedBrand && deleteBrandMutation.mutate(selectedBrand.id)}
+        title='Archive Brand'
+        message={`Are you sure you want to archive "${selectedBrand?.name}"? This action may affect related products.`}
       />
-    </>
+    </div>
   )
 }

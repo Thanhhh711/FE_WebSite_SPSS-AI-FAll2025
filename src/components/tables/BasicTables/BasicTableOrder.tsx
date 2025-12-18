@@ -1,102 +1,40 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useQuery } from '@tanstack/react-query'
-import { CheckCircle, Clock, Search, Truck, XCircle } from 'lucide-react'
-import React, { ReactNode, useMemo, useState } from 'react'
-import { toast } from 'react-toastify'
+import { Search, ShoppingBag, Clock, CheckCircle, XCircle } from 'lucide-react'
+import { useMemo, useState } from 'react'
 import { orderApi } from '../../../api/order.api'
-import { OrderResponse, OrderStatus, OrderUserAddress } from '../../../types/order.type'
+import { OrderResponse, OrderStatus } from '../../../types/order.type'
 import { formatDateToDDMMYYYY, formatVND } from '../../../utils/validForm'
 import { OrderDetailModal } from '../../order/OrderDetailModal'
 import Pagination from '../../pagination/Pagination'
 
 const ITEMS_PER_PAGE = 10
 
-const Badge = ({ color, children }: any) => {
-  let colorClasses = ''
-  switch (color) {
-    case 'success':
-      colorClasses = 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-      break
-    case 'warning':
-      colorClasses = 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
-      break
-    case 'error':
-      colorClasses = 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-      break
-    case 'info':
-      colorClasses = 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
-      break
-    default:
-      colorClasses = 'bg-gray-100 text-gray-800 dark:bg-gray-700/30 dark:text-gray-300'
-  }
-  return (
-    <span
-      className={`inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-medium ${colorClasses}`}
-    >
-      {children}
-    </span>
-  )
-}
-
-interface TableProps {
-  children: ReactNode
-}
-interface TableHeaderProps extends TableProps {
-  className?: string
-}
-interface TableCellProps extends TableProps {
-  isHeader?: boolean
-  colSpan?: number
-  className?: string
-}
-
-const Table: React.FC<TableProps> = ({ children }) => (
-  <table className='w-full table-auto border-collapse'>{children}</table>
-)
-const TableHeader: React.FC<TableHeaderProps> = ({ children, className }) => (
-  <thead className={`${className ?? ''} text-left`}>{children}</thead>
-)
-const TableBody: React.FC<TableHeaderProps> = ({ children, className }) => (
-  <tbody className={`${className ?? ''} text-left divide-y divide-gray-100 dark:divide-white/[0.05]`}>{children}</tbody>
-)
-const TableRow: React.FC<TableProps> = ({ children }) => (
-  <tr className='hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors border-b border-gray-100 dark:border-white/[0.05] last:border-b-0'>
-    {children}
-  </tr>
+// --- Order Stat Component ---
+const OrderStat = ({ title, count, icon, color }: any) => (
+  <div className='bg-white dark:bg-gray-800/40 p-5 rounded-[1.5rem] border border-gray-100 dark:border-white/[0.05] flex items-center gap-4 shadow-sm'>
+    <div className={`p-3 rounded-xl ${color}`}>{icon}</div>
+    <div>
+      <p className='text-[10px] font-black text-gray-400 uppercase tracking-widest'>{title}</p>
+      <p className='text-xl font-black text-gray-900 dark:text-white'>{count}</p>
+    </div>
+  </div>
 )
 
-const TableCell: React.FC<TableCellProps> = ({ children, isHeader, colSpan, className }) => {
-  const baseClasses = 'p-4 text-sm align-middle'
-  const headerClasses = isHeader
-    ? 'font-medium text-gray-500 text-xs uppercase tracking-wider dark:text-gray-400'
-    : 'text-gray-700 dark:text-gray-300'
-  const Tag = isHeader ? 'th' : 'td'
-  return (
-    <Tag colSpan={colSpan} className={`${baseClasses} ${headerClasses} ${className || ''}`}>
-      {children}
-    </Tag>
-  )
-}
-
-// ====================================================================
-// --- UTILITY FUNCTIONS ---
-// ====================================================================
-
-const getStatusDisplay = (status: OrderStatus) => {
+const getOrderStatusStyles = (status: OrderStatus) => {
   switch (status) {
-    case OrderStatus.Confirmed:
     case OrderStatus.Completed:
-      return { label: status, color: 'success', icon: CheckCircle }
+    case OrderStatus.Confirmed:
+      return 'bg-emerald-100 text-emerald-700 border-emerald-200' // Thành công
     case OrderStatus.Pending:
-      return { label: status, color: 'warning', icon: Clock }
+      return 'bg-amber-100 text-amber-700 border-amber-200' // Chờ xử lý
     case OrderStatus.Processing:
-      return { label: status, color: 'info', icon: Truck }
+      return 'bg-blue-100 text-blue-700 border-blue-200' // Đang giao
     case OrderStatus.Cancelled:
     case OrderStatus.Refunded:
-      return { label: status, color: 'error', icon: XCircle }
+      return 'bg-rose-100 text-rose-700 border-rose-200' // Hủy/Hoàn tiền
     default:
-      return { label: status, color: 'default', icon: Clock }
+      return 'bg-gray-100 text-gray-700 border-gray-200'
   }
 }
 
@@ -104,236 +42,158 @@ export default function BasicTableOrder() {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState<OrderStatus | 'all'>('all')
   const [currentPage, setCurrentPage] = useState(1)
+  const [selectedOrder, setSelectedOrder] = useState<OrderResponse | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
-  // State for Detail Modal
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
-  const [selectedOrderForDetail, setSelectedOrderForDetail] = useState<OrderResponse | null>(null)
-
-  // Fetch Order Data
-  const {
-    data: ordersResponse,
-    isLoading,
-    isError
-  } = useQuery({
+  const { data: orders = [] } = useQuery({
     queryKey: ['orders'],
-    queryFn: async () => {
-      try {
-        const res = await orderApi.getOrders()
-        return res.data.data as OrderResponse[]
-      } catch (error) {
-        toast.error('Failed to fetch orders.')
-        return []
-      }
-    },
-    staleTime: 1000 * 60
+    queryFn: () => orderApi.getOrders().then((res) => res.data.data as OrderResponse[])
   })
 
-  const allOrders: OrderResponse[] = ordersResponse || []
+  // Order Stats Logic
+  const orderStats = useMemo(
+    () => ({
+      total: orders.length,
+      pending: orders.filter((o) => o.status === OrderStatus.Pending).length,
+      completed: orders.filter((o) => o.status === OrderStatus.Completed).length,
+      cancelled: orders.filter((o) => o.status === OrderStatus.Cancelled).length
+    }),
+    [orders]
+  )
 
-  const handleViewDetails = (order: OrderResponse) => {
-    setSelectedOrderForDetail(order)
-    setIsDetailModalOpen(true)
-  }
+  const filteredOrders = useMemo(() => {
+    return orders.filter((order) => {
+      const matchesSearch =
+        order.user.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        order.id.toLowerCase().includes(searchTerm.toLowerCase())
+      const matchesStatus = filterStatus === 'all' || order.status === filterStatus
+      return matchesSearch && matchesStatus
+    })
+  }, [orders, searchTerm, filterStatus])
 
-  // Filter + Pagination
-  const filteredAndPaginatedData = useMemo(() => {
-    let filtered = allOrders
-
-    if (filterStatus !== 'all') {
-      filtered = filtered.filter((order) => order.status === filterStatus)
-    }
-
-    if (searchTerm) {
-      const lower = searchTerm.toLowerCase()
-      filtered = filtered.filter(
-        (order) =>
-          order.id.toLowerCase().includes(lower) ||
-          order.user.userName.toLowerCase().includes(lower) ||
-          order.user.emailAddress.toLowerCase().includes(lower)
-      )
-    }
-
-    const start = (currentPage - 1) * ITEMS_PER_PAGE
-    const end = start + ITEMS_PER_PAGE
-
-    return {
-      totalItems: filtered.length,
-      data: filtered.slice(start, end)
-    }
-  }, [allOrders, filterStatus, searchTerm, currentPage])
-
-  const totalPages = Math.ceil(filteredAndPaginatedData.totalItems / ITEMS_PER_PAGE)
-
-  if (isLoading)
-    return (
-      <div className='p-6 text-center text-lg text-blue-500'>
-        <div className='animate-spin inline-block w-8 h-8 border-4 border-t-4 border-blue-500 border-gray-200 rounded-full'></div>
-        Loading orders...
-      </div>
-    )
-
-  if (isError) return <div className='p-6 text-center text-lg text-red-500'>Failed to load orders.</div>
-
-  const getShortAddress = (addresses: OrderUserAddress[]): string => {
-    if (!addresses || addresses.length === 0) return 'N/A'
-    const defaultAddress = addresses.find((addr) => addr.isDefault) || addresses[0]
-    return `${defaultAddress.streetNumber}, ${defaultAddress.city}`
-  }
+  const paginatedData = filteredOrders.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
 
   return (
-    <div className='overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl dark:border-white/[0.05] dark:bg-gray-800/80 backdrop-blur-sm'>
-      <div className='p-5 border-b border-gray-100 dark:border-white/[0.05]'>
-        <h3 className='text-xl font-bold text-gray-800 dark:text-white mb-1'>Order Management</h3>
+    <div className='space-y-6 max-w-[1600px] mx-auto p-2'>
+      {/* ORDER STATS BAR */}
+      <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4'>
+        <OrderStat
+          title='Total Orders'
+          count={orderStats.total}
+          color='bg-blue-50 text-blue-600'
+          icon={<ShoppingBag size={20} />}
+        />
+        <OrderStat
+          title='Pending'
+          count={orderStats.pending}
+          color='bg-amber-50 text-amber-600'
+          icon={<Clock size={20} />}
+        />
+        <OrderStat
+          title='Success'
+          count={orderStats.completed}
+          color='bg-emerald-50 text-emerald-600'
+          icon={<CheckCircle size={20} />}
+        />
+        <OrderStat
+          title='Cancelled'
+          count={orderStats.cancelled}
+          color='bg-rose-50 text-rose-600'
+          icon={<XCircle size={20} />}
+        />
+      </div>
 
-        {/* Search + Filter */}
-        <div className='flex items-center gap-3 mt-4'>
-          <div className='relative flex-grow max-w-sm'>
-            <input
-              type='text'
-              placeholder='Search by Order ID, Customer Name, or Email...'
-              value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value)
-                setCurrentPage(1)
-              }}
-              className='w-full rounded-lg border border-gray-300 dark:border-gray-700 dark:text-white bg-white dark:bg-gray-900 pl-10 pr-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
-            />
-            <Search className='w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2' />
-          </div>
+      {/* FILTER BAR */}
+      <div className='flex flex-col md:flex-row gap-4 justify-between'>
+        <div className='relative flex-grow max-w-md group'>
+          <input
+            type='text'
+            placeholder='Search by ID or Customer...'
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className='w-full pl-12 pr-4 py-3 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl outline-none focus:ring-2 focus:ring-brand-500 transition-all shadow-sm'
+          />
+          <Search className='absolute left-4 top-3.5 text-gray-400 group-focus-within:text-brand-500' size={18} />
+        </div>
+        <select
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value as any)}
+          className='px-4 py-3 rounded-2xl border border-gray-100 dark:bg-gray-900 dark:border-gray-800 outline-none font-bold text-xs uppercase tracking-widest text-gray-500 shadow-sm'
+        >
+          <option value='all'>All Statuses</option>
+          {Object.values(OrderStatus).map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
+        </select>
+      </div>
 
-          <select
-            className='w-[200px] rounded-lg border dark:text-white border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none'
-            value={filterStatus}
-            onChange={(e) => {
-              setFilterStatus(e.target.value as OrderStatus | 'all')
-              setCurrentPage(1)
-            }}
-          >
-            <option value='all'>All Statuses</option>
-            {Object.values(OrderStatus).map((status) => (
-              <option key={status} value={status}>
-                {status}
-              </option>
+      {/* TABLE */}
+      <div className='bg-white dark:bg-white/[0.03] rounded-[2rem] border border-gray-100 dark:border-white/[0.05] overflow-hidden shadow-sm'>
+        <table className='w-full text-left border-collapse'>
+          <thead className='bg-gray-50/50 dark:bg-white/[0.02] border-b border-gray-100 dark:border-white/[0.05]'>
+            <tr>
+              <th className='py-5 px-8 text-[10px] font-black text-gray-400 uppercase tracking-widest'>Customer</th>
+              <th className='py-5 px-8 text-[10px] font-black text-gray-400 uppercase tracking-widest'>Status</th>
+              <th className='py-5 px-8 text-[10px] font-black text-gray-400 uppercase tracking-widest'>Amount</th>
+              <th className='py-5 px-8 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right'>
+                Action
+              </th>
+            </tr>
+          </thead>
+          <tbody className='divide-y divide-gray-50'>
+            {paginatedData.map((order) => (
+              <tr key={order.id} className='group hover:bg-gray-50/50 transition-colors'>
+                <td className='py-5 px-8'>
+                  <div className='flex items-center gap-3'>
+                    <div className='w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center font-black text-brand-600 text-xs'>
+                      {order.user.userName.substring(0, 2).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className='font-black text-gray-900 dark:text-white leading-tight'>{order.user.userName}</p>
+                      <p className='text-[10px] text-gray-400 font-bold uppercase'>
+                        {formatDateToDDMMYYYY(order.createdTime)}
+                      </p>
+                    </div>
+                  </div>
+                </td>
+                <td className='py-5 px-8'>
+                  <span
+                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-tighter border ${getOrderStatusStyles(order.status)}`}
+                  >
+                    <span className='w-1.5 h-1.5 rounded-full bg-current' /> {/* Chấm tròn nhỏ cho đẹp */}
+                    {order.status}
+                  </span>
+                </td>
+                <td className='py-5 px-8 font-black text-gray-900 dark:text-white'>{formatVND(order.orderTotal)}</td>
+                <td className='py-5 px-8 text-right'>
+                  <button
+                    onClick={() => {
+                      setSelectedOrder(order)
+                      setIsModalOpen(true)
+                    }}
+                    className='px-4 py-2 text-[10px] font-black text-brand-600 hover:bg-brand-50 rounded-xl uppercase tracking-widest transition-all'
+                  >
+                    Details
+                  </button>
+                </td>
+              </tr>
             ))}
-          </select>
+          </tbody>
+        </table>
+
+        {/* PAGINATION */}
+        <div className='p-6 border-t border-gray-50 flex justify-center'>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={Math.ceil(filteredOrders.length / ITEMS_PER_PAGE)}
+            onPageChange={setCurrentPage}
+          />
         </div>
       </div>
 
-      <div className='max-w-full overflow-x-auto'>
-        <div className='px-4 py-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg text-end'>
-          <span className='text-sm font-semibold text-indigo-700 dark:text-indigo-400'>
-            Total Customer Order : **{filteredAndPaginatedData.totalItems}**
-          </span>
-        </div>
-        <Table>
-          <TableHeader className='border-b border-gray-100 dark:border-white/[0.05] bg-gray-50 dark:bg-white/[0.05]'>
-            <TableRow>
-              {/* <TableCell isHeader className='w-2/12'>
-                Order ID
-              </TableCell> */}
-              <TableCell isHeader className='w-3/12'>
-                Customer
-              </TableCell>
-              <TableCell isHeader className='w-2/12'>
-                Status
-              </TableCell>
-              <TableCell isHeader className='w-1/12'>
-                Total
-              </TableCell>
-              <TableCell isHeader className='w-2/12'>
-                Created Date
-              </TableCell>
-              <TableCell isHeader className='w-2/12 text-end pr-6'>
-                Actions
-              </TableCell>
-            </TableRow>
-          </TableHeader>
-
-          <TableBody>
-            {filteredAndPaginatedData.data.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className='py-4 text-center text-gray-500'>
-                  {searchTerm || filterStatus !== 'all' ? 'No matching orders found.' : 'No orders yet.'}
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredAndPaginatedData.data.map((order) => {
-                const statusDisplay = getStatusDisplay(order.status)
-                const primaryAddress = order.user.addresses[0]
-
-                return (
-                  <TableRow key={order.id}>
-                    {/* <TableCell className='text-gray-800 dark:text-white font-semibold truncate max-w-[150px]'>
-                      {order.id}
-                    </TableCell> */}
-
-                    <TableCell className='py-4'>
-                      <div className='flex items-center gap-3'>
-                        <div className='w-10 h-10 overflow-hidden rounded-full border border-gray-200 dark:border-gray-700'>
-                          <img
-                            width={40}
-                            height={40}
-                            src={order.user.avatarUrl || 'https://placehold.co/40x40/EAB308/FFFFFF?text=U'}
-                            alt={order.user.userName}
-                            className='object-cover w-full h-full'
-                          />
-                        </div>
-                        <div>
-                          <span className='block font-medium text-gray-800 dark:text-white/90'>
-                            {order.user.userName}
-                          </span>
-                          <span className='block text-gray-500 text-xs dark:text-gray-400'>
-                            {order.user.emailAddress}
-                          </span>
-                          <span className='block text-gray-500 text-xs dark:text-gray-400'>
-                            {primaryAddress ? getShortAddress(order.user.addresses) : 'No Address'}
-                          </span>
-                        </div>
-                      </div>
-                    </TableCell>
-
-                    <TableCell>
-                      <Badge color={statusDisplay.color}>
-                        <statusDisplay.icon className='w-3 h-3 mr-1' />
-                        {statusDisplay.label}
-                      </Badge>
-                    </TableCell>
-
-                    <TableCell className='text-gray-800 dark:text-white font-semibold'>
-                      {formatVND(order.orderTotal)} VNĐ
-                    </TableCell>
-
-                    <TableCell className='text-gray-600 dark:text-gray-300'>
-                      {formatDateToDDMMYYYY(order.createdTime)}
-                    </TableCell>
-
-                    <TableCell className='text-end pr-6'>
-                      <button
-                        onClick={() => handleViewDetails(order)}
-                        className='text-blue-500 hover:text-blue-700 dark:hover:text-blue-400 text-sm p-1 font-medium'
-                      >
-                        View Details
-                      </button>
-                    </TableCell>
-                  </TableRow>
-                )
-              })
-            )}
-          </TableBody>
-        </Table>
-      </div>
-
-      {filteredAndPaginatedData.totalItems > ITEMS_PER_PAGE && (
-        <div className='p-4 border-t border-gray-100 dark:border-white/[0.05] flex justify-center'>
-          <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
-        </div>
-      )}
-
-      <OrderDetailModal
-        isOpen={isDetailModalOpen}
-        onClose={() => setIsDetailModalOpen(false)}
-        order={selectedOrderForDetail}
-      />
+      <OrderDetailModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} order={selectedOrder} />
     </div>
   )
 }

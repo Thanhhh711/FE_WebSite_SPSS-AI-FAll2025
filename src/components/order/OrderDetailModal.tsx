@@ -21,16 +21,14 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ isOpen, onCl
 
   return (
     <div
-      // ĐÂY LÀ PHẦN QUAN TRỌNG: fixed inset-0 và z-[9999]
       className='fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4'
-      onClick={onClose} // Đóng khi click ra ngoài
+      onClick={onClose}
     >
       <div
-        // CONTAINER NỘI DUNG: Hiệu ứng Pop-up
         className='bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-6xl max-h-[95vh] overflow-y-auto shadow-2xl 
                    transform transition-all duration-500 ease-out 
                    ring-2 ring-indigo-500/10'
-        onClick={(e) => e.stopPropagation()} // Ngăn không đóng modal khi click vào nội dung
+        onClick={(e) => e.stopPropagation()}
       >
         {/* HEADER */}
         <div className='flex justify-between items-center border-b border-gray-200 dark:border-gray-700 pb-3 mb-6'>

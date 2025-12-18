@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState } from 'react'
-import { ProductForm, ProductImage, ProductImageForm, ProductStatusEnum } from '../../types/product.type'
-import ModalPhotoViewer from './ModalPhotoViewer'
 import { categoryApi } from '../../api/category.api'
+import { ProductForm, ProductImage, ProductImageForm, ProductStatusEnum } from '../../types/product.type'
+import { formatVND } from '../../utils/validForm'
+import ModalPhotoViewer from './ModalPhotoViewer'
 
 export type NewUploadedImage = ProductImageForm & { imagePath: string }
 export interface ProductFormState extends Omit<ProductForm, 'images' | 'expiryDate'> {
@@ -50,7 +51,6 @@ const STATUS_MAP: { [key: number]: string } = {
 }
 const getStatusText = (status: ProductStatusEnum): string => STATUS_MAP[status] || 'Unknown'
 
-// Hàm render Field tái sử dụng (đã được tối ưu hóa)
 const Field = ({
   id,
   label,
@@ -62,7 +62,8 @@ const Field = ({
   min = 0,
   isMulti = false,
   handleChange,
-  isViewMode
+  isViewMode,
+  error // <--- Nhận prop error từ component cha
 }: {
   id: keyof ProductFormState
   label: string
@@ -75,55 +76,95 @@ const Field = ({
   isMulti?: boolean
   handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void
   isViewMode: boolean
+  error?: string
 }) => (
-  <div>
-    <label htmlFor={id as string} className={labelClass}>
-      {label} {isRequired && <span className='text-red-500'>*</span>}
+  <div className='flex flex-col gap-1.5'>
+    {/* Label chuyển màu đỏ nếu có lỗi */}
+    <label htmlFor={id as string} className={`${labelClass} ${error ? 'text-rose-500' : ''}`}>
+      {label} {isRequired && <span className='text-rose-500'>*</span>}
     </label>
-    {type === 'textarea' ? (
-      <textarea
-        id={id as string}
-        rows={rows}
-        value={value || ''}
-        onChange={handleChange}
-        disabled={isViewMode}
-        className={baseInputClass + ' min-h-[100px]'}
-      />
-    ) : type === 'select' ? (
-      <select
-        id={id as string}
-        // Đối với multi-select, value là mảng, còn single-select là chuỗi
-        value={isMulti ? value : value || ''}
-        onChange={handleChange}
-        disabled={isViewMode}
-        multiple={isMulti}
-        className={baseInputClass + (isMulti ? ' h-[150px]' : '')}
-      >
-        {!isMulti && (
-          <option value='' disabled>
-            Select an option
-          </option>
-        )}
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    ) : (
-      <input
-        id={id as string}
-        type={type === 'date' ? 'date' : type}
-        value={value || ''}
-        onChange={handleChange}
-        min={min}
-        disabled={isViewMode}
-        className={baseInputClass}
-      />
+
+    <div className='relative'>
+      {type === 'textarea' ? (
+        <textarea
+          id={id as string}
+          rows={rows}
+          value={value || ''}
+          onChange={handleChange}
+          disabled={isViewMode}
+          className={`${baseInputClass} min-h-[100px] ${
+            error
+              ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500/10'
+              : 'border-gray-100 focus:border-brand-500'
+          }`}
+        />
+      ) : type === 'select' ? (
+        <select
+          id={id as string}
+          value={isMulti ? value : value || ''}
+          onChange={handleChange}
+          disabled={isViewMode}
+          multiple={isMulti}
+          className={`${baseInputClass} ${isMulti ? ' h-[150px]' : ''} ${
+            error ? 'border-rose-400 focus:border-rose-500' : 'border-gray-100 focus:border-brand-500'
+          }`}
+        >
+          {!isMulti && (
+            <option value='' disabled>
+              Select an option
+            </option>
+          )}
+          {options.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <input
+          id={id as string}
+          type={type === 'date' ? 'date' : type}
+          value={value || ''}
+          onChange={handleChange}
+          min={min}
+          disabled={isViewMode}
+          className={`${baseInputClass} ${
+            error
+              ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500/10'
+              : 'border-gray-100 focus:border-brand-500'
+          }`}
+        />
+      )}
+
+      {/* Icon cảnh báo nhỏ ở góc phải input nếu có lỗi */}
+      {error && !isViewMode && (
+        <div className='absolute right-3 top-1/2 -translate-y-1/2 text-rose-500 pointer-events-none animate-in zoom-in'>
+          <svg
+            xmlns='http://www.w3.org/2000/svg'
+            width='16'
+            height='16'
+            viewBox='0 0 24 24'
+            fill='none'
+            stroke='currentColor'
+            strokeWidth='3'
+            strokeLinecap='round'
+            strokeLinejoin='round'
+          >
+            <circle cx='12' cy='12' r='10' />
+            <line x1='12' y1='8' x2='12' y2='12' />
+            <line x1='12' y1='16' x2='12.01' y2='16' />
+          </svg>
+        </div>
+      )}
+    </div>
+
+    {error && !isViewMode && (
+      <span className='text-[10px] font-black text-rose-500 uppercase tracking-tight ml-1 animate-in fade-in slide-in-from-top-1'>
+        {error}
+      </span>
     )}
   </div>
 )
-
 export default function ProductFormFields({
   form,
   handleChange,
@@ -147,7 +188,7 @@ export default function ProductFormFields({
   const [categoryName, setCategoryName] = useState('')
   const isModalOpen = currentImageIndex !== -1
   const currentImageUrl = isModalOpen ? form.images[currentImageIndex]?.imageUrl : ''
-
+  const [errors] = useState<Partial<Record<keyof ProductFormState, string>>>({})
   // --- 2. HÀM XỬ LÝ SỰ KIỆN ---
 
   const openImage = (clickedImage: Image) => {
@@ -160,6 +201,18 @@ export default function ProductFormFields({
       setCurrentImageIndex(index)
     }
   }
+
+  // const validateForm = () => {
+  //   const newErrors: any = {}
+
+  //   if (!form.name.trim()) newErrors.name = 'Product name is required'
+  //   if (form.price <= 0) newErrors.price = 'Price must be greater than 0'
+  //   if (form.quantityInStock < 0) newErrors.quantityInStock = 'Quantity cannot be negative'
+  //   if (form.description.length < 10) newErrors.description = 'Description must be at least 10 characters'
+
+  //   setErrors(newErrors)
+  //   return Object.keys(newErrors).length === 0
+  // }
 
   const closeModal = () => {
     setCurrentImageIndex(-1)
@@ -177,20 +230,17 @@ export default function ProductFormFields({
     }
   }
 
-  // 2. Dùng useEffect để gọi API
   useEffect(() => {
-    // Ẩn API call nếu không có ID
     if (!form.productCategoryId) {
       setCategoryName('Chưa xác định')
       return
     }
 
-    // Định nghĩa hàm fetch
     const fetchCategory = async () => {
       try {
-        setCategoryName('Đang tải...') // Đặt trạng thái loading
+        setCategoryName('Đang tải...')
         const categoryData = await categoryApi.getCategoryById(form.productCategoryId)
-        setCategoryName(categoryData.data.data.categoryName) // Lưu tên category
+        setCategoryName(categoryData.data.data.categoryName)
       } catch (error) {
         console.error('Error fetching category:', error)
         setCategoryName('Lỗi tải Category')
@@ -200,10 +250,21 @@ export default function ProductFormFields({
     fetchCategory()
   }, [form.productCategoryId])
 
+  // const handleSubmit = () => {
+  //   const isValid = validateForm()
+
+  //   if (isValid) {
+  //     // Nếu dữ liệu hợp lệ, mới gọi hàm onSave từ props truyền vào
+  //     onSave(form)
+  //     setErrors({}) // Xóa lỗi cũ
+  //   } else {
+  //     toast.error('Vui lòng kiểm tra lại các thông tin còn thiếu!')
+  //   }
+  // }
+
   if (isViewMode) {
     return (
       <div className='space-y-6'>
-        {/* -------------------- PHẦN 1: THÔNG TIN CƠ BẢN & GIÁ -------------------- */}
         <div className='p-6 bg-white dark:bg-gray-800   shadow-xl rounded-xl'>
           <h3 className='text-2xl font-extrabold text-brand-700 dark:text-brand-300 mb-4 border-b pb-3'>
             {form.name}
@@ -212,10 +273,8 @@ export default function ProductFormFields({
             )}
           </h3>
           <dl className='grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6 text-gray-700 dark:text-gray-300 border-t border-gray-200 dark:border-gray-700 pt-4'>
-            {/* 1. Category */}
             <div className='flex items-center'>
               <dt className='flex items-center font-semibold text-gray-500 dark:text-gray-400 w-1/3 min-w-[120px]'>
-                {/* Icon: Folder */}
                 <svg
                   className='w-5 h-5 mr-2 text-blue-500'
                   fill='none'
@@ -232,16 +291,11 @@ export default function ProductFormFields({
                 </svg>
                 Category:
               </dt>
-              <dd className='font-bold ml-2 text-gray-800 dark:text-gray-200'>
-                {/* Giả định categoryName được fetch */}
-                {categoryName}
-              </dd>
+              <dd className='font-bold ml-2 text-gray-800 dark:text-gray-200'>{categoryName}</dd>
             </div>
 
-            {/* 2. Tình trạng (Status) */}
             <div className='flex items-center'>
               <dt className='flex items-center font-semibold text-gray-500 dark:text-gray-400 w-1/3 min-w-[120px]'>
-                {/* Icon: Check/X */}
                 <svg
                   className='w-5 h-5 mr-2 text-purple-500'
                   fill='none'
@@ -261,10 +315,8 @@ export default function ProductFormFields({
               <dd className='ml-2'>{getStatusText(form.status)}</dd>
             </div>
 
-            {/* 3. Giá Bán (Price) - Highlight mạnh */}
             <div className='flex items-center col-span-1 sm:col-span-2 border-t border-dashed border-gray-300 dark:border-gray-600 pt-4'>
               <dt className='flex items-center font-semibold text-gray-600 dark:text-gray-400 w-1/3 min-w-[120px]'>
-                {/* Icon: Tag */}
                 <svg
                   className='w-6 h-6 mr-2 text-red-500'
                   fill='none'
@@ -426,6 +478,7 @@ export default function ProductFormFields({
           isRequired={true}
           handleChange={handleChange}
           isViewMode={isViewMode}
+          error={errors.name}
         />
         <Field
           id='englishName'
@@ -433,28 +486,44 @@ export default function ProductFormFields({
           value={form.englishName}
           handleChange={handleChange}
           isViewMode={isViewMode}
+          error={errors.englishName}
         />
 
         <div className='grid grid-cols-2 gap-4'>
-          <Field
-            id='price'
-            label='Price (VND)'
-            value={form.price}
-            type='number'
-            isRequired={true}
-            min={0}
-            handleChange={handleChange}
-            isViewMode={isViewMode}
-          />
-          <Field
-            id='marketPrice'
-            label='Market Price (VND)'
-            value={form.marketPrice}
-            type='number'
-            min={0}
-            handleChange={handleChange}
-            isViewMode={isViewMode}
-          />
+          <div className='relative'>
+            <Field
+              id='price'
+              label='Price (VND)'
+              value={form.price}
+              type='number'
+              isRequired={true}
+              handleChange={handleChange}
+              isViewMode={isViewMode}
+              error={errors.price}
+            />
+            {!isViewMode && (
+              <p className='absolute right-2 top-9 text-[10px] font-black text-brand-500 uppercase'>
+                {formatVND(form.price)}
+              </p>
+            )}
+          </div>
+
+          <div className='relative'>
+            <Field
+              id='marketPrice'
+              label='Market Price (VND)'
+              value={form.marketPrice}
+              type='number'
+              handleChange={handleChange}
+              isViewMode={isViewMode}
+              error={errors.marketPrice}
+            />
+            {!isViewMode && (
+              <p className='absolute right-2 top-9 text-[10px] font-black text-brand-500 uppercase'>
+                {formatVND(form.marketPrice)}
+              </p>
+            )}
+          </div>
         </div>
 
         <div className='grid grid-cols-2 gap-4'>
@@ -467,6 +536,7 @@ export default function ProductFormFields({
             options={brandOptions}
             handleChange={handleChange}
             isViewMode={isViewMode}
+            error={errors.brandId}
           />
           <Field
             id='productCategoryId'
@@ -476,6 +546,7 @@ export default function ProductFormFields({
             options={categoryOptions}
             handleChange={handleChange}
             isViewMode={isViewMode}
+            error={errors.productCategoryId}
           />
         </div>
         <Field
@@ -570,6 +641,7 @@ export default function ProductFormFields({
             min={0}
             handleChange={handleChange}
             isViewMode={isViewMode}
+            error={errors.quantityInStock}
           />
         </div>
 
