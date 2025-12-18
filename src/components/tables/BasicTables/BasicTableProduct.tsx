@@ -57,7 +57,7 @@ export default function BasicTableProduct({ onViewReviews }: BasicTableProductPr
   const [isViewMode, setIsViewMode] = useState(false)
 
   // --- 2. LẤY DỮ LIỆU ---
-  const { data: products = [], isLoading } = useQuery({
+  const { data: products = [] } = useQuery({
     queryKey: ['products'],
     queryFn: () => productApi.getProducts().then((res) => res.data.data)
   })
