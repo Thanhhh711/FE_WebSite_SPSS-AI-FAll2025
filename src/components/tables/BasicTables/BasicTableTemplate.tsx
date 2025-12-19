@@ -2,29 +2,28 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import { toast } from 'react-toastify'
+import { Edit3, Trash2, Eye, Search, Plus, Clock, Hash } from 'lucide-react'
 
-// Assume these UI components are imported correctly
 import ConfirmModal from '../../CalendarModelDetail/ConfirmModal'
 import Pagination from '../../pagination/Pagination'
 import { Table, TableBody, TableCell, TableHeader, TableRow } from '../../ui/table'
 
-// Assume API client and types
-import { templateApi } from '../../../api/template.api' // 🚨 Ensure this path is correct
+import { templateApi } from '../../../api/template.api'
 import { Role } from '../../../constants/Roles'
 import { useAppContext } from '../../../context/AuthContext'
 import { ScheduleTemplate, TemplateForm } from '../../../types/templete.type'
 import TemplateModal from '../../TemplateModal/TemplateModal'
+import { slotApi } from '../../../api/slot.api'
+import { SuccessResponse } from '../../../utils/utils.type'
+import { Slot } from '../../../types/registration.type'
 
-// --- CONSTANTS ---
 const ITEMS_PER_PAGE = 10
-
-// --- MAIN COMPONENT ---
 
 export default function BasicTableTemplate() {
   const { profile } = useAppContext()
   const queryClient = useQueryClient()
 
-  // --- STATE MANAGEMENT ---
+  // --- STATE ---
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false)
@@ -32,87 +31,71 @@ export default function BasicTableTemplate() {
   const [selectedTemplate, setSelectedTemplate] = useState<ScheduleTemplate | null>(null)
   const [isViewMode, setIsViewMode] = useState(false)
 
-  // --- API READ (R) ---
+  // --- QUERIES ---
   const {
-    data: allTemplates = [],
+    data: templatesRes,
     isLoading,
-    isError
-  } = useQuery({
+    refetch
+  } = useQuery<SuccessResponse<ScheduleTemplate[]>>({
     queryKey: ['templates'],
-    queryFn: async () => {
-      const res = await templateApi.getTemplates()
-      return res.data.data
-    },
-    staleTime: 1000 * 60 * 5
+    queryFn: () => templateApi.getTemplates().then((res) => res.data)
   })
 
-  // --- FILTERING AND PAGINATION ---
-  const filteredAndPaginatedTemplates = useMemo(() => {
-    // Filter by name or description
-    const lowercasedSearchTerm = searchTerm.toLowerCase()
-    const filtered = allTemplates.filter(
-      (template: ScheduleTemplate) =>
-        template.name.toLowerCase().includes(lowercasedSearchTerm) ||
-        template.description.toLowerCase().includes(lowercasedSearchTerm)
-    )
+  const { data: slotsRes } = useQuery<SuccessResponse<Slot[]>>({
+    queryKey: ['slots'],
+    queryFn: () => slotApi.getSlots().then((res) => res.data)
+  })
 
-    // Pagination
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
-    const endIndex = startIndex + ITEMS_PER_PAGE
+  const templates = templatesRes?.data ?? []
+  const slots = slotsRes?.data ?? []
 
-    return {
-      totalItems: filtered.length,
-      data: filtered.slice(startIndex, endIndex)
-    }
-  }, [allTemplates, searchTerm, currentPage])
-
-  // --- API MUTATIONS (C, U, D) ---
-
-  // Mutation for Create and Update
-  const { mutate: saveTemplate } = useMutation({
-    mutationFn: (data: TemplateForm & { id?: string }) => {
-      if (data.id) {
-        // Update
-        return templateApi.updateTemplate(data.id, data)
-      }
-      // Create
-      return templateApi.createTemplate(data)
-    },
-    onSuccess: (res) => {
-      toast.success(res.data.message || 'Template saved successfully!')
+  // --- MUTATIONS ---
+  const createMutation = useMutation({
+    mutationFn: (body: TemplateForm) => templateApi.createTemplate(body),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['templates'] })
-      // Reset state and close modal after successful save
       setIsTemplateModalOpen(false)
-      setSelectedTemplate(null)
-    },
-    onError: (error: any) => {
-      toast.error(error.data?.res || 'Error saving template.')
     }
   })
 
-  // Mutation for Delete
-  const { mutate: deleteTemplate } = useMutation({
-    mutationFn: (id: string) => templateApi.deleteTemplate(id),
-    onSuccess: (res) => {
-      toast.success(res.data.message || 'Template deleted successfully!')
+  // Hàm helper để tìm thông tin slot nhanh
+  const getSlotInfo = (slotId: string) => {
+    return slots.find((s) => s.id === slotId)
+  }
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, body }: { id: string; body: TemplateForm }) => templateApi.updateTemplate(id, body),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['templates'] })
-    },
-    onError: (error: any) => {
-      toast.error(error.data?.res || 'Error deleting template.')
+      setIsTemplateModalOpen(false)
     }
   })
 
-  // --- EVENT HANDLERS ---
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => templateApi.deleteTemplate(id),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['templates'] })
+      setIsConfirmOpen(false)
+      toast.success(data.data.message)
+    }
+  })
 
-  const handleOpenDetailModal = (template: ScheduleTemplate, mode: 'view' | 'edit') => {
-    setSelectedTemplate(template)
-    setIsViewMode(mode === 'view')
+  // --- HANDLERS ---
+  const handleOpenCreate = () => {
+    setSelectedTemplate(null)
+    setIsViewMode(false)
     setIsTemplateModalOpen(true)
   }
 
-  const handleCreateNew = () => {
-    setSelectedTemplate(null) // Reset to open Create mode
+  const handleOpenEdit = (template: ScheduleTemplate) => {
+    setSelectedTemplate(template)
     setIsViewMode(false)
+    setIsTemplateModalOpen(true)
+  }
+
+  const handleOpenView = (template: ScheduleTemplate) => {
+    setSelectedTemplate(template)
+    setIsViewMode(true)
     setIsTemplateModalOpen(true)
   }
 
@@ -122,115 +105,173 @@ export default function BasicTableTemplate() {
   }
 
   const handleConfirmDelete = () => {
-    if (selectedTemplate?.id) {
-      deleteTemplate(selectedTemplate.id)
-      setIsConfirmOpen(false)
-      setSelectedTemplate(null)
+    if (selectedTemplate) deleteMutation.mutate(selectedTemplate.id)
+  }
+
+  const saveTemplate = (data: TemplateForm & { id?: string }) => {
+    const { id, ...body } = data
+    if (id) {
+      updateMutation.mutate({ id, body })
+    } else {
+      createMutation.mutate(body)
     }
   }
 
-  // --- RENDERING ---
+  // --- FILTER & PAGINATION ---
+  const filteredTemplates = useMemo(() => {
+    return templates.filter((t) => t.name.toLowerCase().includes(searchTerm.toLowerCase()))
+  }, [templates, searchTerm])
 
-  if (isLoading) return <div className='p-6 text-center text-lg text-brand-500'>Loading Template list...</div>
-  if (isError) return <div className='p-6 text-center text-lg text-red-500'>Error loading template list.</div>
+  const paginatedData = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE
+    return filteredTemplates.slice(start, start + ITEMS_PER_PAGE)
+  }, [filteredTemplates, currentPage])
+
+  if (isLoading) {
+    return (
+      <div className='flex justify-center items-center p-10'>
+        <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600'></div>
+        <span className='ml-3 text-slate-500'>Đang tải danh sách...</span>
+      </div>
+    )
+  }
+
+  // 2. Kiểm tra nếu templates thực sự trống hoặc null sau khi đã load xong
+  if (!templates || templates.length === 0) {
+    return (
+      <div className='text-center py-20 bg-white rounded-2xl border-2 border-dashed border-slate-200'>
+        <p className='text-slate-400'>Không tìm thấy dữ liệu bài test nào.</p>
+        <button onClick={() => refetch?.()} className='mt-4 text-indigo-600 font-bold hover:underline'>
+          Thử tải lại
+        </button>
+      </div>
+    )
+  }
 
   return (
     <>
-      <div className='flex justify-between items-center mb-5'>
-        {/* Search Bar */}
-        <input
-          type='text'
-          placeholder='Search by Template Name or Description...'
-          value={searchTerm}
-          onChange={(e) => {
-            setSearchTerm(e.target.value)
-            setCurrentPage(1) // Reset page on search
-          }}
-          className='dark:text-white w-1/3 min-w-[200px] rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500'
-        />
-
-        {/* Create Button */}
-        {profile?.role === Role.ADMIN && (
-          <button
-            onClick={handleCreateNew}
-            className='btn btn-primary flex justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white shadow-brand-xs hover:bg-brand-600 transition-colors'
-          >
-            Add New Template
-          </button>
-        )}
-      </div>
-
-      <div className='overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] shadow-lg'>
-        <div className='px-4 py-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg text-end'>
-          <span className='text-sm font-semibold text-indigo-700 dark:text-indigo-400'>
-            Total: **{filteredAndPaginatedTemplates.totalItems}**
-          </span>
+      <div className='bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-white/[0.05] shadow-xl overflow-hidden'>
+        {/* Header Actions */}
+        <div className='p-6 border-b border-gray-50 dark:border-white/[0.05] flex flex-col sm:flex-row sm:items-center justify-between gap-4'>
+          <div className='relative flex-1 max-w-md'>
+            <Search className='absolute left-3 top-1/2 -translate-y-1/2 text-gray-400' size={18} />
+            <input
+              type='text'
+              placeholder='Search templates...'
+              className='w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-white/[0.03] border-none rounded-xl text-sm focus:ring-2 focus:ring-brand-500/20 outline-none'
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          {profile?.role === Role.ADMIN && (
+            <button
+              onClick={handleOpenCreate}
+              className='flex items-center justify-center gap-2 px-5 py-2.5 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-brand-500/20'
+            >
+              <Plus size={18} /> Create Template
+            </button>
+          )}
         </div>
-        <div className='max-w-full overflow-x-auto'>
-          <Table>
-            {/* Table Header */}
-            <TableHeader className='dark:text-gray-300 border-b border-gray-100 dark:border-white/[0.05] bg-gray-50 dark:bg-white/[0.05]'>
-              <TableRow>
-                <TableCell isHeader className='px-5 py-3 text-start'>
-                  Name
+
+        {/* Table Content */}
+        <div className='overflow-x-auto'>
+          <Table className='w-full table-fixed'>
+            {' '}
+            {/* Thêm table-fixed để ép các cột tuân thủ độ rộng */}
+            <TableHeader>
+              <TableRow className='bg-gray-50/50 dark:bg-white/[0.02]'>
+                {/* Thiết lập % độ rộng cho từng cột */}
+                <TableCell isHeader className='w-[25%] px-5 py-4'>
+                  Template Name
                 </TableCell>
-                <TableCell isHeader className='px-5 py-3 text-start'>
+                <TableCell isHeader className='w-[25%] px-5 py-4'>
+                  Slot & Timing
+                </TableCell>
+                <TableCell isHeader className='w-[30%] px-5 py-4'>
                   Description
                 </TableCell>
-                <TableCell isHeader className='px-5 py-3 text-start'>
-                  Created Time
-                </TableCell>
-                <TableCell isHeader className='px-5 py-3 text-end'>
+                <TableCell isHeader className='w-[20%] px-5 py-4 text-right'>
                   Actions
                 </TableCell>
               </TableRow>
             </TableHeader>
-
-            {/* Table Body */}
             <TableBody>
-              {filteredAndPaginatedTemplates.data.length === 0 ? (
+              {isLoading ? (
                 <TableRow>
-                  <TableCell className='py-4 text-center text-gray-500'>
-                    {searchTerm ? 'No matching templates found.' : 'No templates have been registered.'}
-                  </TableCell>
+                  <TableCell className='text-center py-10 text-gray-400'>Loading templates...</TableCell>
+                </TableRow>
+              ) : paginatedData.length === 0 ? (
+                <TableRow>
+                  <TableCell className='text-center py-10 text-gray-400'>No templates found.</TableCell>
                 </TableRow>
               ) : (
-                filteredAndPaginatedTemplates.data.map((template) => (
-                  <TableRow key={template.id} className='dark:text-gray-300'>
-                    <TableCell className='px-5 py-4 font-medium truncate max-w-[150px]'>{template.name}</TableCell>
-                    <TableCell className='px-4 py-3 text-start truncate max-w-[300px]'>
-                      {template.description || 'N/A'}
+                paginatedData.map((template) => (
+                  <TableRow
+                    key={template.id}
+                    className='hover:bg-gray-50/30 dark:hover:bg-white/[0.01] transition-colors border-b border-gray-100 dark:border-gray-800'
+                  >
+                    {/* Cột 1: Tên */}
+                    <TableCell className='px-5 py-4 w-[25%]'>
+                      <div className='flex flex-col'>
+                        <span className='font-bold text-gray-800 dark:text-gray-200 truncate'>{template.name}</span>
+                        <span className='text-[10px] text-gray-400 font-mono uppercase tracking-tighter'>
+                          ID: {template.id.slice(0, 8)}
+                        </span>
+                      </div>
                     </TableCell>
-                    <TableCell className='px-4 py-3 text-start'>
-                      {new Date(template.createdTime).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell className='px-4 py-3 text-end'>
-                      <div className='flex justify-end gap-2'>
-                        {/* View/Edit Buttons */}
-                        <button
-                          onClick={() => handleOpenDetailModal(template, 'view')}
-                          className='text-sky-500 hover:text-sky-700 dark:hover:text-sky-300 text-sm p-1'
-                          title='View Details'
-                        >
-                          View
-                        </button>
 
+                    {/* Cột 2: Slot & Timing */}
+                    <TableCell className='px-5 py-4 w-[25%]'>
+                      <div className='flex flex-col items-start gap-2'>
+                        <div className='flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-500/20 shadow-sm'>
+                          <Hash size={12} className='opacity-70' />
+                          <span className='text-xs font-bold whitespace-nowrap'>
+                            {(() => {
+                              const slotDetail = getSlotInfo(template.slotId)
+                              return slotDetail
+                                ? `${slotDetail.slotMinutes}m / ${slotDetail.breakMinutes}m break`
+                                : 'Loading...'
+                            })()}
+                          </span>
+                        </div>
+                        <div className='flex items-center gap-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 ml-1'>
+                          <Clock size={14} className='text-gray-400' />
+                          <span className='whitespace-nowrap'>
+                            {template.startTime.slice(0, 5)} - {template.endTime.slice(0, 5)}
+                          </span>
+                        </div>
+                      </div>
+                    </TableCell>
+
+                    {/* Cột 3: Mô tả */}
+                    <TableCell className='px-5 py-4 w-[30%] text-sm text-gray-500 dark:text-gray-400'>
+                      <p className='truncate max-w-full'>
+                        {template.description || <span className='italic opacity-50 text-xs'>No description</span>}
+                      </p>
+                    </TableCell>
+
+                    {/* Cột 4: Hành động */}
+                    <TableCell className='px-5 py-4 w-[20%] text-right'>
+                      <div className='flex justify-end gap-1'>
+                        <button
+                          onClick={() => handleOpenView(template)}
+                          className='p-2 text-gray-400 hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/10 rounded-lg transition-all'
+                        >
+                          <Eye size={18} />
+                        </button>
                         {profile?.role === Role.ADMIN && (
                           <>
                             <button
-                              onClick={() => handleOpenDetailModal(template, 'edit')}
-                              className='text-brand-500 hover:text-brand-700 dark:hover:text-brand-300 text-sm p-1'
-                              title='Edit Template'
+                              onClick={() => handleOpenEdit(template)}
+                              className='p-2 text-gray-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-500/10 rounded-lg transition-all'
                             >
-                              Edit
+                              <Edit3 size={18} />
                             </button>
-                            {/* Delete Button */}
                             <button
                               onClick={() => handleDeleteClick(template)}
-                              className='text-red-500 hover:text-red-700 dark:hover:text-red-300 text-sm p-1'
-                              title='Delete Template'
+                              className='p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all'
                             >
-                              Delete
+                              <Trash2 size={18} />
                             </button>
                           </>
                         )}
@@ -244,19 +285,19 @@ export default function BasicTableTemplate() {
         </div>
 
         {/* Pagination */}
-        {filteredAndPaginatedTemplates.totalItems > ITEMS_PER_PAGE && (
-          <div className='p-4 border-t border-gray-100 dark:border-white/[0.05] flex justify-center'>
+        {filteredTemplates.length > ITEMS_PER_PAGE && (
+          <div className='p-6 border-t border-gray-50 dark:border-white/[0.05] flex justify-center'>
             <Pagination
               currentPage={currentPage}
-              totalPages={Math.ceil(filteredAndPaginatedTemplates.totalItems / ITEMS_PER_PAGE)}
+              totalPages={Math.ceil(filteredTemplates.length / ITEMS_PER_PAGE)}
               onPageChange={setCurrentPage}
             />
           </div>
         )}
       </div>
 
-      {/* --- TEMPLATE DETAIL MODAL --- */}
-      {isTemplateModalOpen && ( // Using conditional rendering to ensure form resets
+      {/* --- MODALS --- */}
+      {isTemplateModalOpen && (
         <TemplateModal
           isOpen={isTemplateModalOpen}
           onClose={() => setIsTemplateModalOpen(false)}
@@ -266,13 +307,12 @@ export default function BasicTableTemplate() {
         />
       )}
 
-      {/* --- CONFIRM DELETION MODAL --- */}
       <ConfirmModal
         isOpen={isConfirmOpen}
         onClose={() => setIsConfirmOpen(false)}
         onConfirm={handleConfirmDelete}
-        title='Confirm Template Deletion'
-        message={`Are you sure you want to delete template "${selectedTemplate?.name}"? This action cannot be undone.`}
+        title='Delete Template'
+        message={`Are you sure you want to delete "${selectedTemplate?.name}"?`}
       />
     </>
   )

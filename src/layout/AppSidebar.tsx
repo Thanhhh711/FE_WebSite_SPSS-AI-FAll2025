@@ -143,6 +143,13 @@ const navItems: NavItem[] = [
     icon: <DocsIcon />,
     path: AppPath.BLOGS,
     allowedRoles: [Role.ADMIN]
+  },
+
+  {
+    name: 'Quizs',
+    icon: <DocsIcon />,
+    path: AppPath.QUIZZS,
+    allowedRoles: [Role.ADMIN]
   }
 
   // {

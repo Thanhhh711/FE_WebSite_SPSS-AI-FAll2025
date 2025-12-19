@@ -46,6 +46,7 @@ export enum AppPath {
   CALENDAR = '/calendar',
   FORM_ELEMENTS = '/form-elements',
   BLOGS = '/blogs',
+  QUIZZS = '/quizzs',
   PATIENTS = '/patients',
   MEDICAL_RECORD = '/medical-record',
   REPORT = '/report',

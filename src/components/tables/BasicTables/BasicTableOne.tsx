@@ -34,11 +34,25 @@ const ITEMS_PER_PAGE = 10
 
 // --- Stats Card Component ---
 const StatCard = ({ title, count, colorClass, icon }: any) => (
-  <div className='bg-white dark:bg-white/[0.03] p-5 rounded-3xl border border-gray-100 dark:border-white/[0.05] shadow-sm flex items-center gap-4 transition-transform hover:scale-[1.02]'>
-    <div className={`p-3 rounded-2xl ${colorClass}`}>{icon}</div>
+  <div className='group bg-white dark:bg-gray-800/40 p-6 rounded-[2rem] border border-gray-100 dark:border-white/[0.05] shadow-sm hover:shadow-xl hover:shadow-gray-200/50 dark:hover:shadow-none transition-all duration-300 flex flex-col gap-4 relative overflow-hidden'>
+    {/* Một lớp phủ màu nhẹ khi hover */}
+    <div
+      className={`absolute -right-4 -top-4 w-24 h-24 rounded-full opacity-[0.03] group-hover:scale-150 transition-transform duration-500 ${colorClass.split(' ')[0]}`}
+    />
+
+    <div className='flex items-center justify-between'>
+      <div className={`p-3.5 rounded-2xl shadow-sm ${colorClass}`}>{icon}</div>
+      <span className='flex h-2 w-2 rounded-full bg-current opacity-20 animate-pulse' />
+    </div>
+
     <div>
-      <p className='text-xs font-semibold text-gray-400 uppercase tracking-wider'>{title}</p>
-      <p className='text-2xl font-bold text-gray-900 dark:text-white'>{count}</p>
+      <p className='text-[11px] font-black text-gray-400 uppercase tracking-[0.12em] mb-1'>{title}</p>
+      <div className='flex items-baseline gap-1'>
+        <h3 className='text-3xl font-black text-gray-900 dark:text-white tracking-tight'>
+          {count?.toLocaleString() || 0}
+        </h3>
+        <span className='text-[10px] font-bold text-gray-400'>Users</span>
+      </div>
     </div>
   </div>
 )

@@ -163,16 +163,16 @@ const ScheduleFormModal: React.FC<ScheduleFormModalProps> = ({
           scheduleToEdit.endTime.length > 5 ? scheduleToEdit.endTime.substring(0, 5) : scheduleToEdit.endTime
 
         setFormData({
-          staffId: scheduleToEdit.staffId,
-          shiftDate: formatDateValue(scheduleToEdit.shiftDate),
+          staffId: scheduleToEdit?.staffId ?? '',
+          shiftDate: formatDateValue(scheduleToEdit?.shiftDate ?? new Date().toISOString()),
           startTime: startTime,
           endTime: endTime,
-          roomId: scheduleToEdit.room.id,
-          status: scheduleToEdit.status.toString(),
-          notes: scheduleToEdit.notes,
-          // Assume these are not pre-filled from the schedule object
-          slotIndex: scheduleToEdit.slotIndex,
-          registrationId: ''
+          // Optional chaining for the nested room ID
+          roomId: scheduleToEdit?.room?.id ?? '',
+          status: (scheduleToEdit?.status ?? WorkScheduleStatus.Active).toString(),
+          notes: scheduleToEdit?.notes ?? '',
+          slotIndex: scheduleToEdit?.slotIndex ?? 0,
+          registrationId: '' // Registrations are fetched separately based on staffId
         })
       } else {
         // Reset/Default for Create Mode

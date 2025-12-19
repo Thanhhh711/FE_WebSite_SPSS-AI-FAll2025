@@ -1,6 +1,9 @@
 export interface ScheduleTemplate {
   id: string
   name: string
+  startTime: string
+  endTime: string
+  slotId: string
   description: string
   createdBy: string
   lastUpdatedBy: string | null
@@ -13,4 +16,7 @@ export interface ScheduleTemplate {
 export interface TemplateForm {
   name: string
   description: string
+  startTime: string
+  endTime: string
+  slotId: string
 }

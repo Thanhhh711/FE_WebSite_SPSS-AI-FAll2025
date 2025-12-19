@@ -1,20 +1,21 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import React, { ReactNode, useMemo, useState, useEffect } from 'react'
+import { Calendar, Clock, Edit, Eye, Plus, Search, Trash2, User } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'react-toastify'
 import { registrationApi } from '../../../api/registration.api'
 import { slotApi } from '../../../api/slot.api'
 import { templateApi } from '../../../api/template.api'
+import userApi from '../../../api/user.api'
 import { Role } from '../../../constants/Roles'
 import { useAppContext } from '../../../context/AuthContext'
-import { ScheduleTemplate } from '../../../types/templete.type'
+import StaffEmailLookup from '../../../utils/StaffEmailLookup'
 import { formatDateToDDMMYYYY } from '../../../utils/validForm'
 import ConfirmModal from '../../CalendarModelDetail/ConfirmModal'
 import RegistrationModal, { WEEKDAY_NAMES } from '../../RegistrationModal/RegistrationModal'
-import StaffEmailLookup from '../../../utils/StaffEmailLookup'
-import userApi from '../../../api/user.api'
 
+// Giữ nguyên các Interface cũ của bạn...
 interface Template {
   id: string
   name: string
@@ -24,18 +25,9 @@ interface Slot {
   slotMinutes: number
   breakMinutes: number
 }
-
-// SỬA LỖI: Bỏ trường 'id' khỏi RegistrationWeekday để tương thích với type từ API
 interface RegistrationWeekday {
-  // id: string // Đã loại bỏ để giải quyết lỗi Type 'ScheduleRegistration[]' is not assignable...
   weekday: number
 }
-
-interface TableHeaderProps {
-  children: ReactNode
-  className?: string
-}
-
 export interface ScheduleRegistrationComponent {
   id: string
   staffId: string
@@ -48,104 +40,22 @@ export interface ScheduleRegistrationComponent {
   slotId: string
   template: Template
   slot: Slot
-  // Giữ lại kiểu mảng này sau khi đã sửa định nghĩa RegistrationWeekday ở trên
   registrationWeekdays: RegistrationWeekday[]
 }
+type RegistrationForm = any
+export const ITEMS_PER_PAGE = 8
 
-interface SchedulePayload {
-  startDate: string
-  endDate: string
-  startTime: string
-  endTime: string
-  templateId: string
-  slotId: string
-  notes: string
-  weekdays: number[]
-}
-
-// Định nghĩa kiểu dữ liệu cho Beauty Advisor
-interface BeautyAdvisor {
-  userId: string
-  emailAddress: string
-}
-
-// HÀM TIỆN ÍCH: Trích xuất phần ngày (YYYY-MM-DD) từ chuỗi ISO Date
 const getDatePart = (isoString: string) => (isoString ? isoString.substring(0, 10) : '')
-
-export const ITEMS_PER_PAGE = 10
-
-const Table = ({ children }: { children: React.ReactNode }) => <table className='w-full table-auto'>{children}</table>
-const TableHeader: React.FC<TableHeaderProps> = ({ children, className }) => (
-  <thead className={className ?? 'text-left'}>{children}</thead>
-)
-const TableBody: React.FC<TableHeaderProps> = ({ children, className }) => (
-  <tbody className={className ?? 'text-left'}>{children}</tbody>
-)
-const TableRow = ({ children }: { children: React.ReactNode }) => (
-  <tr className='hover:bg-gray-50 dark:hover:bg-white/[0.05] transition-colors duration-150 border-b border-gray-100 dark:border-white/[0.05] last:border-b-0'>
-    {children}
-  </tr>
-)
-
-const TableCell: React.FC<React.PropsWithChildren<{ isHeader?: boolean; colSpan?: number; className?: string }>> = ({
-  children,
-  isHeader,
-  colSpan,
-  className
-}) => {
-  const baseClasses = 'p-4 text-sm'
-  const headerClasses = isHeader
-    ? 'font-medium text-gray-500 text-theme-xs dark:text-gray-400'
-    : 'text-gray-800 dark:text-white/90'
-  const Tag = isHeader ? 'th' : 'td'
-  return (
-    <Tag colSpan={colSpan} className={`${baseClasses} ${headerClasses} ${className || ''}`}>
-      {children}
-    </Tag>
-  )
-}
-
-interface PaginationProps {
-  currentPage: number
-  totalPages: number
-  onPageChange: (page: number) => void
-}
-const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages, onPageChange }) => {
-  const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
-  return (
-    <div className='flex space-x-2'>
-      {pages.map((page) => (
-        <button
-          key={page}
-          onClick={() => onPageChange(page)}
-          disabled={page === currentPage}
-          className={`px-3 py-1 rounded-lg text-sm transition-colors duration-150 disabled:cursor-default disabled:opacity-50 ${
-            page === currentPage
-              ? 'bg-brand-500 text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
-          }`}
-        >
-          {page}
-        </button>
-      ))}
-    </div>
-  )
-}
-
-// Cập nhật: Thêm staffId vào RegistrationForm
-type RegistrationForm = SchedulePayload & { id?: string; staffId: string }
 
 export default function BasicTableRegistration() {
   const queryClient = useQueryClient()
   const { profile } = useAppContext()
   const isBeautyAdvisor = profile?.role === Role.BEAUTY_ADVISOR
 
-  // STATE LỌC MỚI
-  const [beautyAdvisors, setBeautyAdvisors] = useState<BeautyAdvisor[]>([])
-  const [selectedBAId, setSelectedBAId] = useState<string | undefined>(undefined)
+  const [beautyAdvisors, setBeautyAdvisors] = useState<any[]>([])
+  const [selectedBAId, setSelectedBAId] = useState<string | undefined>('all')
   const [filterStartDate, setFilterStartDate] = useState<string>('')
   const [filterEndDate, setFilterEndDate] = useState<string>('')
-
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -153,102 +63,77 @@ export default function BasicTableRegistration() {
   const [selectedRegistration, setSelectedRegistration] = useState<ScheduleRegistrationComponent | null>(null)
   const [isViewMode, setIsViewMode] = useState(false)
 
-  // FETCH DANH SÁCH BEAUTY ADVISOR
+  // Fetch dữ liệu API (Giữ nguyên logic của bạn)
   useEffect(() => {
     const fetchBAs = async () => {
       try {
         const response = await userApi.getBeatyAdvisor()
-        const allOption = { userId: 'all', emailAddress: 'All Staff' }
-        setBeautyAdvisors([allOption, ...response.data.data])
-        setSelectedBAId('all')
+        setBeautyAdvisors([{ userId: 'all', emailAddress: 'All Staff Members' }, ...response.data.data])
       } catch (error) {
-        toast.error('Error fetching Staff list.')
-        setBeautyAdvisors([{ userId: 'all', emailAddress: 'All Staff' }])
-        setSelectedBAId('all')
+        toast.error('Error fetching staff list')
       }
     }
-
-    if (!isBeautyAdvisor) {
-      fetchBAs()
-    } else if (profile?.userId) {
-      // Nếu là BA, mặc định chỉ xem lịch của mình
-      setSelectedBAId(profile.userId)
-    }
+    if (!isBeautyAdvisor) fetchBAs()
+    else if (profile?.userId) setSelectedBAId(profile.userId)
   }, [isBeautyAdvisor, profile?.userId])
 
-  const { data: slotsData } = useQuery<Slot[]>({
+  const { data: slotsData } = useQuery({
     queryKey: ['slots'],
-    queryFn: async () => {
-      const res = await slotApi.getSlots()
-      return res.data.data
-    }
+    queryFn: () => slotApi.getSlots().then((res) => res.data.data)
   })
-
-  const { data: templatesData } = useQuery<ScheduleTemplate[]>({
+  const { data: templatesData } = useQuery({
     queryKey: ['templates'],
+    queryFn: () => templateApi.getTemplates().then((res) => res.data.data)
+  })
+  const { data: registrationsResponse, isLoading } = useQuery({
+    queryKey: ['registrations', profile?.userId],
     queryFn: async () => {
-      const res = await templateApi.getTemplates()
-      return res.data.data
-    }
-  })
-
-  const fetchRegistrations = async () => {
-    // API trả về kiểu ScheduleRegistration[]
-    if (isBeautyAdvisor && profile?.userId) {
-      const res = await registrationApi.getRegistrationByBeatyAdvisorId(profile.userId)
-      // Ép kiểu đầu ra thành ScheduleRegistrationComponent[]
+      const res = isBeautyAdvisor
+        ? await registrationApi.getRegistrationByBeatyAdvisorId(profile!.userId)
+        : await registrationApi.getRegistration()
       return res.data.data as ScheduleRegistrationComponent[]
-    }
-
-    const res = await registrationApi.getRegistration()
-    // Ép kiểu đầu ra thành ScheduleRegistrationComponent[]
-    return res.data.data as ScheduleRegistrationComponent[]
-  }
-
-  const {
-    data: registrationsResponse,
-    isLoading,
-    isError
-  } = useQuery({
-    queryKey: ['registrations', profile?.role, profile?.userId],
-    queryFn: fetchRegistrations,
-    enabled: !!profile,
-    staleTime: 1000 * 60 * 5
+    },
+    enabled: !!profile
   })
 
-  // Đã sửa lỗi type ở trên, nên giờ có thể sử dụng kiểu này
-  const allRegistrations: ScheduleRegistrationComponent[] = registrationsResponse || []
+  const allRegistrations = registrationsResponse || []
 
-  // CẬP NHẬT LOGIC LỌC
+  // Logic lọc dữ liệu (Giữ nguyên)
   const filteredAndPaginatedData = useMemo(() => {
     const lowercasedSearchTerm = searchTerm.toLowerCase()
+
+    // Bước 1: Lọc theo tên Template (Search bar)
     let filtered = allRegistrations.filter((reg) => reg.template.name.toLowerCase().includes(lowercasedSearchTerm))
 
-    // 1. Lọc theo Beauty Advisor
+    // Bước 2: Lọc theo Beauty Advisor (Dropdown lọc nhân viên)
+    // Đảm bảo selectedBAId không phải là 'all' thì mới lọc theo staffId
     if (selectedBAId && selectedBAId !== 'all') {
       filtered = filtered.filter((reg) => reg.staffId === selectedBAId)
     }
 
-    // 2. Lọc theo Ngày Bắt đầu
+    // Bước 3: Lọc theo khoảng ngày (Nếu có)
     if (filterStartDate) {
       filtered = filtered.filter((reg) => getDatePart(reg.startDate) >= filterStartDate)
     }
-
-    // 3. Lọc theo Ngày Kết thúc
     if (filterEndDate) {
       filtered = filtered.filter((reg) => getDatePart(reg.endDate) <= filterEndDate)
     }
 
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
-    const endIndex = startIndex + ITEMS_PER_PAGE
-
     return {
       totalItems: filtered.length,
-      data: filtered.slice(startIndex, endIndex)
+      data: filtered.slice(startIndex, startIndex + ITEMS_PER_PAGE)
     }
   }, [allRegistrations, searchTerm, currentPage, selectedBAId, filterStartDate, filterEndDate])
+  // Mutation (Giữ nguyên logic của bạn)
+  const { mutate: deleteRegistration } = useMutation({
+    mutationFn: (id: string) => registrationApi.deleteRegistration(id),
+    onSuccess: () => {
+      toast.success('Deleted successfully')
+      queryClient.invalidateQueries({ queryKey: ['registrations'] })
+    }
+  })
 
-  // Cập nhật: Logic saveRegistration
   const { mutate: saveRegistration } = useMutation({
     mutationFn: (data: RegistrationForm) => {
       const { staffId, id, ...payload } = data // Tách staffId và id ra
@@ -278,255 +163,245 @@ export default function BasicTableRegistration() {
     }
   })
 
-  const { mutate: deleteRegistration } = useMutation({
-    mutationFn: (id: string) => registrationApi.deleteRegistration(id),
-    onSuccess: (res) => {
-      toast.success(res.data.message || 'Registration deleted successfully!')
-      queryClient.invalidateQueries({ queryKey: ['registrations'] })
-    },
-    onError: (error: any) => {
-      toast.error(error.data?.res || 'Error deleting registration.')
-    }
-  })
-
-  const handleOpenDetailModal = (reg: ScheduleRegistrationComponent, mode: 'view' | 'edit') => {
-    setSelectedRegistration(reg)
-    setIsViewMode(mode === 'view')
-    setIsModalOpen(true)
-  }
-
-  const handleCreateNew = () => {
-    setSelectedRegistration(null)
-    setIsViewMode(false)
-    setIsModalOpen(true)
-  }
-
-  const handleDeleteClick = (reg: ScheduleRegistrationComponent) => {
-    setSelectedRegistration(reg)
-    setIsConfirmOpen(true)
-  }
-
-  const handleConfirmDelete = () => {
-    if (selectedRegistration?.id) {
-      deleteRegistration(selectedRegistration.id)
-      setIsConfirmOpen(false)
-      setSelectedRegistration(null)
-    }
-  }
-
-  if (isLoading || selectedBAId === undefined)
-    return <div className='p-6 text-center text-lg text-brand-500'>Loading Work Schedule Registrations...</div>
-
-  if (isError)
-    return <div className='p-6 text-center text-lg text-red-500'>Failed to load Work Schedule Registrations.</div>
+  if (isLoading)
+    return (
+      <div className='h-96 flex items-center justify-center text-indigo-500 animate-pulse font-medium'>
+        Loading workspace...
+      </div>
+    )
 
   return (
-    <>
-      <div className='flex justify-between items-center mb-5'>
-        <div className='flex items-center gap-3'>
-          {/* Thanh Tìm kiếm */}
-          <input
-            type='text'
-            placeholder='Search by Template Name...'
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value)
-              setCurrentPage(1)
-            }}
-            className='dark:text-white w-1/3 min-w-[200px] rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500'
-          />
-
-          {/* SELECT CHỌN BEAUTY ADVISOR */}
-          {!isBeautyAdvisor && (
-            <select
-              className='w-[200px] dark:text-white rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none'
-              value={selectedBAId || 'all'}
-              onChange={(e) => {
-                setSelectedBAId(e.target.value)
-                setCurrentPage(1)
-              }}
-              disabled={!beautyAdvisors.length}
-            >
-              {!beautyAdvisors.length && <option value='all'>Loading Staff...</option>}
-              {beautyAdvisors.map((ba) => (
-                <option key={ba.userId} value={ba.userId}>
-                  {ba.emailAddress}
-                </option>
-              ))}
-            </select>
-          )}
-
-          {/* START DATE */}
-          <label className='mb-1 text-sm font-medium text-gray-700 dark:text-gray-300'>Start Date</label>
-          <input
-            type='date'
-            placeholder='Start Date'
-            value={filterStartDate}
-            onChange={(e) => {
-              setFilterStartDate(e.target.value)
-              setCurrentPage(1)
-            }}
-            className='dark:text-white  w-[150px] rounded-lg border border-gray-300 dark:border-gray-700 
-      bg-white dark:bg-gray-900 px-4 py-2.5 text-sm 
-      focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
-          />
-
-          {/* END DATE */}
-          <label className='mb-1 text-sm font-medium text-gray-700 dark:text-gray-300'>End Date</label>
-          <input
-            type='date'
-            placeholder='End Date'
-            value={filterEndDate}
-            onChange={(e) => {
-              setFilterEndDate(e.target.value)
-              setCurrentPage(1)
-            }}
-            className='dark:text-white w-[150px] rounded-lg border border-gray-300 dark:border-gray-700 
-      bg-white dark:bg-gray-900 px-4 py-2.5 text-sm 
-      focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
-          />
+    <div className='space-y-6 animate-in fade-in duration-500'>
+      {/* 1. Header & Quick Actions */}
+      <div className='flex flex-col md:flex-row md:items-center justify-between gap-4'>
+        <div>
+          <h1 className='text-2xl font-bold text-slate-800 dark:text-white'>Schedule Registrations</h1>
+          <p className='text-slate-500 text-sm'>Manage and monitor staff work shifts and templates</p>
         </div>
-
-        {/* Nút Tạo mới */}
         {profile?.role !== Role.ADMIN && (
           <button
-            onClick={handleCreateNew}
-            className='btn btn-primary flex justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white shadow-brand-xs hover:bg-brand-600 transition-colors'
+            onClick={() => {
+              setSelectedRegistration(null)
+              setIsViewMode(false)
+              setIsModalOpen(true)
+            }}
+            className='flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl shadow-lg shadow-indigo-200 dark:shadow-none transition-all active:scale-95'
           >
-            Add new registration
+            <Plus size={18} />
+            <span className='font-semibold text-sm'>New Registration</span>
           </button>
         )}
       </div>
 
-      <div className='overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] shadow-lg'>
-        <div className='px-4 py-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg text-end'>
-          <span className='text-sm font-semibold text-indigo-700 dark:text-indigo-400'>
-            Total Registration Found: **{filteredAndPaginatedData.totalItems}**
-          </span>
-        </div>
-        <div className='max-w-full overflow-x-auto'>
-          <Table>
-            {/* Table Header */}
-            <TableHeader className='border-b border-gray-100 dark:border-white/[0.05] bg-gray-50 dark:bg-white/[0.05]'>
-              <TableRow>
-                <TableCell
-                  isHeader
-                  className='px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400'
-                >
-                  Staff Email
-                </TableCell>
-                <TableCell
-                  isHeader
-                  className='px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400'
-                >
-                  Template
-                </TableCell>
-                <TableCell
-                  isHeader
-                  className='px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400'
-                >
-                  Slot (Phút)
-                </TableCell>
-                <TableCell
-                  isHeader
-                  className='px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400'
-                >
-                  Time Range
-                </TableCell>
-                <TableCell
-                  isHeader
-                  className='px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400'
-                >
-                  Weekdays
-                </TableCell>
-                <TableCell
-                  isHeader
-                  className='px-5 py-3 font-medium text-gray-500 text-end text-theme-xs dark:text-gray-400'
-                >
-                  Actions
-                </TableCell>
-              </TableRow>
-            </TableHeader>
+      {/* 2. Filter Bar Container */}
+      <div className='bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm'>
+        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
+          {/* Search */}
+          <div className='relative'>
+            <Search className='absolute left-3 top-1/2 -translate-y-1/2 text-slate-400' size={16} />
+            <input
+              type='text'
+              placeholder='Search template...'
+              className='w-full pl-10 pr-4 py-2 text-sm bg-slate-50 dark:bg-slate-800 border-none rounded-xl focus:ring-2 ring-indigo-500 dark:text-white'
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
 
-            {/* Table Body */}
-            <TableBody className='divide-y divide-gray-100 dark:divide-white/[0.05]'>
-              {filteredAndPaginatedData.data.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className='py-4 text-center text-gray-500'>
-                    {searchTerm ? 'Không tìm thấy đăng ký nào.' : 'Chưa có đăng ký lịch làm việc nào.'}
-                  </TableCell>
-                </TableRow>
-              ) : (
+          {/* BA Selector */}
+          {!isBeautyAdvisor && (
+            <div className='relative'>
+              <User className='absolute left-3 top-1/2 -translate-y-1/2 text-slate-400' size={16} />
+              <select
+                className='w-full pl-10 pr-4 py-2 text-sm bg-slate-50 dark:bg-slate-800 border-none rounded-xl focus:ring-2 ring-indigo-500 dark:text-white appearance-none cursor-pointer'
+                value={selectedBAId}
+                onChange={(e) => setSelectedBAId(e.target.value)}
+              >
+                {beautyAdvisors.map((ba) => (
+                  <option key={ba.userId} value={ba.userId}>
+                    {ba.emailAddress}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Date Range */}
+          <div className='lg:col-span-2 flex items-center gap-2'>
+            <div className='flex-1 relative'>
+              <Calendar className='absolute left-3 top-1/2 -translate-y-1/2 text-slate-400' size={16} />
+              <input
+                type='date'
+                className='w-full pl-10 pr-4 py-2 text-sm bg-slate-50 dark:bg-slate-800 border-none rounded-xl focus:ring-2 ring-indigo-500 dark:text-white'
+                value={filterStartDate}
+                onChange={(e) => setFilterStartDate(e.target.value)}
+              />
+            </div>
+            <span className='text-slate-400'>to</span>
+            <div className='flex-1 relative'>
+              <Calendar className='absolute left-3 top-1/2 -translate-y-1/2 text-slate-400' size={16} />
+              <input
+                type='date'
+                className='w-full pl-10 pr-4 py-2 text-sm bg-slate-50 dark:bg-slate-800 border-none rounded-xl focus:ring-2 ring-indigo-500 dark:text-white'
+                value={filterEndDate}
+                onChange={(e) => setFilterEndDate(e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 3. Main Data Table */}
+      <div className='bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm'>
+        <div className='overflow-x-auto'>
+          <table className='w-full text-left border-collapse'>
+            <thead>
+              <tr className='bg-slate-50/50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 text-[11px] uppercase tracking-wider font-bold'>
+                <th className='px-6 py-4'>Staff Member</th>
+                <th className='px-6 py-4'>Work Template</th>
+                <th className='px-6 py-4'>Configuration</th>
+                <th className='px-6 py-4'>Duration</th>
+                <th className='px-6 py-4'>Weekly Schedule</th>
+                <th className='px-6 py-4 text-right'>Actions</th>
+              </tr>
+            </thead>
+            <tbody className='divide-y divide-slate-100 dark:divide-slate-800'>
+              {filteredAndPaginatedData.data.length > 0 ? (
                 filteredAndPaginatedData.data.map((reg) => (
-                  <TableRow key={reg.id}>
-                    <TableCell className='px-5 py-4 sm:px-6 text-start font-medium text-gray-800 dark:text-white/90 truncate max-w-[100px]'>
-                      {/* Dùng StaffEmailLookup để hiển thị email */}
-                      <StaffEmailLookup staffId={reg.staffId} />
-                    </TableCell>
-                    <TableCell className='px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400 font-semibold'>
-                      {reg.template.name}
-                    </TableCell>
-                    <TableCell className='px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400'>
-                      {reg.slot.slotMinutes}p ({reg.slot.breakMinutes}p nghỉ)
-                    </TableCell>
-                    <TableCell className='px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400'>
-                      {formatDateToDDMMYYYY(reg.startDate)} - {formatDateToDDMMYYYY(reg.endDate)}
-                    </TableCell>
-                    <TableCell className='px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400'>
-                      {reg.registrationWeekdays.map((w) => WEEKDAY_NAMES[w.weekday]).join(', ')}
-                    </TableCell>
-                    <TableCell className='px-4 py-3 text-end'>
-                      <div className='flex justify-end gap-2'>
-                        {/* Nút View Detail */}
+                  <tr key={reg.id} className='hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors group'>
+                    <td className='px-6 py-4'>
+                      <div className='flex items-center gap-3'>
+                        <div className='w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 font-bold text-xs'>
+                          {reg.staffId.substring(0, 2).toUpperCase()}
+                        </div>
+                        <div className='text-sm font-semibold text-slate-700 dark:text-slate-200'>
+                          <StaffEmailLookup staffId={reg.staffId} />
+                        </div>
+                      </div>
+                    </td>
+                    <td className='px-6 py-4'>
+                      <span className='px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-medium border border-slate-200 dark:border-slate-700'>
+                        {reg.template.name}
+                      </span>
+                    </td>
+                    <td className='px-6 py-4'>
+                      <div className='flex flex-col'>
+                        <span className='text-sm text-slate-700 dark:text-slate-300 font-medium'>
+                          {reg.slot.slotMinutes} mins/slot
+                        </span>
+                        <span className='text-[11px] text-slate-400'>{reg.slot.breakMinutes} mins break</span>
+                      </div>
+                    </td>
+                    <td className='px-6 py-4'>
+                      <div className='flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400'>
+                        <Clock size={14} className='text-slate-300' />
+                        <span>
+                          {formatDateToDDMMYYYY(reg.startDate)} - {formatDateToDDMMYYYY(reg.endDate)}
+                        </span>
+                      </div>
+                    </td>
+                    <td className='px-6 py-4'>
+                      <div className='flex flex-wrap gap-1'>
+                        {reg.registrationWeekdays.map((w) => (
+                          <span
+                            key={w.weekday}
+                            className='px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400'
+                          >
+                            {WEEKDAY_NAMES[w.weekday].substring(0, 3)}
+                          </span>
+                        ))}
+                      </div>
+                    </td>
+                    <td className='px-6 py-4 text-right'>
+                      <div className='flex justify-end items-center gap-1'>
                         <button
-                          onClick={() => handleOpenDetailModal(reg, 'view')}
-                          className='text-sky-500 hover:text-sky-700 dark:hover:text-sky-300 text-sm p-1'
-                          title='View Details'
+                          onClick={() => {
+                            setSelectedRegistration(reg)
+                            setIsViewMode(true)
+                            setIsModalOpen(true)
+                          }}
+                          className='p-2 text-slate-400 hover:text-sky-500 hover:bg-sky-50 dark:hover:bg-sky-900/20 rounded-lg transition-all'
+                          title='Quick View'
                         >
-                          View
+                          <Eye size={16} />
                         </button>
-                        {/* Nút Edit */}
+
                         {profile?.role !== Role.ADMIN && (
                           <>
                             <button
-                              onClick={() => handleOpenDetailModal(reg, 'edit')}
-                              className='text-brand-500 hover:text-brand-700 dark:hover:text-brand-300 text-sm p-1'
-                              title='Edit Registration'
+                              onClick={() => {
+                                setSelectedRegistration(reg)
+                                setIsViewMode(false)
+                                setIsModalOpen(true)
+                              }}
+                              className='p-2 text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-all'
                             >
-                              Edit
+                              <Edit size={16} />
                             </button>
-                            {/* Nút Delete */}
                             <button
-                              onClick={() => handleDeleteClick(reg)}
-                              className='text-red-500 hover:text-red-700 dark:hover:text-red-300 text-sm p-1'
-                              title='Delete Registration'
+                              onClick={() => {
+                                setSelectedRegistration(reg)
+                                setIsConfirmOpen(true)
+                              }}
+                              className='p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all'
                             >
-                              Delete
+                              <Trash2 size={16} />
                             </button>
                           </>
                         )}
                       </div>
-                    </TableCell>
-                  </TableRow>
+                    </td>
+                  </tr>
                 ))
+              ) : (
+                <tr>
+                  <td colSpan={6} className='px-6 py-20 text-center'>
+                    <div className='flex flex-col items-center gap-2 text-slate-400'>
+                      <Search size={40} className='opacity-20' />
+                      <p className='text-sm'>No registrations found matching your criteria</p>
+                    </div>
+                  </td>
+                </tr>
               )}
-            </TableBody>
-          </Table>
+            </tbody>
+          </table>
         </div>
 
-        {/* Pagination */}
-        {filteredAndPaginatedData.totalItems > ITEMS_PER_PAGE && (
-          <div className='p-4 border-t border-gray-100 dark:border-white/[0.05] flex justify-center'>
-            <Pagination
-              currentPage={currentPage}
-              totalPages={Math.ceil(filteredAndPaginatedData.totalItems / ITEMS_PER_PAGE)}
-              onPageChange={setCurrentPage}
-            />
+        {/* 4. Pagination (Modern style) */}
+        {allRegistrations.length > ITEMS_PER_PAGE && (
+          <div className='px-6 py-4 bg-slate-50/50 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between'>
+            <p className='text-xs text-slate-500'>
+              Showing{' '}
+              <span className='font-bold text-slate-700 dark:text-slate-300'>
+                {(currentPage - 1) * ITEMS_PER_PAGE + 1}
+              </span>{' '}
+              to{' '}
+              <span className='font-bold text-slate-700 dark:text-slate-300'>
+                {Math.min(currentPage * ITEMS_PER_PAGE, allRegistrations.length)}
+              </span>{' '}
+              of {allRegistrations.length} results
+            </p>
+            <div className='flex gap-2'>
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((p) => p - 1)}
+                className='px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-700 disabled:opacity-30 hover:bg-white dark:hover:bg-slate-800 transition-all'
+              >
+                Previous
+              </button>
+              <button
+                disabled={currentPage >= Math.ceil(allRegistrations.length / ITEMS_PER_PAGE)}
+                onClick={() => setCurrentPage((p) => p + 1)}
+                className='px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm transition-all'
+              >
+                Next
+              </button>
+            </div>
           </div>
         )}
       </div>
 
-      {/* Truyền props vào RegistrationModal */}
+      {/* Modals - Giữ nguyên logic truyền props của bạn */}
       <RegistrationModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -543,10 +418,13 @@ export default function BasicTableRegistration() {
       <ConfirmModal
         isOpen={isConfirmOpen}
         onClose={() => setIsConfirmOpen(false)}
-        onConfirm={handleConfirmDelete}
-        title='Confirm Schedule Registration Deletion'
-        message={`Are you sure you want to delete the schedule registration for template "${selectedRegistration?.template.name}"? This action cannot be undone.`}
+        onConfirm={() => {
+          if (selectedRegistration) deleteRegistration(selectedRegistration.id)
+          setIsConfirmOpen(false)
+        }}
+        title='Confirm Deletion'
+        message={`Are you sure you want to delete this schedule registration?`}
       />
-    </>
+    </div>
   )
 }

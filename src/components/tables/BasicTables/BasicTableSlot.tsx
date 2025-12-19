@@ -11,6 +11,7 @@ import ConfirmModal from '../../CalendarModelDetail/ConfirmModal'
 import Pagination from '../../pagination/Pagination'
 import SlotModal from '../../SlotModal/SlotModal'
 import { Table, TableBody, TableCell, TableHeader, TableRow } from '../../ui/table'
+import { SuccessResponse } from '../../../utils/utils.type'
 
 const ITEMS_PER_PAGE = 10
 
@@ -28,17 +29,19 @@ export default function BasicTableSlot() {
 
   // --- API READ (R) ---
   const {
-    data: allSlots = [],
+    data: slotsRes,
     isLoading,
     isError
-  } = useQuery<Slot[]>({
+  } = useQuery<SuccessResponse<Slot[]>>({
     queryKey: ['slots'],
     queryFn: async () => {
       const res = await slotApi.getSlots()
-      return res.data.data // trả về Slot[]
+      return res.data
     },
     staleTime: 1000 * 60 * 5
   })
+
+  const allSlots: Slot[] = slotsRes?.data ?? []
 
   // --- FILTERING AND PAGINATION ---
   const filteredAndPaginatedSlots = useMemo(() => {

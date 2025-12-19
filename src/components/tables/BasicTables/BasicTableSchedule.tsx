@@ -475,7 +475,7 @@ export default function WorkSchedulesManagement() {
       <GenerateScheduleFromRegistrationModal
         isOpen={isGenerateModalOpen}
         onClose={() => setIsGenerateModalOpen(false)}
-        selectedBAId={selectedBAId === 'all' ? undefined : selectedBAId} // Truyền ID BA đang được chọn (trừ 'all')
+        // selectedBAId={selectedBAId === 'all' ? undefined : selectedBAId} // Truyền ID BA đang được chọn (trừ 'all')
         onScheduleGenerated={refetch}
       />
     </>

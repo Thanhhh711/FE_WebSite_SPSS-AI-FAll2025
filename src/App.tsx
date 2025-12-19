@@ -49,6 +49,7 @@ import Videos from './pages/UiElements/Videos'
 import UserProfiles from './pages/UserProfiles'
 import { ErrorBoundary } from './utils/ErrorBoundary'
 import TreatmentPlanTab from './pages/Patients/PatientDetail'
+import { SkinTestManager } from './pages/Quizz/ManagerQuizz'
 
 const BasicTables = lazy(() => import('./pages/Tables/BasicTables'))
 
@@ -109,6 +110,7 @@ export default function App() {
             <Route path={AppPath.FORM_ELEMENTS} element={<FormElements />} />
             {/* Content */}
             <Route path={AppPath.BLOGS} element={<ManageBlogs />} />
+            <Route path={AppPath.QUIZZS} element={<SkinTestManager />} />
           </Route>
         </Route>
 

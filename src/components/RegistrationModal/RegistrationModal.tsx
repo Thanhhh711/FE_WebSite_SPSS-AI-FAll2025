@@ -8,12 +8,10 @@ import { useQuery } from '@tanstack/react-query'
 import userApi from '../../api/user.api'
 import { formatDateToDDMMYYYY, formatDateValue } from '../../utils/validForm'
 import { Role } from '../../constants/Roles'
+import { ScheduleTemplate } from '../../types/templete.type'
 
 // Interfaces used in this component
-interface Template {
-  id: string
-  name: string
-}
+
 interface Slot {
   id: string
   slotMinutes: number
@@ -32,7 +30,7 @@ interface RegistrationModalProps {
   // Cập nhật onSave để nhận RegistrationForm (có staffId)
   onSave: (data: RegistrationForm) => void
   isViewMode: boolean
-  templates: Template[]
+  templates: ScheduleTemplate[]
   slots: Slot[]
   // THÊM: Danh sách BA để chọn
   beautyAdvisors: BeautyAdvisor[]
@@ -48,8 +46,7 @@ export const WEEKDAY_NAMES: { [key: number]: string } = {
   3: 'Wed',
   4: 'Thu',
   5: 'Fri',
-  6: 'Sat',
-  7: 'Sun'
+  6: 'Sat'
 }
 
 // Cập nhật: Thêm staffId vào RegistrationForm
@@ -103,36 +100,61 @@ export default function RegistrationModal({
   })
   const [errors, setErrors] = useState<RegistrationErrors>(initialErrors)
 
-  useEffect(() => {
-    if (registration) {
-      setForm({
-        startDate: formatDateValue(registration.startDate),
-        endDate: formatDateValue(registration.endDate),
-        startTime: registration.startTime,
-        endTime: registration.endTime,
-        templateId: registration.templateId,
-        slotId: registration.slotId,
-        notes: registration.notes,
-        weekdays: registration.registrationWeekdays.map((w) => w.weekday),
-        staffId: registration.staffId // THÊM staffId khi edit
-      })
-    } else {
-      // Reset form for Create mode, using default IDs và initialStaffId
-      setForm({
-        startDate: today,
-        endDate: today,
-        startTime: '',
-        endTime: '',
-        templateId: defaultTemplateId,
-        slotId: defaultSlotId,
-        notes: '',
-        weekdays: [],
-        staffId: initialStaffId || '' // THÊM staffId khi tạo mới
-      })
-    }
-    setErrors(initialErrors) // Reset errors
-  }, [registration, defaultTemplateId, defaultSlotId, today, initialStaffId])
+  // useEffect(() => {
+  //   if (registration) {
+  //     setForm({
+  //       startDate: formatDateValue(registration.startDate),
+  //       endDate: formatDateValue(registration.endDate),
+  //       startTime: registration.startTime,
+  //       endTime: registration.endTime,
+  //       templateId: registration.templateId,
+  //       slotId: registration.slotId,
+  //       notes: registration.notes,
+  //       weekdays: registration.registrationWeekdays.map((w) => w.weekday),
+  //       staffId: registration.staffId // THÊM staffId khi edit
+  //     })
+  //   } else {
+  //     // Reset form for Create mode, using default IDs và initialStaffId
+  //     setForm({
+  //       startDate: today,
+  //       endDate: today,
+  //       startTime: '',
+  //       endTime: '',
+  //       templateId: defaultTemplateId,
+  //       slotId: defaultSlotId,
+  //       notes: '',
+  //       weekdays: [],
+  //       staffId: initialStaffId || '' // THÊM staffId khi tạo mới
+  //     })
+  //   }
+  //   setErrors(initialErrors) // Reset errors
+  // }, [registration, defaultTemplateId, defaultSlotId, today, initialStaffId])
 
+  useEffect(() => {
+    // Chỉ tự động fill khi đang ở chế độ Tạo mới hoặc Chỉnh sửa (không phải View)
+    if (form.templateId && !isViewMode) {
+      const selectedTemplate = templates.find((t) => t.id === form.templateId) as ScheduleTemplate | undefined
+
+      if (selectedTemplate) {
+        setForm((prev) => ({
+          ...prev,
+          // Tự động gán giá trị từ template vào form
+          slotId: selectedTemplate.slotId || prev.slotId,
+          startTime: selectedTemplate.startTime || prev.startTime,
+          endTime: selectedTemplate.endTime || prev.endTime
+        }))
+
+        // Xóa thông báo lỗi của các trường này nếu có
+        setErrors((prev) => ({
+          ...prev,
+          templateId: undefined,
+          slotId: undefined,
+          startTime: undefined,
+          endTime: undefined
+        }))
+      }
+    }
+  }, [form.templateId, templates, isViewMode])
   // Validate form (Logic này giữ nguyên)
   const validateForm = (data: SchedulePayload & { staffId: string }): boolean => {
     const newErrors: RegistrationErrors = {}
@@ -204,6 +226,35 @@ export default function RegistrationModal({
       isValid = false
     }
 
+    const now = new Date()
+    now.setSeconds(0, 0)
+
+    if (data.startDate) {
+      const startDate = new Date(data.startDate)
+      startDate.setHours(0, 0, 0, 0)
+
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+
+      if (startDate < today) {
+        newErrors.startDate = 'Start date cannot be in the past.'
+        isValid = false
+      }
+    }
+
+    if (data.endDate) {
+      const endDate = new Date(data.endDate)
+      endDate.setHours(0, 0, 0, 0)
+
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+
+      if (endDate < today) {
+        newErrors.endDate = 'End date cannot be in the past.'
+        isValid = false
+      }
+    }
+
     setErrors(newErrors)
     return isValid
   }
@@ -250,7 +301,6 @@ export default function RegistrationModal({
       staffId: staffId
     }
     onSave(dataToSave)
-    toast.success(`${isEditing ? 'Updated' : 'Created'} Schedule Registration successfully!`)
   }
 
   const title = isCreating
@@ -334,13 +384,13 @@ export default function RegistrationModal({
             )}
 
             {/* 2. TEMPLATE & SLOT (Gộp lại) */}
+            {/* 2. TEMPLATE & SLOT */}
             <div className='grid grid-cols-2 gap-4'>
               {/* Template */}
               <div>
                 <label htmlFor='templateId' className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>
                   Schedule Template *
                 </label>
-
                 <select
                   id='templateId'
                   value={form.templateId}
@@ -359,7 +409,7 @@ export default function RegistrationModal({
                 {errors.templateId && <p className={errorClass}>{errors.templateId}</p>}
               </div>
 
-              {/* Slot */}
+              {/* Slot - Sẽ tự động được chọn khi chọn Template bên trên */}
               <div>
                 <label htmlFor='slotId' className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>
                   Slot Configuration *

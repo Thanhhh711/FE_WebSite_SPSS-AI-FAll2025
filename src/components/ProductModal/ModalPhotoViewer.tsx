@@ -62,7 +62,7 @@ const ModalPhotoViewer: React.FC<ModalProps> = ({ isOpen, onClose, imageUrl, onP
             shadow-[0_0_50px_rgba(0,0,0,0.5)]
             ring-1 ring-white/10
           '
-        />
+        />{' '}
       </div>
 
       {/* Nút Next */}
