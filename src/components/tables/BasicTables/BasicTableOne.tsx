@@ -46,7 +46,7 @@ const StatCard = ({ title, count, colorClass, icon }: any) => (
     </div>
 
     <div>
-      <p className='text-[11px] font-black text-gray-400 uppercase tracking-[0.12em] mb-1'>{title}</p>
+      ư<p className='text-[11px] font-black text-gray-400 uppercase tracking-[0.12em] mb-1'>{title}</p>
       <div className='flex items-baseline gap-1'>
         <h3 className='text-3xl font-black text-gray-900 dark:text-white tracking-tight'>
           {count?.toLocaleString() || 0}

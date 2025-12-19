@@ -1,19 +1,9 @@
+import { ScheduleTemplate } from './templete.type'
+
 export interface Slot {
   id: string
   slotMinutes: number
   breakMinutes: number
-  createdBy: string
-  lastUpdatedBy: string | null
-  createdTime: string
-  lastUpdatedTime: string | null
-  deletedTime: string | null
-  isDeleted: boolean
-}
-
-export interface Template {
-  id: string
-  name: string
-  description: string
   createdBy: string
   lastUpdatedBy: string | null
   createdTime: string
@@ -43,7 +33,7 @@ export interface ScheduleRegistration {
   deletedTime: string | null
   isDeleted: boolean
   slot: Slot
-  template: Template
+  template: ScheduleTemplate
   registrationWeekdays: RegistrationWeekday[]
 }
 

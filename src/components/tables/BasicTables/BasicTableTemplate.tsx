@@ -202,7 +202,7 @@ export default function BasicTableTemplate() {
                 </TableRow>
               ) : paginatedData.length === 0 ? (
                 <TableRow>
-                  <TableCell className='text-center py-10 text-gray-400'>No templates found.</TableCell>
+                  <TableCell className='text-center p y-10 text-gray-400'>No templates found.</TableCell>
                 </TableRow>
               ) : (
                 paginatedData.map((template) => (
