@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { ThemeToggleButton } from '../common/ThemeToggleButton'
-import NotificationDropdown from './NotificationDropdown'
-import UserDropdown from './UserDropdown'
 import { Link } from 'react-router'
+import { ThemeToggleButton } from '../common/ThemeToggleButton'
+import UserDropdown from './UserDropdown'
+// import logo from '/public/images/logo/SPSS.png'
 
 // Define the interface for the props
 interface HeaderProps {
@@ -74,12 +74,13 @@ const Header: React.FC<HeaderProps> = ({ onClick, onToggle }) => {
               />
             </svg>
           </button>
+          <Link to='/' className='lg:hidden h-5 w-auto'>
+            {/* <div className='h-5 w-auto flex items-center justify-center overflow-hidden'>
+              <img className='h-full w-auto block dark:hidden object-contain' src={logo} alt='Logo' />
 
-          <Link to='/' className='lg:hidden'>
-            {/* <img className='dark:hidden' src='./images/logo/SPSS.png' alt='Logo' />
-            <img className='hidden dark:block' src='./images/logo/logo-dark.svg' alt='Logo' /> */}
+              <img className='h-full w-auto hidden dark:block object-contain' src={logo} alt='Logo' />
+            </div> */}
           </Link>
-
           <button
             onClick={toggleApplicationMenu}
             className='flex items-center justify-center w-10 h-10 text-gray-700 rounded-lg z-99999 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 lg:hidden'
@@ -127,7 +128,7 @@ const Header: React.FC<HeaderProps> = ({ onClick, onToggle }) => {
             {/* <!-- Dark Mode Toggler --> */}
             <ThemeToggleButton />
             {/* <!-- Dark Mode Toggler --> */}
-            <NotificationDropdown />
+            {/* <NotificationDropdown /> */}
             {/* <!-- Notification Menu Area --> */}
           </div>
           {/* <!-- User Area --> */}

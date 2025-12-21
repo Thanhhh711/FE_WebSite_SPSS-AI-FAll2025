@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMutation } from '@tanstack/react-query'
 import { useContext, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
@@ -13,6 +14,7 @@ import Checkbox from '../form/input/Checkbox'
 import Input from '../form/input/InputField'
 import Button from '../ui/button/Button'
 import logo from '/public/images/logo/SPSS.png'
+import TwoFactorModal from '../../pages/AuthPages/VerifySignIn'
 
 interface FormData {
   usernameOrEmail: string
@@ -23,6 +25,20 @@ export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false)
   const [isChecked, setIsChecked] = useState(false)
   const { setIsAuthenticated, setProfile } = useContext(AppContext)
+
+  const [show2FA, setShow2FA] = useState(false)
+  const [tempEmail, setTempEmail] = useState('')
+
+  // 1. Logic to handle final successful login (after 2FA)
+  const handleFinalSuccess = (data: any) => {
+    toast.success(data.data.message)
+    setProfileToLS(data.data.data.authUserDto as AuthUser)
+    setProfile(data.data.data.authUserDto as AuthUser)
+    setIsAuthenticated(true)
+
+    const redirectPath = roleRedirectPath(data.data.data.authUserDto.role)
+    navigate(redirectPath)
+  }
 
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({})
   const navigate = useNavigate()
@@ -64,17 +80,26 @@ export default function SignInForm() {
       { usernameOrEmail, password },
       {
         onSuccess: (data) => {
-          toast.success(data.data.message)
+          if (data.data.data.is2FARequired) {
+            setTempEmail(usernameOrEmail)
+            setShow2FA(true)
+            toast.info('Please check your email for the verification code')
+          }
 
-          setProfileToLS(data.data.data.authUserDto as AuthUser)
-          setProfile(data.data.data.authUserDto as AuthUser)
-          setIsAuthenticated(true)
+          if (!data.data.data.is2FARequired) {
+            toast.success(data.data.message)
 
-          const redirectPath = roleRedirectPath(data.data.data.authUserDto.role)
-          navigate(redirectPath)
+            setProfileToLS(data.data.data.authUserDto as AuthUser)
+            setProfile(data.data.data.authUserDto as AuthUser)
+            setIsAuthenticated(true)
+
+            const redirectPath = roleRedirectPath(data.data.data.authUserDto.role)
+            navigate(redirectPath)
+          }
         },
-        onError: (error) => {
-          console.log('errror', error)
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        onError: (_error) => {
+          toast.error('Login failed. Please check your credentials.')
         }
       }
     )
@@ -82,6 +107,7 @@ export default function SignInForm() {
 
   return (
     <div className='w-full'>
+      {show2FA && <TwoFactorModal email={tempEmail} onSuccess={handleFinalSuccess} onClose={() => setShow2FA(false)} />}
       <div className='bg-white dark:bg-gray-800 p-8 sm:p-12 rounded-3xl shadow-2xl ring-1 ring-gray-100 dark:ring-gray-700/50'>
         <div className='mb-8 text-center'>
           <div className='inline-block mb-4 p-3 rounded-full bg-pink-100 dark:bg-pink-900/50'>

@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 
 import { Link } from 'react-router'
-import { useSidebar } from '../context/SidebarContext'
 import { ThemeToggleButton } from '../components/common/ThemeToggleButton'
-import NotificationDropdown from '../components/header/NotificationDropdown'
 import UserDropdown from '../components/header/UserDropdown'
+import { useSidebar } from '../context/SidebarContext'
+import logo from '/public/images/logo/SPSS.png'
 
 const AppHeader: React.FC = () => {
   const [isApplicationMenuOpen, setApplicationMenuOpen] = useState(false)
@@ -72,12 +72,15 @@ const AppHeader: React.FC = () => {
           </button>
 
           <Link to='/' className='lg:hidden'>
-            <img
-              className='dark:hidden'
-              // src="./images/logo/logo.svg"
-              alt='Logo'
-            />
-            {/* <img className='hidden dark:block' src='./images/logo/logo-dark.svg' alt='Logo' /> */}
+            {/* 1. Div này đóng vai trò là "cái khung" cố định. 
+     Bạn có thể chỉnh h-4 (16px), h-5 (20px) hoặc h-6 (24px) tùy độ nhỏ mong muốn */}
+            <div className='h-14 w-auto flex items-center justify-center overflow-hidden'>
+              {/* 2. Thẻ img dùng h-full để luôn cao bằng div cha.
+       object-contain giúp logo giữ đúng tỷ lệ không bị méo. */}
+              <img className='h-full w-auto block dark:hidden object-contain' src={logo} alt='Logo' />
+
+              <img className='h-full w-auto hidden dark:block object-contain' src={logo} alt='Logo' />
+            </div>
           </Link>
 
           <button
@@ -103,7 +106,7 @@ const AppHeader: React.FC = () => {
             {/* <!-- Dark Mode Toggler --> */}
             <ThemeToggleButton />
             {/* <!-- Dark Mode Toggler --> */}
-            <NotificationDropdown />
+            {/* <NotificationDropdown /> */}
             {/* <!-- Notification Menu Area --> */}
           </div>
           {/* <!-- User Area --> */}

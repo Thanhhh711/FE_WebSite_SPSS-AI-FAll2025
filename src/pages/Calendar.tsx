@@ -445,6 +445,7 @@ const AppointmentCalendar: React.FC = () => {
                 bg-indigo-600 text-white text-xs font-semibold
                 px-2 py-0.5 rounded-md
                 hover:bg-indigo-700 transition duration-150
+                z-0
               '
               >
                 +{args.num} more

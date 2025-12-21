@@ -345,14 +345,35 @@ const AppSidebar: React.FC = () => {
       onMouseLeave={() => setIsHovered(false)}
     >
       <div className={`py-8 flex ${!isExpanded && !isHovered ? 'lg:justify-center' : 'justify-start'}`}>
-        <Link to='/'>
+        <Link to='/' className='flex items-center gap-3'>
           {isExpanded || isHovered || isMobileOpen ? (
             <>
-              <img className='dark:hidden' src='/images/logo/SPSS.png' alt='Logo' width={50} height={40} />
-              <img className='hidden dark:block' src='/images/logo/SPSS.png' alt='Logo' width={50} height={40} />
+              <div className='flex items-center gap-3'>
+                {/* Logo Group */}
+                <div className='flex items-center justify-center h-8 w-auto'>
+                  <img
+                    className='h-full w-auto block dark:hidden object-contain'
+                    src='/images/logo/SPSS.png'
+                    alt='Logo'
+                  />
+                  <img
+                    className='h-full w-auto hidden dark:block object-contain'
+                    src='/images/logo/SPSS.png'
+                    alt='Logo'
+                  />
+                </div>
+
+                {/* Website Name - Chỉ hiện khi Sidebar mở hoặc trên Mobile */}
+                <span className='text-xl font-bold tracking-tight text-slate-900 dark:text-white whitespace-nowrap'>
+                  Glowly
+                </span>
+              </div>
             </>
           ) : (
-            <img src='/images/logo/SPSS.png' alt='Logo' width={32} height={32} />
+            /* Khi Sidebar thu gọn: Chỉ hiện Logo nhỏ */
+            <div className='flex items-center justify-center h-8 w-8'>
+              <img src='/images/logo/SPSS.png' alt='Logo' className='h-full w-full object-contain' />
+            </div>
           )}
         </Link>
       </div>

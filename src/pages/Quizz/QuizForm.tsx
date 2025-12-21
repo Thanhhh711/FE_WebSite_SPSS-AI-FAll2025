@@ -1,263 +1,354 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Activity, ArrowLeft, Save, Settings, X } from 'lucide-react'
-import { useEffect, useState } from 'react'
-import { CreateSkinTestRequest, ResultConfig } from '../../types/quizz.type'
+import { Activity, ArrowLeft, Loader2, Plus, Save, Settings, Trash2, X } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { toast } from 'react-toastify'
+import quizzApi from '../../api/quizz.api'
+import { CreateSkinTestRequest, ResultConfig, SkinSection } from '../../types/quizz.type'
 import { SkinType } from '../../types/skin.type'
 import http from '../../utils/http'
-import quizzApi from '../../api/quizz.api'
 
-// Assuming your API path for skin types
 const SKIN_TYPES_URL = 'skin-types'
 
-const QuizForm = ({ initialData, onClose }: { initialData?: any; onClose: () => void }) => {
+const QuizForm = ({ initialData, onClose }: { initialData?: any | null; onClose: () => void }) => {
   const [skinTypes, setSkinTypes] = useState<SkinType[]>([])
-  const [formData, setFormData] = useState<CreateSkinTestRequest>(
-    initialData || {
-      name: '',
-      isDefault: false,
-      questions: [],
-      resultConfigs: []
-    }
-  )
+  const [isLoading, setIsLoading] = useState(false)
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [formData, setFormData] = useState<CreateSkinTestRequest>({
+    name: '',
+    isDefault: false,
+    questions: [],
+    resultConfigs: []
+  })
 
-  // Fetch Skin Types from API to generate Result Configurations
+  // 1. Tính toán cận trên và cận dưới dựa trên tổng điểm các câu hỏi hiện có
+  const sectionRanges = useMemo(() => {
+    const ranges: Record<string, { min: number; max: number }> = {
+      OD: { min: 0, max: 0 },
+      SR: { min: 0, max: 0 },
+      PN: { min: 0, max: 0 },
+      WT: { min: 0, max: 0 }
+    }
+
+    formData.questions.forEach((q) => {
+      if (q.options.length > 0) {
+        const scores = q.options.map((o) => Number(o.score) || 0)
+        ranges[q.section].min += Math.min(...scores)
+        ranges[q.section].max += Math.max(...scores)
+      }
+    })
+    return ranges
+  }, [formData.questions])
+
+  // 2. Hàm validate logic điểm số (trả về lỗi inline)
+  const validateAllConfigs = (configs: ResultConfig[]) => {
+    const newErrors: Record<string, string> = {}
+
+    configs.forEach((config, idx) => {
+      const sections: (keyof typeof sectionRanges)[] = ['OD', 'SR', 'PN', 'WT']
+      sections.forEach((s) => {
+        const fieldKey = `${s.toLowerCase()}Score` as keyof ResultConfig
+        const val = config[fieldKey] as string
+        const errorKey = `${idx}-${fieldKey}`
+
+        if (!val) return
+
+        const parts = val.split('-')
+        const minVal = parseInt(parts[0])
+        const maxVal = parseInt(parts[1])
+
+        if (parts.length !== 2 || isNaN(minVal) || isNaN(maxVal)) {
+          newErrors[errorKey] = 'Format: min-max (e.g. 10-20)'
+        } else if (minVal < sectionRanges[s].min || maxVal > sectionRanges[s].max) {
+          newErrors[errorKey] = `Out of range (${sectionRanges[s].min}-${sectionRanges[s].max})`
+        }
+      })
+    })
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
   useEffect(() => {
-    const fetchSkinTypes = async () => {
+    const initData = async () => {
+      setIsLoading(true)
       try {
-        const res = await http.get<{ data: SkinType[] }>(SKIN_TYPES_URL)
-        const types = res.data.data
+        const resSkinTypes = await http.get<{ data: SkinType[] }>(SKIN_TYPES_URL)
+        const types = resSkinTypes.data.data
         setSkinTypes(types)
 
-        // If creating new, pre-populate resultConfigs based on fetched Skin Types
-        if (!initialData) {
-          const initialConfigs: ResultConfig[] = types.map((type) => ({
-            skinTypeId: type.id,
-            odScore: '',
-            srScore: '',
-            pnScore: '',
-            wtScore: ''
+        if (initialData?.id) {
+          const resDetail = await quizzApi.getQuizzsById(initialData.id)
+          const d = resDetail.data.data
+          setFormData({
+            name: d.name,
+            isDefault: d.isDefault,
+            questions: d.questions.map((q: any) => ({
+              value: q.value,
+              section: q.section,
+              options: q.options.map((o: any) => ({ value: o.value, score: o.score }))
+            })),
+            resultConfigs: d.results.map((r: any) => ({
+              skinTypeId: r.skinTypeId,
+              odScore: r.odScore,
+              srScore: r.srScore,
+              pnScore: r.pnScore,
+              wtScore: r.wtScore
+            }))
+          })
+        } else {
+          setFormData((prev) => ({
+            ...prev,
+            resultConfigs: types.map((t) => ({
+              skinTypeId: t.id,
+              odScore: '',
+              srScore: '',
+              pnScore: '',
+              wtScore: ''
+            }))
           }))
-          setFormData((prev) => ({ ...prev, resultConfigs: initialConfigs }))
         }
       } catch (error) {
-        console.error('Failed to fetch skin types', error)
+        console.error('Error initializing form', error)
+      } finally {
+        setIsLoading(false)
       }
     }
-    fetchSkinTypes()
-  }, [initialData])
+    initData()
+  }, [initialData?.id])
 
   const handleSave = async () => {
     if (!formData.name.trim()) return alert('Please enter a quiz name')
+    if (!validateAllConfigs(formData.resultConfigs)) return
+
     try {
-      if (initialData) {
-        await quizzApi.editQuizzs(initialData.id, formData)
+      if (initialData?.id) {
+        const data = await quizzApi.editQuizzs(initialData.id, formData as any)
+        toast.success(data?.data.message || 'Update quiz successfully')
       } else {
-        await quizzApi.createQuizzs(formData)
+        const data = await quizzApi.createQuizzs(formData)
+        toast.success(data?.data.message || 'Create quiz successfully')
       }
-      alert('Saved successfully!')
+
       onClose()
     } catch (error) {
-      alert('Error saving data')
+      alert('Error saving quiz data')
     }
   }
 
-  // --- Question Management Logic ---
-  const addQuestion = () => {
-    const newQuestion = { value: '', section: 'OD', options: [{ value: '', score: 0 }] }
-    setFormData({ ...formData, questions: [...formData.questions, newQuestion] })
-  }
-
-  const removeQuestion = (index: number) => {
-    setFormData({ ...formData, questions: formData.questions.filter((_, i) => i !== index) })
-  }
-
-  const addOption = (qIndex: number) => {
-    const updatedQuestions = [...formData.questions]
-    updatedQuestions[qIndex].options.push({ value: '', score: 0 })
-    setFormData({ ...formData, questions: updatedQuestions })
-  }
+  if (isLoading)
+    return (
+      <div className='flex items-center justify-center py-20'>
+        <Loader2 className='animate-spin text-indigo-500' size={40} />
+      </div>
+    )
 
   return (
-    <div className='space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20'>
-      {/* Sticky Top Bar */}
-      <div className='sticky top-4 z-10 flex items-center gap-4 bg-white/80 backdrop-blur-md p-4 rounded-2xl border border-slate-200 shadow-lg'>
-        <button onClick={onClose} className='p-2.5 hover:bg-slate-100 rounded-xl transition-colors'>
+    <div className='space-y-6 pb-20 dark:bg-slate-950 transition-colors'>
+      {/* Sticky Header with Glassmorphism */}
+      <div className='sticky top-4 z-20 flex flex-wrap items-center gap-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-4 rounded-3xl border dark:border-slate-800 shadow-lg'>
+        <button
+          onClick={onClose}
+          className='p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl dark:text-slate-300 transition-colors'
+        >
           <ArrowLeft size={20} />
         </button>
         <input
+          className='flex-1 min-w-[200px] bg-transparent text-xl font-bold outline-none dark:text-white placeholder:text-slate-400'
+          placeholder='Quiz Name...'
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          className='flex-1 text-xl font-bold bg-transparent outline-none placeholder:text-slate-300'
-          placeholder='Quiz Campaign Name...'
         />
-        <button
-          onClick={handleSave}
-          className='bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl flex items-center gap-2 font-semibold shadow-md transition-all'
-        >
-          <Save size={18} /> Save Quiz
-        </button>
+        <div className='flex items-center gap-4'>
+          <label className='flex items-center gap-2 cursor-pointer'>
+            <input
+              type='checkbox'
+              checked={formData.isDefault}
+              onChange={(e) => setFormData({ ...formData, isDefault: e.target.checked })}
+              className='w-4 h-4 accent-indigo-600'
+            />
+            <span className='text-sm font-bold text-slate-600 dark:text-slate-400'>Default</span>
+          </label>
+          <button
+            onClick={handleSave}
+            className='bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-md active:scale-95 transition-all'
+          >
+            <Save size={18} /> <span className='hidden sm:inline'>Save Quiz</span>
+          </button>
+        </div>
       </div>
 
-      <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
-        {/* Left Column: Settings & Result Mapping */}
-        <div className='lg:col-span-1 space-y-6'>
-          {/* General Config */}
-          <div className='bg-white p-6 rounded-2xl border border-slate-200 shadow-sm'>
-            <div className='flex items-center gap-2 text-indigo-600 mb-6 font-bold uppercase text-[11px] tracking-widest'>
-              <Settings size={16} /> General Settings
+      <div className='grid grid-cols-1 lg:grid-cols-12 gap-8'>
+        {/* Score Config Panel */}
+        <div className='lg:col-span-4 space-y-6 order-2 lg:order-1'>
+          <div className='bg-white dark:bg-slate-900 p-6 rounded-3xl border dark:border-slate-800 shadow-sm'>
+            <div className='flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-bold mb-6'>
+              <Settings size={18} /> <span>SCORE CONFIG</span>
             </div>
-            <label className='relative flex items-start gap-3 p-4 rounded-xl border border-slate-100 bg-slate-50/50 cursor-pointer hover:bg-slate-100 transition-colors'>
-              <input
-                type='checkbox'
-                checked={formData.isDefault}
-                onChange={(e) => setFormData({ ...formData, isDefault: e.target.checked })}
-                className='mt-1 w-5 h-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500'
-              />
-              <div className='text-sm'>
-                <p className='font-bold text-slate-700'>Set as Default</p>
-                <p className='text-slate-500 text-xs'>This quiz will be prioritized for new users.</p>
-              </div>
-            </label>
-          </div>
-
-          {/* Skin Type Result Configs */}
-          <div className='bg-white p-6 rounded-2xl border border-slate-200 shadow-sm'>
-            <div className='flex items-center gap-2 text-indigo-600 mb-6 font-bold uppercase text-[11px] tracking-widest'>
-              <Activity size={16} /> Skin Type Result Mapping
-            </div>
-            <div className='space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar'>
-              {formData.resultConfigs.map((config, idx) => {
-                const typeInfo = skinTypes.find((t) => t.id === config.skinTypeId)
-                return (
-                  <div key={config.skinTypeId} className='p-4 rounded-xl border border-slate-100 bg-slate-50/30'>
-                    <p className='font-bold text-slate-800 text-sm mb-3 flex items-center gap-2'>
-                      <span className='w-2 h-2 rounded-full bg-indigo-400'></span>
-                      {typeInfo?.name || 'Unknown Type'}
-                    </p>
-                    <div className='grid grid-cols-2 gap-2'>
-                      {['odScore', 'srScore', 'pnScore', 'wtScore'].map((scoreField) => (
-                        <div key={scoreField}>
-                          <label className='text-[10px] font-bold text-slate-400 uppercase ml-1'>
-                            {scoreField.replace('Score', '')}
-                          </label>
-                          <input
-                            type='text'
-                            placeholder='Range...'
-                            className='w-full text-xs p-2 rounded-lg border border-slate-200 outline-none focus:border-indigo-400'
-                            value={(config as any)[scoreField]}
-                            onChange={(e) => {
-                              const newConfigs = [...formData.resultConfigs]
-                              ;(newConfigs[idx] as any)[scoreField] = e.target.value
-                              setFormData({ ...formData, resultConfigs: newConfigs })
-                            }}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column: Questions */}
-        <div className='lg:col-span-2 space-y-6'>
-          <div className='flex justify-between items-center'>
-            <h2 className='text-lg font-bold text-slate-800 flex items-center gap-2'>
-              Questionnaire Content
-              <span className='bg-slate-200 text-slate-600 text-xs py-0.5 px-2 rounded-full'>
-                {formData.questions.length}
-              </span>
-            </h2>
-            <button
-              onClick={addQuestion}
-              className='text-sm bg-indigo-600 text-white font-bold px-4 py-2 rounded-xl hover:bg-indigo-700 transition-all shadow-sm'
-            >
-              + Add Question
-            </button>
-          </div>
-
-          {formData.questions.map((q, qIndex) => (
-            <div key={qIndex} className='bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden'>
-              <div className='p-5'>
-                <div className='flex gap-4 mb-6'>
-                  <span className='flex-shrink-0 bg-slate-800 text-white w-8 h-8 flex items-center justify-center rounded-lg font-bold text-sm'>
-                    {qIndex + 1}
-                  </span>
-                  <div className='flex-1 space-y-3'>
-                    <input
-                      className='w-full text-lg border-b border-slate-100 focus:border-indigo-500 outline-none font-semibold py-1'
-                      placeholder='Enter question text...'
-                      value={q.value}
-                      onChange={(e) => {
-                        const newQuestions = [...formData.questions]
-                        newQuestions[qIndex].value = e.target.value
-                        setFormData({ ...formData, questions: newQuestions })
-                      }}
-                    />
-                    <select
-                      value={q.section}
-                      className='bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-bold text-slate-600 outline-none'
-                      onChange={(e) => {
-                        const newQuestions = [...formData.questions]
-                        newQuestions[qIndex].section = e.target.value
-                        setFormData({ ...formData, questions: newQuestions })
-                      }}
-                    >
-                      <option value='OD'>CATEGORY: Oily vs Dry (OD)</option>
-                      <option value='SR'>CATEGORY: Sensitive vs Resistant (SR)</option>
-                      <option value='PN'>CATEGORY: Pigmented vs Non (PN)</option>
-                      <option value='WT'>CATEGORY: Wrinkled vs Tight (WT)</option>
-                    </select>
-                  </div>
-                  <button
-                    onClick={() => removeQuestion(qIndex)}
-                    className='text-slate-300 hover:text-red-500 p-1 self-start'
-                  >
-                    <X size={20} />
-                  </button>
-                </div>
-
-                <div className='ml-12 space-y-3'>
-                  {q.options.map((opt, oIndex) => (
-                    <div key={oIndex} className='flex gap-3 items-center'>
-                      <input
-                        placeholder='Answer option...'
-                        className='flex-1 text-sm bg-slate-50/50 border-slate-200 border rounded-xl px-4 py-2.5 focus:bg-white focus:ring-2 ring-indigo-500/10 outline-none transition-all'
-                        value={opt.value}
-                        onChange={(e) => {
-                          const newQuestions = [...formData.questions]
-                          newQuestions[qIndex].options[oIndex].value = e.target.value
-                          setFormData({ ...formData, questions: newQuestions })
-                        }}
-                      />
-                      <div className='flex items-center gap-2 bg-slate-50 rounded-xl px-3 border border-slate-200'>
-                        <span className='text-[10px] font-bold text-slate-400'>SCORE</span>
+            <div className='space-y-4 max-h-[700px] overflow-y-auto pr-2 custom-scrollbar'>
+              {formData.resultConfigs.map((config, idx) => (
+                <div
+                  key={config.skinTypeId}
+                  className='p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border dark:border-slate-700'
+                >
+                  <p className='text-[10px] font-black text-slate-400 dark:text-slate-500 mb-3 uppercase tracking-widest'>
+                    {skinTypes.find((t) => t.id === config.skinTypeId)?.name}
+                  </p>
+                  <div className='grid grid-cols-2 gap-3'>
+                    {['odScore', 'srScore', 'pnScore', 'wtScore'].map((field) => (
+                      <div key={field}>
+                        <label className='flex justify-between text-[9px] font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase'>
+                          <span>{field.replace('Score', '').toUpperCase()}</span>
+                        </label>
                         <input
-                          type='number'
-                          className='w-12 bg-transparent text-sm font-bold py-2 outline-none text-center'
-                          value={opt.score}
+                          className={`w-full text-xs p-2.5 rounded-xl border outline-none dark:bg-slate-900 dark:text-slate-100 ${errors[`${idx}-${field}`] ? 'border-red-500 bg-red-50 dark:bg-red-900/20' : 'border-slate-200 dark:border-slate-700 focus:ring-2 ring-indigo-500/20'}`}
+                          value={(config as any)[field]}
                           onChange={(e) => {
-                            const newQuestions = [...formData.questions]
-                            newQuestions[qIndex].options[oIndex].score = Number(e.target.value)
-                            setFormData({ ...formData, questions: newQuestions })
+                            const nc = [...formData.resultConfigs]
+                            ;(nc[idx] as any)[field] = e.target.value
+                            setFormData({ ...formData, resultConfigs: nc })
+                            validateAllConfigs(nc)
                           }}
                         />
                       </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        {/* Right: Question Editor */}
+        <div className='lg:col-span-8 space-y-6 order-1 lg:order-2 '>
+          <div className='flex justify-between items-center bg-white p-5 rounded-2xl border  dark:bg-slate-900/80 dark:text-gray-300 border-slate-200 shadow-sm'>
+            <div className='flex items-center gap-2 font-bold'>
+              <Activity size={20} className='text-indigo-500' /> Questionnaire Content
+            </div>
+            <button
+              onClick={() =>
+                setFormData({
+                  ...formData,
+                  questions: [...formData.questions, { value: '', section: 'OD', options: [{ value: '', score: 0 }] }]
+                })
+              }
+              className='bg-indigo-50 text-indigo-600 font-bold px-5 py-2 rounded-xl flex items-center gap-2 hover:bg-indigo-100'
+            >
+              <Plus size={18} /> Add Question
+            </button>
+          </div>
+
+          <div className='space-y-6'>
+            {formData.questions.map((q, qIdx) => (
+              <div
+                key={qIdx}
+                className='group bg-white p-6 rounded-3xl border dark:bg-slate-900/80 dark:text-gray-300 border-slate-200 relative hover:shadow-md transition-all'
+              >
+                <button
+                  onClick={() =>
+                    setFormData({ ...formData, questions: formData.questions.filter((_, i) => i !== qIdx) })
+                  }
+                  className='absolute top-6 right-6 p-2 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100'
+                >
+                  <Trash2 size={18} />
+                </button>
+
+                <div className='flex gap-5'>
+                  <div className='flex-shrink-0 w-10 h-10 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-bold'>
+                    {qIdx + 1}
+                  </div>
+                  <div className='flex-1 space-y-5'>
+                    <div className='space-y-2'>
+                      <label className='text-[10px] font-bold text-slate-400 uppercase tracking-widest'>
+                        Question Text
+                      </label>
+                      <input
+                        className='w-full text-lg font-bold border-b-2 border-slate-100 focus:border-indigo-500 outline-none pb-2 transition-all'
+                        placeholder='Type your question...'
+                        value={q.value}
+                        onChange={(e) => {
+                          const newQ = [...formData.questions]
+                          newQ[qIdx].value = e.target.value
+                          setFormData({ ...formData, questions: newQ })
+                        }}
+                      />
                     </div>
-                  ))}
-                  <button
-                    onClick={() => addOption(qIndex)}
-                    className='text-xs font-bold text-indigo-500 hover:underline ml-1'
-                  >
-                    + Add Option
-                  </button>
+
+                    <div className='space-y-1.5'>
+                      <label className='text-[10px] font-bold text-slate-400 uppercase'>Section Category</label>
+                      <select
+                        className='block text-xs font-bold p-2.5 dark:bg-slate-900/80 dark:text-gray-300   rounded-xl bg-slate-100 border-none outline-none'
+                        value={q.section}
+                        onChange={(e) => {
+                          const newQ = [...formData.questions]
+                          newQ[qIdx].section = e.target.value as SkinSection
+                          setFormData({ ...formData, questions: newQ })
+                        }}
+                      >
+                        <option value='OD'>Oily vs Dry (OD)</option>
+                        <option value='SR'>Sensitive vs Resistant (SR)</option>
+                        <option value='PN'>Pigmented vs Non-Pigmented (PN)</option>
+                        <option value='WT'>Wrinkled vs Tight (WT)</option>
+                      </select>
+                    </div>
+
+                    {/* Answer Options Section */}
+                    <div className='space-y-3 pt-4 border-t border-slate-50'>
+                      <label className='text-[10px] font-bold text-slate-400 uppercase'>Answer Options</label>
+                      <div className='grid grid-cols-1 gap-3'>
+                        {q.options.map((opt, oIdx) => (
+                          <div key={oIdx} className='flex gap-3 items-center group/opt'>
+                            <input
+                              className='flex-1 text-sm p-3 bg-slate-50 dark:bg-slate-900/80 dark:text-gray-300 rounded-2xl border border-transparent focus:bg-white focus:border-indigo-200 outline-none'
+                              placeholder='Option text...'
+                              value={opt.value}
+                              onChange={(e) => {
+                                const newQ = [...formData.questions]
+                                newQ[qIdx].options[oIdx].value = e.target.value
+                                setFormData({ ...formData, questions: newQ })
+                              }}
+                            />
+                            <div className='flex items-center gap-2 bg-slate-100 px-4 rounded-2xl border dark:bg-slate-900/80 dark:text-gray-300'>
+                              <span className='text-[9px] font-black text-slate-400'>SCORE</span>
+                              <input
+                                type='number'
+                                className='w-12 bg-transparent dark:bg-slate-900/80 dark:text-gray-300 font-bold text-sm py-3 outline-none text-center'
+                                value={opt.score}
+                                onChange={(e) => {
+                                  const newQ = [...formData.questions]
+                                  newQ[qIdx].options[oIdx].score = Number(e.target.value)
+                                  setFormData({ ...formData, questions: newQ })
+                                }}
+                              />
+                            </div>
+                            <button
+                              onClick={() => {
+                                const newQ = [...formData.questions]
+                                newQ[qIdx].options = newQ[qIdx].options.filter((_, i) => i !== oIdx)
+                                setFormData({ ...formData, questions: newQ })
+                              }}
+                              className='p-2 text-slate-300 hover:text-red-500 opacity-0 group-opt/hover:opacity-100 transition-all'
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                      <button
+                        onClick={() => {
+                          const newQ = [...formData.questions]
+                          newQ[qIdx].options.push({ value: '', score: 0 })
+                          setFormData({ ...formData, questions: newQ })
+                        }}
+                        className='inline-flex items-center gap-1.5 text-xs font-bold text-indigo-500 hover:text-indigo-700 mt-2 transition-colors'
+                      >
+                        <Plus size={14} /> Add Option
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     </div>

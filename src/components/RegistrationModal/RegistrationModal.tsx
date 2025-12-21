@@ -400,11 +400,12 @@ export default function RegistrationModal({
                   <option value='' disabled>
                     --- Select Template ---
                   </option>
-                  {templates.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name}
-                    </option>
-                  ))}
+                  {Array.isArray(templates) &&
+                    templates.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.name}
+                      </option>
+                    ))}
                 </select>
                 {errors.templateId && <p className={errorClass}>{errors.templateId}</p>}
               </div>
@@ -418,11 +419,12 @@ export default function RegistrationModal({
                   <option value='' disabled>
                     --- Choose Slot ---
                   </option>
-                  {slots.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.slotMinutes} min / Break: {s.breakMinutes} min
-                    </option>
-                  ))}
+                  {Array.isArray(slots) &&
+                    slots.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.slotMinutes} min / Break: {s.breakMinutes} min
+                      </option>
+                    ))}
                 </select>
                 {errors.slotId && <p className={errorClass}>{errors.slotId}</p>}
               </div>

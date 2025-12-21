@@ -1,10 +1,10 @@
 import axios, { AxiosError, AxiosInstance } from 'axios'
-import { clearLS, getTokenFromLS, saveAccessTokenToLS, saveRefreshTokenToLS } from './auth'
-import config from '../constants/config'
-import { AuthResponse } from '../types/auth.type'
-import { URL_LOGIN, URL_LOGOUT } from '../api/auth.api'
-import { HttpStatusCode } from '../constants/HttpStatusCode.enum'
 import { toast } from 'react-toastify'
+import { URL_LOGIN, URL_LOGOUT, URL_VERIFY_LOGIN } from '../api/auth.api'
+import config from '../constants/config'
+import { HttpStatusCode } from '../constants/HttpStatusCode.enum'
+import { AuthResponse } from '../types/auth.type'
+import { clearLS, getTokenFromLS, saveAccessTokenToLS, saveRefreshTokenToLS } from './auth'
 
 // import { path } from '../constants/path'
 // import { useNavigate } from 'react-router-dom'
@@ -46,7 +46,7 @@ class Http {
         const { url } = response.config
         console.log('url', url)
 
-        if (url === URL_LOGIN) {
+        if (url === URL_VERIFY_LOGIN || url === URL_LOGIN) {
           const data = response.data as AuthResponse
           console.log(data)
           this.accessToken = data.data.accessToken

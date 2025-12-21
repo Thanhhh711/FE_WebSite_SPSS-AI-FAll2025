@@ -84,7 +84,7 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
   isOpen,
   onClose,
   selectedEvent,
-
+  onSave,
   notes,
   setNotes,
   patientName,
@@ -536,16 +536,16 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
             Close
           </button>
 
-          {/* {profile.role === Role.BEAUTY_ADVISOR && (
+          {profile.role === Role.BEAUTY_ADVISOR && (
             <button
               onClick={onSave}
               type='button'
               className='btn btn-success flex w-full justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white shadow-brand-xs hover:bg-brand-600 sm:w-auto'
               disabled={isCreateModalOpen}
             >
-              {isEditing ? 'Update Appointment' : 'Add Appointment'}
+              Submit Appointment
             </button>
-          )} */}
+          )}
           {/* Create Report Modal */}
           <MedicalReportModal
             isOpen={isCreateModalOpen}

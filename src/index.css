@@ -932,3 +932,13 @@ a.fc-daygrid-event.status-default {
   border-color: #9ca3af !important; /* Gray-400 */
   color: #4b5563 !important; /* Gray-600 */
 }
+
+.fc .fc-popover {
+  z-index: 10 !important; /* Thấp hơn mức 50 của Header */
+}
+
+/* 2. Đảm bảo container chứa Calendar có thuộc tính position */
+.calendar-wrapper {
+  position: relative;
+  z-index: 1; /* Lớp cơ sở thấp */
+}

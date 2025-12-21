@@ -5,6 +5,7 @@ export type AuthResponse = SuccessResponse<{
   accessToken: string
   refreshToken: string
   authUserDto: AuthUser
+  is2FARequired: boolean
 }>
 
 export interface PagingData<T> {

@@ -1,17 +1,15 @@
-import React, { useCallback, useEffect, useState } from 'react'
-import { registrationApi } from '../../api/registration.api'
+import React, { useEffect, useState } from 'react'
+import { toast } from 'react-toastify'
 import { roomApi } from '../../api/room.api'
 import { scheduleApi } from '../../api/schedulars.api'
 import userApi from '../../api/user.api'
+import { Role } from '../../constants/Roles'
 import { WorkScheduleStatus } from '../../constants/SchedularConstants'
 import { ScheduleWork } from '../../types/appoinment.type'
-import { ScheduleRegistration } from '../../types/registration.type'
 import { Room } from '../../types/room.type'
 import { FormUpdateSchedular, ScheduleRequest } from '../../types/schedula.type'
 import { User } from '../../types/user.type'
 import { formatDateValue } from '../../utils/validForm'
-import { toast } from 'react-toastify'
-import { Role } from '../../constants/Roles'
 
 // Simple Toast/Message Function (replacing Ant Design notification)
 const showToast = (msg: string, type: 'success' | 'error') => {
@@ -40,7 +38,7 @@ const ScheduleFormModal: React.FC<ScheduleFormModalProps> = ({
   const [roomList, setRoomList] = useState<Room[]>([])
   const [staffList, setStaffList] = useState<User[]>([]) // Danh sách Beauty Advisors
   //   const [slotList, setSlotList] = useState<Slot[]>([]) // Danh sách Slots
-  const [registrationList, setRegistrationList] = useState<ScheduleRegistration[]>([]) // Danh sách Registrations
+  // const [registrationList, setRegistrationList] = useState<ScheduleRegistration[]>([]) // Danh sách Registrations
 
   // --- FORM DATA (Updated to include slotId and registrationId) ---
   const [formData, setFormData] = useState({
@@ -59,7 +57,7 @@ const ScheduleFormModal: React.FC<ScheduleFormModalProps> = ({
   const [isRoomLoading, setIsRoomLoading] = useState(false)
   const [isStaffLoading, setIsStaffLoading] = useState(false)
   //   const [isSlotLoading, setIsSlotLoading] = useState(false)
-  const [isRegistrationLoading, setIsRegistrationLoading] = useState(false)
+  // const [isRegistrationLoading, setIsRegistrationLoading] = useState(false)
 
   // --- DATA FETCHING FUNCTIONS ---
 
@@ -120,31 +118,31 @@ const ScheduleFormModal: React.FC<ScheduleFormModalProps> = ({
   //   }
 
   // Hàm lấy danh sách Registration theo Staff ID
-  const fetchRegistrations = useCallback(async (staffId: string) => {
-    if (!staffId) {
-      setRegistrationList([])
-      setFormData((prev) => ({ ...prev, registrationId: '' }))
-      return
-    }
+  // const fetchRegistrations = useCallback(async (staffId: string) => {
+  //   if (!staffId) {
+  //     setRegistrationList([])
+  //     setFormData((prev) => ({ ...prev, registrationId: '' }))
+  //     return
+  //   }
 
-    setIsRegistrationLoading(true)
-    try {
-      const response = await registrationApi.getRegistrationByBeatyAdvisorId(staffId)
-      const registrations = response.data.data || []
-      setRegistrationList(registrations)
+  //   setIsRegistrationLoading(true)
+  //   try {
+  //     const response = await registrationApi.getRegistrationByBeatyAdvisorId(staffId)
+  //     const registrations = response.data.data || []
+  //     setRegistrationList(registrations)
 
-      if (registrations.length > 0) {
-        setFormData((prev) => ({ ...prev, registrationId: registrations[0].id }))
-      } else {
-        setFormData((prev) => ({ ...prev, registrationId: '' }))
-      }
-    } catch (error) {
-      console.error(`Error fetching registrations for ${staffId}:`, error)
-      showToast('Failed to load registrations.', 'error')
-    } finally {
-      setIsRegistrationLoading(false)
-    }
-  }, [])
+  //     if (registrations.length > 0) {
+  //       setFormData((prev) => ({ ...prev, registrationId: registrations[0].id }))
+  //     } else {
+  //       setFormData((prev) => ({ ...prev, registrationId: '' }))
+  //     }
+  //   } catch (error) {
+  //     console.error(`Error fetching registrations for ${staffId}:`, error)
+  //     showToast('Failed to load registrations.', 'error')
+  //   } finally {
+  //     setIsRegistrationLoading(false)
+  //   }
+  // }, [])
 
   // --- EFFECT: Initial Data Loading (Rooms, Staff, Slots) ---
   useEffect(() => {
@@ -192,11 +190,11 @@ const ScheduleFormModal: React.FC<ScheduleFormModalProps> = ({
   }, [visible, isEditMode, scheduleToEdit])
 
   // --- EFFECT: Dependent Fetching (Registrations based on selected Staff) ---
-  useEffect(() => {
-    if (visible && formData.staffId) {
-      fetchRegistrations(formData.staffId)
-    }
-  }, [visible, formData.staffId, fetchRegistrations]) // Chạy lại khi staffId thay đổi
+  // useEffect(() => {
+  //   if (visible && formData.staffId) {
+  //     fetchRegistrations(formData.staffId)
+  //   }
+  // }, [visible, formData.staffId, fetchRegistrations]) // Chạy lại khi staffId thay đổi
 
   // --- Input Change Handler ---
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -324,7 +322,7 @@ const ScheduleFormModal: React.FC<ScheduleFormModalProps> = ({
             </div>
 
             {/* Registration Selection (Dependent on Staff) */}
-            <div>
+            {/* <div>
               <label
                 htmlFor='registrationId'
                 className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'
@@ -356,7 +354,7 @@ const ScheduleFormModal: React.FC<ScheduleFormModalProps> = ({
                   ))
                 )}
               </select>
-            </div>
+            </div> */}
 
             {/* Room Selection */}
             <div>
