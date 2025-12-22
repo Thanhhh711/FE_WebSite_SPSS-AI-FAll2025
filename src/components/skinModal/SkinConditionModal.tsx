@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { Activity, CheckCircle2, FileText, Layers, ShieldAlert } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 import { toast } from 'react-toastify'
-import ModalRegistration from '../RegistrationModal/ModalRegistration'
 import { SkinCondition, SkinConditionForm } from '../../types/skin.type'
+import ModalRegistration from '../RegistrationModal/ModalRegistration'
 
 interface SkinConditionModalProps {
   isOpen: boolean
@@ -143,122 +144,179 @@ export default function SkinConditionModal({
   const baseInputClass =
     'w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm text-gray-800 dark:text-white/90 focus:border-brand-500 focus:ring-1 focus:ring-brand-500'
 
-  const errorClass = 'mt-1 text-xs text-red-500'
   const getInputClass = (fieldName: keyof SkinConditionForm) => {
     return `${baseInputClass} ${errors[fieldName] ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`
   }
 
   return (
     <ModalRegistration isOpen={isOpen} onClose={onClose} title={title}>
-      <div className='p-6'>
-        {condition && isViewMode && (
-          <div className='space-y-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
-            <p className='text-sm text-gray-700 dark:text-gray-300'>
-              <span className='font-semibold'>Condition Name:</span> {condition.name}
-            </p>
+      <div className='w-full bg-white dark:bg-gray-900 overflow-hidden'>
+        {/* CONTENT SECTION */}
+        <div className='p-8'>
+          {condition && isViewMode ? (
+            // VIEW MODE GIAO DIỆN SANG TRỌNG
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+              <div className='space-y-6 md:col-span-2'>
+                <div className='flex items-center gap-4 p-4 bg-slate-50 dark:bg-gray-800/50 rounded-[1.25rem] border border-slate-100 dark:border-gray-700'>
+                  <div className='w-12 h-12 bg-rose-100 dark:bg-rose-900/30 rounded-xl flex items-center justify-center text-rose-600'>
+                    <Activity size={24} />
+                  </div>
+                  <div>
+                    <p className='text-[10px] font-black uppercase tracking-widest text-slate-400'>Condition Name</p>
+                    <p className='text-lg font-black text-slate-800 dark:text-white'>{condition.name}</p>
+                  </div>
+                </div>
+              </div>
 
-            <p className='text-sm text-gray-700 dark:text-gray-300'>
-              <span className='font-semibold'>Severity Level:</span> {condition.severityLevel} / 10
-            </p>
+              <div className='p-4 bg-slate-50 dark:bg-gray-800/50 rounded-[1.25rem] border border-slate-100 dark:border-gray-700'>
+                <p className='text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1'>Severity Level</p>
+                <div className='flex items-center gap-2'>
+                  <span className='text-xl font-black text-slate-800 dark:text-white'>{condition.severityLevel}</span>
+                  <span className='text-slate-400 font-bold'>/ 10</span>
+                  <div className='flex-1 h-2 bg-slate-200 dark:bg-gray-700 rounded-full ml-2 overflow-hidden'>
+                    <div
+                      className='h-full bg-rose-500 rounded-full'
+                      style={{ width: `${(condition.severityLevel / 10) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
 
-            <p className='text-sm text-gray-700 dark:text-gray-300'>
-              <span className='font-semibold'>Is Chronic:</span> {condition.isChronic ? 'Yes' : 'No'}
-            </p>
+              <div className='p-4 bg-slate-50 dark:bg-gray-800/50 rounded-[1.25rem] border border-slate-100 dark:border-gray-700 flex items-center justify-between'>
+                <div>
+                  <p className='text-[10px] font-black uppercase tracking-widest text-slate-400'>Condition Type</p>
+                  <p className='text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider'>
+                    {condition.isChronic ? 'Chronic Case' : 'Acute / Normal'}
+                  </p>
+                </div>
+                {condition.isChronic && <ShieldAlert className='text-amber-500' size={24} />}
+              </div>
 
-            <p className='text-sm text-gray-700 dark:text-gray-300'>
-              <span className='font-semibold'>Description:</span> {condition.description}
-            </p>
-            {/* <p className='text-sm text-gray-700 dark:text-gray-300'>
- <span className='font-semibold'>Created By: </span>
- <StaffEmailLookup staffId={condition.createdBy} />
- </p> */}
-          </div>
-        )}
-        {!isViewMode && (
-          <div className='space-y-4'>
-            <div>
-              <label htmlFor='name' className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'></label>
-
-              <input
-                id='name'
-                type='text'
-                placeholder='E.g., Acne, Eczema'
-                value={form.name}
-                onChange={handleChange}
-                className={getInputClass('name')}
-                maxLength={50}
-              />
-              {errors.name && <p className={errorClass}>{errors.name}</p>}
+              <div className='md:col-span-2 p-4 bg-slate-50 dark:bg-gray-800/50 rounded-[1.25rem] border border-slate-100 dark:border-gray-700'>
+                <p className='text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2'>
+                  Clinical Description
+                </p>
+                <p className='text-sm font-medium text-slate-600 dark:text-slate-300 leading-relaxed italic'>
+                  "{condition.description}"
+                </p>
+              </div>
             </div>
-            <div>
-              <label
-                htmlFor='severityLevel'
-                className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'
-              ></label>
+          ) : (
+            // EDIT / CREATE MODE
+            <div className='space-y-6'>
+              {/* Name Field */}
+              <div className='space-y-2'>
+                <label className='flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1'>
+                  <Layers size={14} /> Skin Condition Name
+                </label>
+                <input
+                  id='name'
+                  type='text'
+                  placeholder='E.g., Acne, Eczema'
+                  value={form.name}
+                  onChange={handleChange}
+                  className={`${getInputClass('name')} w-full px-5 py-4 bg-slate-50 dark:bg-gray-800/50 border-2 border-transparent focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10 rounded-2xl transition-all outline-none font-bold text-sm dark:text-white`}
+                  maxLength={50}
+                />
+                {errors.name && (
+                  <p className='text-[10px] font-black text-rose-500 uppercase ml-1 tracking-wider'>{errors.name}</p>
+                )}
+              </div>
 
-              <input
-                id='severityLevel'
-                type='number'
-                placeholder='E.g., 5'
-                min={1}
-                max={10}
-                step={1}
-                value={form.severityLevel}
-                onChange={handleChange}
-                className={getInputClass('severityLevel')}
-              />
-              {errors.severityLevel && <p className={errorClass}>{errors.severityLevel}</p>}
-            </div>
-            <div className='flex items-center justify-between py-2 border-t border-gray-100 dark:border-gray-800'>
-              <label htmlFor='isChronic' className='block text-sm font-medium text-gray-700 dark:text-gray-300'></label>
+              <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                {/* Severity Level */}
+                <div className='space-y-2'>
+                  <label className='flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1'>
+                    <ShieldAlert size={14} /> Severity (1-10)
+                  </label>
+                  <input
+                    id='severityLevel'
+                    type='number'
+                    placeholder='E.g., 5'
+                    min={1}
+                    max={10}
+                    value={form.severityLevel}
+                    onChange={handleChange}
+                    className={`${getInputClass('severityLevel')} w-full px-5 py-4 bg-slate-50 dark:bg-gray-800/50 border-2 border-transparent focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10 rounded-2xl transition-all outline-none font-bold text-sm dark:text-white`}
+                  />
+                  {errors.severityLevel && (
+                    <p className='text-[10px] font-black text-rose-500 uppercase ml-1 tracking-wider'>
+                      {errors.severityLevel}
+                    </p>
+                  )}
+                </div>
 
-              <input
-                id='isChronic'
-                type='checkbox'
-                checked={form.isChronic}
-                onChange={(e) => handleToggleChronic(e.target.checked)}
-                className='h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500'
-              />
-            </div>
-            {/* Description */}
-            <div>
-              <label
-                htmlFor='description'
-                className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'
-              ></label>
+                {/* Is Chronic Toggle Style */}
+                <div className='space-y-2'>
+                  <label className='text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1'>
+                    Case Status
+                  </label>
+                  <div
+                    onClick={() => handleToggleChronic(!form.isChronic)}
+                    className={`flex items-center justify-between p-4 rounded-2xl border-2 transition-all cursor-pointer ${
+                      form.isChronic
+                        ? 'bg-rose-50 border-rose-200 text-rose-700 dark:bg-rose-900/10 dark:border-rose-900/30 dark:text-rose-400'
+                        : 'bg-slate-50 border-transparent text-slate-500 dark:bg-gray-800/50'
+                    }`}
+                  >
+                    <span className='text-xs font-black uppercase tracking-wider'>Chronic Condition</span>
+                    <input type='checkbox' id='isChronic' className='hidden' checked={form.isChronic} readOnly />
+                    <div
+                      className={`w-10 h-5 rounded-full relative transition-colors ${form.isChronic ? 'bg-rose-500' : 'bg-slate-300 dark:bg-gray-600'}`}
+                    >
+                      <div
+                        className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${form.isChronic ? 'left-6' : 'left-1'}`}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-              <textarea
-                id='description'
-                placeholder='Detailed description of the condition...'
-                rows={4}
-                value={form.description}
-                onChange={handleChange}
-                className={getInputClass('description') + ' min-h-[100px]'}
-                maxLength={500}
-              />
-              {errors.description && <p className={errorClass}>{errors.description}</p>}
+              {/* Description */}
+              <div className='space-y-2'>
+                <label className='flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1'>
+                  <FileText size={14} /> Clinical Notes
+                </label>
+                <textarea
+                  id='description'
+                  placeholder='Detailed description of the condition...'
+                  rows={4}
+                  value={form.description}
+                  onChange={handleChange}
+                  className={`${getInputClass('description')} w-full px-5 py-4 bg-slate-50 dark:bg-gray-800/50 border-2 border-transparent focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10 rounded-2xl transition-all outline-none font-bold text-sm dark:text-white min-h-[120px] resize-none`}
+                  maxLength={500}
+                />
+                {errors.description && (
+                  <p className='text-[10px] font-black text-rose-500 uppercase ml-1 tracking-wider'>
+                    {errors.description}
+                  </p>
+                )}
+              </div>
             </div>
-          </div>
-        )}
-      </div>
-      {/* FOOTER */}
-      <div className='flex items-center gap-3 p-6 border-t border-gray-100 dark:border-gray-800 modal-footer sm:justify-end'>
-        <button
-          onClick={onClose}
-          type='button'
-          className='flex w-full justify-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] sm:w-auto'
-        >
-          {isViewMode ? 'Close' : 'Cancel'}
-        </button>
-        {!isViewMode && (
+          )}
+        </div>
+
+        {/* FOOTER SECTION */}
+        <div className='flex flex-col sm:flex-row items-center gap-3 p-8 border-t border-slate-50 dark:border-gray-800 bg-slate-50/30 dark:bg-transparent sm:justify-end'>
           <button
-            onClick={handleSave}
+            onClick={onClose}
             type='button'
-            className='flex w-full justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white shadow-brand-xs hover:bg-brand-600 sm:w-auto'
+            className='w-full sm:w-auto px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-gray-800 transition-all'
           >
-            {isEditing ? 'Save Changes' : 'Create Condition'}
+            {isViewMode ? 'Exit Portal' : 'Discard'}
           </button>
-        )}
+
+          {!isViewMode && (
+            <button
+              onClick={handleSave}
+              type='button'
+              className='w-full sm:w-auto px-10 py-4 bg-slate-900 dark:bg-rose-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2'
+            >
+              <CheckCircle2 size={16} />
+              {isEditing ? 'Update Record' : 'Confirm & Save'}
+            </button>
+          )}
+        </div>
       </div>
     </ModalRegistration>
   )

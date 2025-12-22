@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Clock, Coffee, Edit3, Eye, Plus, Search, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { toast } from 'react-toastify'
 import { slotApi } from '../../../api/slot.api'
@@ -7,11 +8,11 @@ import { Role } from '../../../constants/Roles'
 import { useAppContext } from '../../../context/AuthContext'
 import { Slot } from '../../../types/registration.type'
 import { SlotForm } from '../../../types/slot.type'
+import { SuccessResponse } from '../../../utils/utils.type'
 import ConfirmModal from '../../CalendarModelDetail/ConfirmModal'
 import Pagination from '../../pagination/Pagination'
 import SlotModal from '../../SlotModal/SlotModal'
 import { Table, TableBody, TableCell, TableHeader, TableRow } from '../../ui/table'
-import { SuccessResponse } from '../../../utils/utils.type'
 
 const ITEMS_PER_PAGE = 10
 
@@ -19,7 +20,6 @@ export default function BasicTableSlot() {
   const { profile } = useAppContext()
   const queryClient = useQueryClient()
 
-  // --- STATE MANAGEMENT ---
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [isSlotModalOpen, setIsSlotModalOpen] = useState(false)
@@ -27,11 +27,10 @@ export default function BasicTableSlot() {
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null)
   const [isViewMode, setIsViewMode] = useState(false)
 
-  // --- API READ (R) ---
   const {
     data: slotsRes,
     isLoading,
-    isError
+    isFetching
   } = useQuery<SuccessResponse<Slot[]>>({
     queryKey: ['slots'],
     queryFn: async () => {
@@ -41,218 +40,201 @@ export default function BasicTableSlot() {
     staleTime: 1000 * 60 * 5
   })
 
-  const allSlots: Slot[] = slotsRes?.data ?? []
+  const allSlots = slotsRes?.data ?? []
 
-  // --- FILTERING AND PAGINATION ---
   const filteredAndPaginatedSlots = useMemo(() => {
-    // Filter by slot minutes or break minutes (or search term that can be converted to number)
-    const filtered = allSlots.filter((slot: Slot) => {
-      const lowercasedSearchTerm = searchTerm.toLowerCase()
-      // Check if the search term matches slotMinutes or breakMinutes (converted to string)
-      return (
-        slot.slotMinutes.toString().includes(lowercasedSearchTerm) ||
-        slot.breakMinutes.toString().includes(lowercasedSearchTerm)
-      )
-    })
-
-    // Pagination
+    const filtered = allSlots.filter((s: Slot) => s.slotMinutes.toString().includes(searchTerm))
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
-    const endIndex = startIndex + ITEMS_PER_PAGE
-
     return {
       totalItems: filtered.length,
-      data: filtered.slice(startIndex, endIndex)
+      data: filtered.slice(startIndex, startIndex + ITEMS_PER_PAGE)
     }
   }, [allSlots, searchTerm, currentPage])
 
-  // --- API MUTATIONS (C, U, D) ---
-
-  // Mutation for Create and Update
   const { mutate: saveSlot } = useMutation({
-    mutationFn: (data: SlotForm & { id?: string }) => {
-      if (data.id) {
-        // Update
-        return slotApi.updateSlot(data.id, data)
-      }
-      // Create
-      return slotApi.createSlot(data)
-    },
+    mutationFn: (data: SlotForm & { id?: string }) =>
+      data.id ? slotApi.updateSlot(data.id, data) : slotApi.createSlot(data),
     onSuccess: (res) => {
-      toast.success(res.data.message || 'Slot saved successfully!')
+      toast.success(res.data.message || 'Saved successfully!')
       queryClient.invalidateQueries({ queryKey: ['slots'] })
-      // Reset state and close modal after successful save
       setIsSlotModalOpen(false)
-      setSelectedSlot(null)
-    },
-    onError: (error: any) => {
-      toast.error(error.data?.res || 'Error saving slot.')
     }
   })
 
-  // Mutation for Delete
   const { mutate: deleteSlot } = useMutation({
     mutationFn: (id: string) => slotApi.deleteSlot(id),
     onSuccess: (res) => {
-      toast.success(res.data.message || 'Slot deleted successfully!')
+      toast.success(res.data.message || 'Removed successfully!')
       queryClient.invalidateQueries({ queryKey: ['slots'] })
-    },
-    onError: (error: any) => {
-      toast.error(error.data?.res || 'Error deleting slot.')
+      setIsConfirmOpen(false)
     }
   })
 
-  // --- EVENT HANDLERS ---
-
-  const handleOpenDetailModal = (slot: Slot, mode: 'view' | 'edit') => {
-    setSelectedSlot(slot)
-    setIsViewMode(mode === 'view')
-    setIsSlotModalOpen(true)
-  }
-
-  const handleCreateNew = () => {
-    setSelectedSlot(null) // Reset to open Create mode
-    setIsViewMode(false)
-    setIsSlotModalOpen(true)
-  }
-
-  const handleDeleteClick = (slot: Slot) => {
-    setSelectedSlot(slot)
-    setIsConfirmOpen(true)
-  }
-
   const handleConfirmDelete = () => {
-    if (selectedSlot?.id) {
-      deleteSlot(selectedSlot.id)
-      setIsConfirmOpen(false)
-      setSelectedSlot(null)
-    }
+    if (selectedSlot) deleteSlot(selectedSlot.id)
   }
 
-  // --- RENDERING ---
-
-  if (isLoading) return <div className='p-6 text-center text-lg text-brand-500'>Loading Slot list...</div>
-  if (isError) return <div className='p-6 text-center text-lg text-red-500'>Error loading slot list.</div>
+  if (isLoading || isFetching)
+    return (
+      <div className='p-20 text-center font-black text-amber-500 animate-pulse uppercase tracking-widest'>
+        Loading Durations...
+      </div>
+    )
 
   return (
-    <>
-      <div className='flex justify-between items-center mb-5'>
-        {/* Search Bar */}
-        <input
-          type='text'
-          placeholder='Search by Slot/Break Minutes...'
-          value={searchTerm}
-          onChange={(e) => {
-            setSearchTerm(e.target.value)
-            setCurrentPage(1) // Reset page on search
-          }}
-          className='dark:text-white w-1/3 min-w-[200px] rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500'
-        />
+    <div className='p-4 md:p-8 space-y-6 bg-transparent min-h-screen'>
+      {/* Header Section */}
+      <div className='flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white dark:bg-gray-900 p-8 rounded-[2.5rem] shadow-sm border border-slate-100 dark:border-gray-800 transition-all'>
+        <div className='flex items-center gap-5'>
+          {/* <div className='w-14 h-14 bg-amber-50 dark:bg-amber-900/20 rounded-2xl flex items-center justify-center text-amber-600 shadow-sm'>
+            <Timer size={30} />
+          </div> */}
+          <div>
+            <h1 className='text-2xl font-black text-slate-800 dark:text-white tracking-tight'>Time Configuration</h1>
+            <p className='text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mt-1'>
+              Slots & Breaks • {filteredAndPaginatedSlots.totalItems} Items
+            </p>
+          </div>
+        </div>
 
-        {/* Create Button */}
-
-        {profile?.role === Role.ADMIN && (
-          <button
-            onClick={handleCreateNew}
-            className='btn btn-primary flex justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white shadow-brand-xs hover:bg-brand-600 transition-colors'
-          >
-            Add New Slot
-          </button>
-        )}
+        <div className='flex flex-col sm:flex-row gap-4'>
+          <div className='relative group'>
+            <Search
+              className='absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-amber-500 transition-colors'
+              size={18}
+            />
+            <input
+              type='text'
+              placeholder='Search minutes...'
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value)
+                setCurrentPage(1)
+              }}
+              className='pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-gray-800/50 border-none rounded-2xl focus:ring-4 ring-amber-500/10 w-full sm:w-64 transition-all text-sm font-bold placeholder:text-slate-400 dark:text-white'
+            />
+          </div>
+          {profile?.role === Role.ADMIN && (
+            <button
+              onClick={() => {
+                setSelectedSlot(null)
+                setIsViewMode(false)
+                setIsSlotModalOpen(true)
+              }}
+              className='bg-slate-900 dark:bg-amber-600 hover:scale-[1.02] text-white px-8 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl transition-all active:scale-95'
+            >
+              <Plus size={18} /> Add New
+            </button>
+          )}
+        </div>
       </div>
 
-      <div className='overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] shadow-lg'>
-        <div className='px-4 py-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg text-end'>
-          <span className='text-sm font-semibold text-indigo-700 dark:text-indigo-400'>
-            Total: **{filteredAndPaginatedSlots.totalItems}**
-          </span>
-        </div>
-        <div className='max-w-full overflow-x-auto'>
+      {/* Table Card Section */}
+      <div className='bg-white dark:bg-gray-900 rounded-[3rem] shadow-sm border border-slate-100 dark:border-gray-800 overflow-hidden'>
+        <div className='overflow-x-auto'>
           <Table>
-            {/* Table Header */}
-            <TableHeader className='dark:text-white border-b border-gray-100 dark:border-white/[0.05] bg-gray-50 dark:bg-white/[0.05]'>
-              <TableRow>
-                <TableCell isHeader className='px-5 py-3 text-start'>
+            <TableHeader className='bg-slate-50/50 dark:bg-gray-800/50'>
+              <TableRow className='border-none'>
+                <TableCell
+                  isHeader
+                  className='px-8 py-6 text-[10px] text-left font-black text-slate-400 uppercase tracking-[0.2em]'
+                >
                   Slot Duration
                 </TableCell>
-                <TableCell isHeader className='px-5 py-3 text-start'>
+                <TableCell
+                  isHeader
+                  className='px-8 py-6 text-[10px] text-left font-black text-slate-400 uppercase tracking-[0.2em]'
+                >
                   Break Duration
                 </TableCell>
-                <TableCell isHeader className='px-5 py-3 text-start'>
-                  Created Time
-                </TableCell>
-                <TableCell isHeader className='px-5 py-3 text-end'>
+                <TableCell
+                  isHeader
+                  className='px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right'
+                >
                   Actions
                 </TableCell>
               </TableRow>
             </TableHeader>
-
-            {/* Table Body */}
             <TableBody>
-              {filteredAndPaginatedSlots.data.length === 0 ? (
-                <TableRow>
-                  <TableCell className='py-4 text-center text-gray-500'>
-                    {searchTerm ? 'No matching slots found.' : 'No slots have been registered.'}
+              {filteredAndPaginatedSlots.data.map((slot) => (
+                <TableRow
+                  key={slot.id}
+                  className='group hover:bg-amber-50/30 dark:hover:bg-amber-900/10 transition-all border-b border-slate-50 dark:border-gray-800 last:border-0'
+                >
+                  {/* Slot Duration Column */}
+                  <TableCell className='px-8 py-7'>
+                    <div className='flex items-center gap-3 text-slate-700 dark:text-slate-200'>
+                      <div className='w-9 h-9 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 rounded-xl flex items-center justify-center'>
+                        <Clock size={16} />
+                      </div>
+                      <span className='font-black text-base'>
+                        {slot.slotMinutes} <span className='text-[10px] font-bold text-slate-400 uppercase'>Mins</span>
+                      </span>
+                    </div>
+                  </TableCell>
+
+                  {/* Break Duration Column */}
+                  <TableCell className='px-8 py-7'>
+                    <div className='inline-flex  items-center gap-2.5 px-4 py-2 bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-2xl text-sm font-black shadow-sm border border-amber-100 dark:border-amber-900/50'>
+                      <Coffee size={16} /> {slot.slotMinutes} Mins
+                    </div>
+                  </TableCell>
+
+                  {/* Actions Column */}
+                  <TableCell className='px-8 py-7 text-right'>
+                    <div className='flex justify-end gap-2.5'>
+                      <button
+                        onClick={() => {
+                          setSelectedSlot(slot)
+                          setIsViewMode(true)
+                          setIsSlotModalOpen(true)
+                        }}
+                        className='p-3 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-gray-800 rounded-2xl transition-all shadow-sm bg-white dark:bg-gray-900 border border-slate-100 dark:border-gray-700'
+                      >
+                        <Eye size={18} />
+                      </button>
+                      {profile?.role === Role.ADMIN && (
+                        <>
+                          <button
+                            onClick={() => {
+                              setSelectedSlot(slot)
+                              setIsViewMode(false)
+                              setIsSlotModalOpen(true)
+                            }}
+                            className='p-3 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-gray-800 rounded-2xl transition-all shadow-sm bg-white dark:bg-gray-900 border border-slate-100 dark:border-gray-700'
+                          >
+                            <Edit3 size={18} />
+                          </button>
+                          <button
+                            onClick={() => {
+                              setSelectedSlot(slot)
+                              setIsConfirmOpen(true)
+                            }}
+                            className='p-3 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-gray-800 rounded-2xl transition-all shadow-sm bg-white dark:bg-gray-900 border border-slate-100 dark:border-gray-700'
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
-              ) : (
-                filteredAndPaginatedSlots.data.map((slot) => (
-                  <TableRow key={slot.id} className='dark:text-gray-300'>
-                    <TableCell className='px-5 py-4 font-medium truncate'>{slot.slotMinutes} min</TableCell>
-                    <TableCell className='px-4 py-3 text-start'>{slot.breakMinutes} min</TableCell>
-                    <TableCell className='px-4 py-3 text-start'>
-                      {new Date(slot.createdTime).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell className='px-4 py-3 text-end'>
-                      <div className='flex justify-end gap-2'>
-                        {/* View/Edit Buttons */}
-                        <button
-                          onClick={() => handleOpenDetailModal(slot, 'view')}
-                          className='text-sky-500 hover:text-sky-700 dark:hover:text-sky-300 text-sm p-1'
-                          title='View Details'
-                        >
-                          View
-                        </button>
-                        {profile?.role === Role.ADMIN && (
-                          <>
-                            <button
-                              onClick={() => handleOpenDetailModal(slot, 'edit')}
-                              className='text-brand-500 hover:text-brand-700 dark:hover:text-brand-300 text-sm p-1'
-                              title='Edit Slot'
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => handleDeleteClick(slot)}
-                              className='text-red-500 hover:text-red-700 dark:hover:text-red-300 text-sm p-1'
-                              title='Delete Slot'
-                            >
-                              Delete
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
+              ))}
             </TableBody>
           </Table>
         </div>
 
-        {/* Pagination */}
-        {filteredAndPaginatedSlots.totalItems > ITEMS_PER_PAGE && (
-          <div className='p-4 border-t border-gray-100 dark:border-white/[0.05] flex justify-center'>
-            <Pagination
-              currentPage={currentPage}
-              totalPages={Math.ceil(filteredAndPaginatedSlots.totalItems / ITEMS_PER_PAGE)}
-              onPageChange={setCurrentPage}
-            />
-          </div>
-        )}
+        {/* Pagination Section */}
+        <div className='p-10 flex justify-center bg-slate-50/30 dark:bg-transparent border-t dark:border-gray-800'>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={Math.ceil(filteredAndPaginatedSlots.totalItems / ITEMS_PER_PAGE)}
+            onPageChange={setCurrentPage}
+          />
+        </div>
       </div>
 
-      {/* --- SLOT DETAIL MODAL --- */}
-      {isSlotModalOpen && ( // Using conditional rendering to ensure form resets
+      {isSlotModalOpen && (
         <SlotModal
           isOpen={isSlotModalOpen}
           onClose={() => setIsSlotModalOpen(false)}
@@ -262,14 +244,13 @@ export default function BasicTableSlot() {
         />
       )}
 
-      {/* --- CONFIRM DELETION MODAL --- */}
       <ConfirmModal
         isOpen={isConfirmOpen}
         onClose={() => setIsConfirmOpen(false)}
         onConfirm={handleConfirmDelete}
-        title='Confirm Slot Deletion'
-        message={`Are you sure you want to delete this slot (${selectedSlot?.slotMinutes} min)? This action cannot be undone.`}
+        title='Remove Duration'
+        message={`Confirm deletion of ${selectedSlot?.slotMinutes} mins duration?`}
       />
-    </>
+    </div>
   )
 }

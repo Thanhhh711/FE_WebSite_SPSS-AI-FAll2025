@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Box, Edit3, Eye, GitBranch, Layers, Plus, Search, Trash2 } from 'lucide-react'
 import { Fragment, useMemo, useState } from 'react'
-
 import { toast } from 'react-toastify'
 import { categoryApi } from '../../../api/category.api'
 import { Role } from '../../../constants/Roles'
@@ -25,6 +25,9 @@ export default function BasicTableCategories() {
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null)
   const [isViewMode, setIsViewMode] = useState(false)
 
+  // Logic phân quyền: Chỉ Store Staff mới có quyền thao tác
+  const isStoreStaff = profile?.role === Role.STORE_STAFF
+
   const {
     data: categoriesResponse,
     isLoading,
@@ -38,31 +41,23 @@ export default function BasicTableCategories() {
 
   const allCategories: Category[] = categoriesResponse || []
 
-  console.log('allCategories', allCategories)
-
   const filteredAndPaginatedCategories = useMemo(() => {
     const lowercasedSearchTerm = searchTerm.toLowerCase()
-
     const filtered = allCategories.filter(
       (category: Category) =>
         category.categoryName.toLowerCase().includes(lowercasedSearchTerm) ||
         category.parentCategory?.categoryName.toLowerCase().includes(lowercasedSearchTerm)
     )
-
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
-    const endIndex = startIndex + ITEMS_PER_PAGE
-
     return {
       totalItems: filtered.length,
-      data: filtered.slice(startIndex, endIndex)
+      data: filtered.slice(startIndex, startIndex + ITEMS_PER_PAGE)
     }
   }, [allCategories, searchTerm, currentPage])
 
   const { mutate: saveCategory } = useMutation({
     mutationFn: (data: CategoryForm & { id?: string }) => {
-      if (data.id) {
-        return categoryApi.updateCategory(data.id, data)
-      }
+      if (data.id) return categoryApi.updateCategory(data.id, data)
       return categoryApi.createCategory(data)
     },
     onSuccess: (res) => {
@@ -116,141 +111,199 @@ export default function BasicTableCategories() {
     }
   }
 
-  if (isLoading) return <div className='p-6 text-center text-lg text-brand-500'>Loading Categories...</div>
-  if (isError) return <div className='p-6 text-center text-lg text-red-500'>Error loading category list.</div>
+  if (isLoading)
+    return (
+      <div className='p-20 text-center font-black text-indigo-500 animate-pulse tracking-widest uppercase'>
+        Loading Categories...
+      </div>
+    )
+  if (isError)
+    return <div className='p-20 text-center font-black text-red-500 uppercase'>Error loading category list.</div>
 
   return (
     <Fragment>
-      <div className='flex justify-between items-center mb-5'>
-        {/* Search Bar */}
-        <input
-          type='text'
-          placeholder='Search by Category or Parent Name...'
-          value={searchTerm}
-          onChange={(e) => {
-            setSearchTerm(e.target.value)
-            setCurrentPage(1)
-          }}
-          className='w-1/3 min-w-[200px] rounded-lg border border-gray-300 dark:border-gray-700 dark:text-white bg-white dark:bg-gray-900 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500'
-        />
+      <div className='p-4 md:p-8 space-y-6 bg-transparent min-h-screen'>
+        {/* Header Section */}
+        <div className='flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white dark:bg-gray-900 p-8 rounded-[2.5rem] shadow-sm border border-slate-100 dark:border-gray-800 transition-all'>
+          <div className='flex items-center gap-5'>
+            {/* <div className='w-14 h-14 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl flex items-center justify-center text-indigo-600 shadow-sm'>
+              <LayoutGrid size={30} />
+            </div> */}
+            <div>
+              <h1 className='text-2xl font-black text-slate-800 dark:text-white tracking-tight'>Category Library</h1>
+              <p className='text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mt-1'>
+                Organization • {filteredAndPaginatedCategories.totalItems} Items
+              </p>
+            </div>
+          </div>
 
-        {profile?.role === Role.STORE_STAFF && (
-          <button
-            onClick={handleCreateNew}
-            className='btn btn-primary flex justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white shadow-brand-xs hover:bg-brand-600 transition-colors'
-          >
-            Add New Category
-          </button>
-        )}
-      </div>
+          <div className='flex flex-col sm:flex-row gap-4'>
+            <div className='relative group'>
+              <Search
+                className='absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors'
+                size={18}
+              />
+              <input
+                type='text'
+                placeholder='Search by name...'
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value)
+                  setCurrentPage(1)
+                }}
+                className='pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-gray-800/50 border-none rounded-2xl focus:ring-4 ring-indigo-500/10 w-full sm:w-64 transition-all text-sm font-bold dark:text-white'
+              />
+            </div>
 
-      <div className='overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] shadow-lg'>
-        <div className='px-4 py-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg text-end'>
-          <span className='text-sm font-semibold text-indigo-700 dark:text-indigo-400'>
-            Total: **{filteredAndPaginatedCategories.totalItems}**
-          </span>
+            {isStoreStaff && (
+              <button
+                onClick={handleCreateNew}
+                className='bg-slate-900 dark:bg-indigo-600 hover:scale-[1.02] text-white px-8 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl transition-all active:scale-95'
+              >
+                <Plus size={18} /> Add New Category
+              </button>
+            )}
+          </div>
         </div>
 
-        <div className='max-w-full overflow-x-auto'>
-          <Table>
-            {/* Table Header */}
-            <TableHeader className='border-b border-gray-100 dark:border-white/[0.05] dark:text-white bg-gray-50 dark:bg-white/[0.05]'>
-              <TableRow>
-                <TableCell isHeader className='px-5 py-3 text-start'>
-                  Category Name
-                </TableCell>
-                <TableCell isHeader className='px-5 py-3 text-start'>
-                  Parent Category
-                </TableCell>
-                <TableCell isHeader className='px-5 py-3 text-start'>
-                  Subcategories
-                </TableCell>
-                <TableCell isHeader className='px-5 py-3 text-start'>
-                  Products
-                </TableCell>
-                <TableCell isHeader className='px-5 py-3 text-end'>
-                  Actions
-                </TableCell>
-              </TableRow>
-            </TableHeader>
-
-            <TableBody>
-              {filteredAndPaginatedCategories.data.length === 0 ? (
-                <TableRow>
-                  <TableCell className='py-4 text-center text-gray-500'>
-                    {searchTerm ? 'No categories found.' : 'No categories have been registered yet.'}
+        {/* Table Card Section */}
+        <div className='bg-white dark:bg-gray-900 rounded-[3rem] shadow-sm border border-slate-100 dark:border-gray-800 overflow-hidden'>
+          <div className='overflow-x-auto'>
+            <Table>
+              <TableHeader className='bg-slate-50/50 dark:bg-gray-800/50'>
+                <TableRow className='border-none'>
+                  <TableCell
+                    isHeader
+                    className='px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]'
+                  >
+                    Category Name
+                  </TableCell>
+                  <TableCell
+                    isHeader
+                    className='px-6 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]'
+                  >
+                    Parent Category
+                  </TableCell>
+                  <TableCell
+                    isHeader
+                    className='px-6 py-6 text-[10px] text-left font-black text-slate-400 uppercase tracking-[0.2em]'
+                  >
+                    Subcategories
+                  </TableCell>
+                  <TableCell
+                    isHeader
+                    className='px-6 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]'
+                  >
+                    Products
+                  </TableCell>
+                  <TableCell
+                    isHeader
+                    className='px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right'
+                  >
+                    Action Center
                   </TableCell>
                 </TableRow>
-              ) : (
-                filteredAndPaginatedCategories.data.map((category) => (
-                  <TableRow key={category.id} className='dark:text-gray-300'>
-                    <TableCell className='px-5 py-4 font-medium truncate max-w-[200px]'>
-                      {category.categoryName}
-                    </TableCell>
-                    <TableCell className='px-4 py-3 text-start truncate max-w-[150px]'>
-                      {category.parentCategory?.categoryName || 'Root'}
-                    </TableCell>
-                    <TableCell className='px-4 py-3 text-start'>
-                      {category.inverseParentCategory?.length || 0}
-                    </TableCell>
-                    <TableCell className='px-4 py-3 text-start'>{category.products?.length || 0}</TableCell>
-                    <TableCell className='px-4 py-3 text-end'>
-                      <div className='flex justify-end gap-2'>
-                        {/* View Button */}
-                        <button
-                          onClick={() => handleOpenDetailModal(category, 'view')}
-                          className='text-sky-500 hover:text-sky-700 dark:hover:text-sky-300 text-sm p-1'
-                          title='View Details'
-                        >
-                          View
-                        </button>
-
-                        {profile?.role === Role.STORE_STAFF && (
-                          <>
-                            {/* Edit Button */}
-                            <button
-                              onClick={() => handleOpenDetailModal(category, 'edit')}
-                              className='text-brand-500 hover:text-brand-700 dark:hover:text-brand-300 text-sm p-1'
-                              title='Edit Category'
-                            >
-                              Edit
-                            </button>
-                            {/* Delete Button */}
-                            <button
-                              onClick={() => handleDeleteClick(category)}
-                              className='text-red-500 hover:text-red-700 dark:hover:text-red-300 text-sm p-1'
-                              title='Delete Category'
-                              // Disable nếu đang xóa hoặc có sản phẩm/danh mục con
-                              disabled={
-                                isDeleting || category.products.length > 0 || category.inverseParentCategory.length > 0
-                              }
-                            >
-                              Delete
-                            </button>
-                          </>
-                        )}
-                      </div>
+              </TableHeader>
+              <TableBody>
+                {filteredAndPaginatedCategories.data.length === 0 ? (
+                  <TableRow>
+                    <TableCell className='py-20 text-center text-slate-400 font-bold italic uppercase tracking-widest'>
+                      No categories found
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
+                ) : (
+                  filteredAndPaginatedCategories.data.map((category) => (
+                    <TableRow
+                      key={category.id}
+                      className='group hover:bg-indigo-50/30 dark:hover:bg-indigo-900/10 transition-all border-b border-slate-50 dark:border-gray-800 last:border-0'
+                    >
+                      <TableCell className='px-8 py-7'>
+                        <div className='flex items-center gap-4'>
+                          <div className='w-11 h-11 bg-slate-100 dark:bg-gray-800 rounded-xl flex items-center justify-center text-indigo-500 group-hover:scale-110 transition-transform'>
+                            <Layers size={20} />
+                          </div>
+                          <span className='font-black text-slate-800 dark:text-white text-base tracking-tight'>
+                            {category.categoryName}
+                          </span>
+                        </div>
+                      </TableCell>
 
-        {/* Pagination */}
-        {filteredAndPaginatedCategories.totalItems > ITEMS_PER_PAGE && (
-          <div className='p-4 border-t border-gray-100 dark:border-white/[0.05] flex justify-center'>
-            <Pagination
-              currentPage={currentPage}
-              totalPages={Math.ceil(filteredAndPaginatedCategories.totalItems / ITEMS_PER_PAGE)}
-              onPageChange={setCurrentPage}
-            />
+                      <TableCell className='px-6 py-7'>
+                        <div className='inline-flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-gray-800 text-slate-600 dark:text-slate-400 rounded-xl text-xs font-bold'>
+                          <GitBranch size={14} /> {category.parentCategory?.categoryName || 'Root Category'}
+                        </div>
+                      </TableCell>
+
+                      <TableCell className='px-6 py-7'>
+                        <span className='font-black text-slate-700 text-start  dark:text-slate-300'>
+                          {category.inverseParentCategory?.length || 0}
+                        </span>
+                      </TableCell>
+
+                      <TableCell className='px-6 py-7'>
+                        <div className='flex items-center gap-2 text-slate-500'>
+                          <Box size={16} className='text-slate-400' />
+                          <span className='font-black text-slate-700 dark:text-slate-300'>
+                            {category.products?.length || 0}
+                          </span>
+                        </div>
+                      </TableCell>
+
+                      <TableCell className='px-8 py-7 text-right'>
+                        <div className='flex justify-end gap-2.5'>
+                          <button
+                            onClick={() => handleOpenDetailModal(category, 'view')}
+                            className='p-3 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-gray-800 rounded-2xl transition-all shadow-sm bg-white dark:bg-gray-900 border border-slate-100 dark:border-gray-700'
+                            title='View details'
+                          >
+                            <Eye size={18} />
+                          </button>
+
+                          {isStoreStaff && (
+                            <>
+                              <button
+                                onClick={() => handleOpenDetailModal(category, 'edit')}
+                                className='p-3 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-gray-800 rounded-2xl transition-all shadow-sm bg-white dark:bg-gray-900 border border-slate-100 dark:border-gray-700'
+                                title='Edit Category'
+                              >
+                                <Edit3 size={18} />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteClick(category)}
+                                disabled={
+                                  isDeleting ||
+                                  category.products.length > 0 ||
+                                  category.inverseParentCategory.length > 0
+                                }
+                                className='p-3 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-gray-800 rounded-2xl transition-all shadow-sm bg-white dark:bg-gray-900 border border-slate-100 dark:border-gray-700 disabled:opacity-30 disabled:cursor-not-allowed'
+                                title='Delete Category'
+                              >
+                                <Trash2 size={18} />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
           </div>
-        )}
+
+          {/* Pagination Section */}
+          {filteredAndPaginatedCategories.totalItems > ITEMS_PER_PAGE && (
+            <div className='p-10 flex justify-center bg-slate-50/30 dark:bg-transparent border-t dark:border-gray-800'>
+              <Pagination
+                currentPage={currentPage}
+                totalPages={Math.ceil(filteredAndPaginatedCategories.totalItems / ITEMS_PER_PAGE)}
+                onPageChange={setCurrentPage}
+              />
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* --- MODAL VIEW/CREATE/EDIT DETAILS --- */}
       {isModalOpen && (
         <CategoryModal
           isOpen={isModalOpen}
@@ -265,8 +318,8 @@ export default function BasicTableCategories() {
         isOpen={isConfirmOpen}
         onClose={() => setIsConfirmOpen(false)}
         onConfirm={handleConfirmDelete}
-        title='Confirm Category Deletion'
-        message={`Are you sure you want to delete the category "${selectedCategory?.categoryName}"? This action cannot be undone.`}
+        title='Archive Category'
+        message={`Are you sure you want to permanently remove "${selectedCategory?.categoryName}"? This action cannot be undone.`}
       />
     </Fragment>
   )

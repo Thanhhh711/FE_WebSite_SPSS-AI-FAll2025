@@ -9,6 +9,7 @@ import ConfirmModal from '../../CalendarModelDetail/ConfirmModal'
 import Pagination from '../../pagination/Pagination'
 import { Table, TableBody, TableCell, TableHeader, TableRow } from '../../ui/table'
 
+import { Edit3, Eye, Plus, Search, Trash2 } from 'lucide-react'
 import { categoryApi } from '../../../api/category.api'
 import variationApi from '../../../api/variation.api'
 import { Category } from '../../../types/category.type'
@@ -126,51 +127,75 @@ export default function BasicTableVariations() {
 
   return (
     <>
-      <div className='flex justify-between items-center mb-5  '>
-        {/* Search Bar */}
-        <input
-          type='text'
-          placeholder='Search by Variation Name or Category...'
-          value={searchTerm}
-          onChange={(e) => {
-            setSearchTerm(e.target.value)
-            setCurrentPage(1)
-          }}
-          className='w-1/3 dark:text-white min-w-[200px] rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500'
-        />
-
-        {/* Create New Button */}
-        <button
-          onClick={handleCreateNew}
-          className='btn btn-primary flex justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white shadow-brand-xs hover:bg-brand-600 transition-colors'
-        >
-          Add New Variation
-        </button>
-      </div>
-
-      <div className='overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] shadow-lg'>
-        {/* Total Products Found (Mới) */}
-        <div className='px-4 py-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg text-end'>
-          <span className='text-sm font-semibold text-indigo-700 dark:text-indigo-400  '>
-            Total: **{filteredAndPaginatedVariations.totalItems}**
-          </span>
+      {/* HEADER SECTION: Search & Create */}
+      <div className='flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white dark:bg-gray-900 p-8 rounded-[2.5rem] shadow-sm border border-slate-100 dark:border-gray-800 transition-all mb-6'>
+        <div className='flex items-center gap-5'>
+          {/* <div className='w-14 h-14 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl flex items-center justify-center text-indigo-600 shadow-sm'>
+            <Layers size={30} />
+          </div> */}
+          <div>
+            <h1 className='text-2xl font-black text-slate-800 dark:text-white tracking-tight'>Product Variations</h1>
+            <p className='text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mt-1'>
+              Attributes Management • {filteredAndPaginatedVariations.totalItems} Variations Found
+            </p>
+          </div>
         </div>
 
+        <div className='flex flex-col sm:flex-row gap-4'>
+          <div className='relative group'>
+            <Search
+              className='absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors'
+              size={18}
+            />
+            <input
+              type='text'
+              placeholder='Search Variations...'
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value)
+                setCurrentPage(1)
+              }}
+              className='pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-gray-800/50 border-none rounded-2xl focus:ring-4 ring-indigo-500/10 w-full sm:w-64 transition-all text-sm font-bold dark:text-white outline-none'
+            />
+          </div>
+
+          <button
+            onClick={handleCreateNew}
+            className='bg-slate-900 dark:bg-indigo-600 hover:scale-[1.02] text-white px-8 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl transition-all active:scale-95'
+          >
+            <Plus size={18} /> Add New Variation
+          </button>
+        </div>
+      </div>
+
+      {/* TABLE SECTION */}
+      <div className='bg-white dark:bg-gray-900 rounded-[3rem] shadow-sm border border-slate-100 dark:border-gray-800 overflow-hidden'>
         <div className='max-w-full overflow-x-auto'>
           <Table>
-            {/* Table Header */}
-            <TableHeader className='dark:text-white border-b border-gray-100 dark:border-white/[0.05] bg-gray-50 dark:bg-white/[0.05]'>
-              <TableRow>
-                <TableCell isHeader className='px-5 py-3 text-start'>
+            <TableHeader className='bg-slate-50/50 dark:bg-gray-800/50'>
+              <TableRow className='border-none'>
+                <TableCell
+                  isHeader
+                  className='px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] w-[30%]'
+                >
                   Variation Name
                 </TableCell>
-                <TableCell isHeader className='px-5 py-3 text-start'>
-                  Product Category
+                <TableCell
+                  isHeader
+                  className='px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] w-[30%]'
+                >
+                  Category
                 </TableCell>
-                <TableCell isHeader className='px-5 py-3 text-start'>
-                  Options Count
+                <TableCell
+                  isHeader
+                  className='px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center w-[20%]'
+                >
+                  Options
                 </TableCell>
-                <TableCell isHeader className='px-5 py-3 text-end'>
+                <TableCell
+                  isHeader
+                  className='px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right w-[20%]'
+                >
                   Actions
                 </TableCell>
               </TableRow>
@@ -179,49 +204,67 @@ export default function BasicTableVariations() {
             <TableBody>
               {filteredAndPaginatedVariations.data.length === 0 ? (
                 <TableRow>
-                  <TableCell className='py-4 text-center text-gray-500'>
-                    {searchTerm ? 'No variations found.' : 'No variations have been registered yet.'}
+                  <TableCell className='py-20 text-center text-slate-400 font-bold italic uppercase tracking-widest'>
+                    {searchTerm ? 'No matching variations found.' : 'No variations registered yet.'}
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredAndPaginatedVariations.data.map((variation) => {
                   const hasOptions = (variation.variationOptions || []).length > 0
-
                   const isDisabled = isDeleting || hasOptions
 
                   return (
-                    <TableRow key={variation.id} className='dark:text-gray-300'>
-                      <TableCell className='px-5 py-4 font-medium truncate max-w-[200px]'>{variation.name}</TableCell>
-                      <TableCell className='px-4 py-3 text-start truncate max-w-[150px]'>
-                        {getCategoryName(variation.productCategoryId)}
+                    <TableRow
+                      key={variation.id}
+                      className='group hover:bg-indigo-50/30 dark:hover:bg-indigo-900/10 transition-all border-b border-slate-50 dark:border-gray-800 last:border-0'
+                    >
+                      <TableCell className='px-8 py-7'>
+                        <span className='font-black text-slate-800 dark:text-white text-base tracking-tight'>
+                          {variation.name}
+                        </span>
                       </TableCell>
-                      <TableCell className='px-4 py-3 text-start'>{variation.variationOptions?.length || 0}</TableCell>
-                      <TableCell className='px-4 py-3 text-end'>
-                        <div className='flex justify-end gap-2'>
-                          {/* View Button */}
+
+                      <TableCell className='px-8 py-7'>
+                        <div className='inline-flex items-center px-3 py-1 bg-slate-100 dark:bg-gray-800 rounded-lg text-xs font-bold text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-gray-700'>
+                          {getCategoryName(variation.productCategoryId)}
+                        </div>
+                      </TableCell>
+
+                      <TableCell className='px-8 py-7 text-center'>
+                        <span
+                          className={`text-sm font-black ${hasOptions ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`}
+                        >
+                          {variation.variationOptions?.length || 0} items
+                        </span>
+                      </TableCell>
+
+                      <TableCell className='px-8 py-7 text-right'>
+                        <div className='flex justify-end gap-2.5'>
                           <button
                             onClick={() => handleOpenDetailModal(variation, 'view')}
-                            className='text-sky-500 hover:text-sky-700 dark:hover:text-sky-300 text-sm p-1'
+                            className='p-3 text-slate-400 hover:text-sky-600 hover:bg-sky-50 dark:hover:bg-gray-800 rounded-2xl transition-all shadow-sm bg-white dark:bg-gray-900 border border-slate-100 dark:border-gray-700'
                             title='View Details'
                           >
-                            View
+                            <Eye size={18} />
                           </button>
-                          {/* Edit Button */}
                           <button
                             onClick={() => handleOpenDetailModal(variation, 'edit')}
-                            className='text-brand-500 hover:text-brand-700 dark:hover:text-brand-300 text-sm p-1'
+                            className='p-3 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-gray-800 rounded-2xl transition-all shadow-sm bg-white dark:bg-gray-900 border border-slate-100 dark:border-gray-700'
                             title='Edit Variation'
                           >
-                            Edit
+                            <Edit3 size={18} />
                           </button>
-                          {/* Delete Button */}
                           <button
                             onClick={() => handleDeleteClick(variation)}
-                            className={`text-red-500 hover:text-red-700 dark:hover:text-red-900 text-sm p-1 ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            title={hasOptions ? 'Cannot delete: Variation still has options.' : 'Delete Variation'}
                             disabled={isDisabled}
+                            className={`p-3 rounded-2xl transition-all shadow-sm border ${
+                              isDisabled
+                                ? 'opacity-30 bg-slate-50 dark:bg-gray-900 text-slate-300 border-slate-100 dark:border-gray-800 cursor-not-allowed'
+                                : 'text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-gray-800 bg-white dark:bg-gray-900 border-slate-100 dark:border-gray-700'
+                            }`}
+                            title={hasOptions ? 'Variation has options - Cannot delete' : 'Delete Variation'}
                           >
-                            Delete
+                            <Trash2 size={18} />
                           </button>
                         </div>
                       </TableCell>
@@ -233,9 +276,9 @@ export default function BasicTableVariations() {
           </Table>
         </div>
 
-        {/* Pagination */}
+        {/* PAGINATION SECTION */}
         {filteredAndPaginatedVariations.totalItems > ITEMS_PER_PAGE && (
-          <div className='p-4 border-t border-gray-100 dark:border-white/[0.05] flex justify-center'>
+          <div className='p-10 flex justify-center bg-slate-50/30 dark:bg-transparent border-t dark:border-gray-800'>
             <Pagination
               currentPage={currentPage}
               totalPages={Math.ceil(filteredAndPaginatedVariations.totalItems / ITEMS_PER_PAGE)}
@@ -245,7 +288,7 @@ export default function BasicTableVariations() {
         )}
       </div>
 
-      {/* --- MODAL VIEW/CREATE/EDIT DETAILS --- */}
+      {/* MODALS */}
       {isModalOpen && (
         <VariationModal
           isOpen={isModalOpen}
@@ -255,13 +298,13 @@ export default function BasicTableVariations() {
           isViewMode={isViewMode}
         />
       )}
-      {/* --- CONFIRM DELETE MODAL --- */}
+
       <ConfirmModal
         isOpen={isConfirmOpen}
         onClose={() => setIsConfirmOpen(false)}
         onConfirm={handleConfirmDelete}
-        title='Confirm Variation Deletion'
-        message={`Are you sure you want to delete the variation "${selectedVariation?.name}"? This action cannot be undone.`}
+        title='Delete Variation'
+        message={`Remove "${selectedVariation?.name}" permanently?`}
       />
     </>
   )

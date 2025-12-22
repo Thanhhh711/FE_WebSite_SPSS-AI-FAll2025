@@ -10,7 +10,7 @@ import { templateApi } from '../../../api/template.api'
 import userApi from '../../../api/user.api'
 import { Role } from '../../../constants/Roles'
 import { useAppContext } from '../../../context/AuthContext'
-import StaffEmailLookup from '../../../utils/StaffEmailLookup'
+import StaffEmailLookup, { AvatarStaff } from '../../../utils/StaffEmailLookup'
 import { formatDateToDDMMYYYY } from '../../../utils/validForm'
 import ConfirmModal from '../../CalendarModelDetail/ConfirmModal'
 import RegistrationModal, { WEEKDAY_NAMES } from '../../RegistrationModal/RegistrationModal'
@@ -272,7 +272,7 @@ export default function BasicTableRegistration() {
                     <td className='px-6 py-4'>
                       <div className='flex items-center gap-3'>
                         <div className='w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 font-bold text-xs'>
-                          {reg.staffId.substring(0, 2).toUpperCase()}
+                          <AvatarStaff staffId={reg.staffId as string} />
                         </div>
                         <div className='text-sm font-semibold text-slate-700 dark:text-slate-200'>
                           <StaffEmailLookup staffId={reg.staffId} />

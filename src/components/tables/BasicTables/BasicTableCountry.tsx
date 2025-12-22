@@ -1,21 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import { Edit3, Flag, Plus, Search, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
-
 import { toast } from 'react-toastify'
 import countriesApi from '../../../api/country.api'
-import Pagination from '../../pagination/Pagination'
-import { Table, TableBody, TableCell, TableHeader, TableRow } from '../../ui/table'
-
 import { Country, CountryForm } from '../../../types/contries.type'
 import ConfirmModal from '../../CalendarModelDetail/ConfirmModal'
 import CountryModal from '../../CountryModal/CountryModal'
+import Pagination from '../../pagination/Pagination'
+import { Table, TableBody, TableCell, TableHeader, TableRow } from '../../ui/table'
 
 const ITEMS_PER_PAGE = 10
 
 export default function BasicTableCountries() {
-  const queryClient = useQueryClient()
-
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [isCountryModalOpen, setIsCountryModalOpen] = useState(false)
@@ -26,203 +23,182 @@ export default function BasicTableCountries() {
   const {
     data: countriesResponse,
     isLoading,
-    isError,
     refetch
   } = useQuery({
     queryKey: ['countries'],
     queryFn: countriesApi.getCountries,
-    staleTime: 1000 * 60 * 5 // 5 minutes
+    staleTime: 1000 * 60 * 5
   })
 
   const allCountries = countriesResponse?.data.data || []
-
   const filteredAndPaginatedCountries = useMemo(() => {
-    const lowercasedSearchTerm = searchTerm.toLowerCase()
     const filtered = allCountries.filter(
-      (country: Country) =>
-        country.countryName.toLowerCase().includes(lowercasedSearchTerm) ||
-        country.countryCode.toLowerCase().includes(lowercasedSearchTerm)
+      (c: Country) =>
+        c.countryName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        c.countryCode.toLowerCase().includes(searchTerm.toLowerCase())
     )
-
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
-    const endIndex = startIndex + ITEMS_PER_PAGE
-
-    return {
-      totalItems: filtered.length,
-      data: filtered.slice(startIndex, endIndex)
-    }
+    const start = (currentPage - 1) * ITEMS_PER_PAGE
+    return { totalItems: filtered.length, data: filtered.slice(start, start + ITEMS_PER_PAGE) }
   }, [allCountries, searchTerm, currentPage])
 
   const { mutate: saveCountry } = useMutation({
-    mutationFn: (data: CountryForm & { id?: number }) => {
-      if (data.id) {
-        return countriesApi.updateCountry(data.id, data)
-      }
-      return countriesApi.createCountry(data)
-    },
-    onSuccess: (res) => {
-      toast.success(res.data.message || 'Country saved successfully!')
-      queryClient.invalidateQueries({ queryKey: ['countries'] })
+    mutationFn: (data: CountryForm & { id?: number }) =>
+      data.id ? countriesApi.updateCountry(data.id, data) : countriesApi.createCountry(data),
+    onSuccess: (data) => {
+      toast.success(data.data.message)
+
       refetch()
       setIsCountryModalOpen(false)
-      setSelectedCountry(null)
-    },
-    onError: (error: any) => {
-      toast.error(error.data?.res || 'Error saving country.')
     }
   })
 
-  const { mutate: deleteCountry, isPending: isDeleting } = useMutation({
+  const { mutate: deleteCountry } = useMutation({
     mutationFn: (id: number) => countriesApi.deleteCountry(id),
-    onSuccess: (res) => {
-      toast.success(res.data.message || 'Country deleted successfully!')
-      queryClient.invalidateQueries({ queryKey: ['countries'] })
+    onSuccess: (data) => {
+      toast.success(data.data.message)
+
       refetch()
-      setSelectedCountry(null)
-    },
-    onError: (error: any) => {
-      toast.error(error.data?.res || 'Error deleting country.')
-    }
-  })
-
-  // --- EVENT HANDLERS ---
-  const handleOpenDetailModal = (country: Country, mode: 'view' | 'edit') => {
-    setSelectedCountry(country)
-    setIsViewMode(mode === 'view')
-    setIsCountryModalOpen(true)
-  }
-
-  const handleCreateNew = () => {
-    setSelectedCountry(null)
-    setIsViewMode(false)
-    setIsCountryModalOpen(true)
-  }
-
-  const handleDeleteClick = (country: Country) => {
-    setSelectedCountry(country)
-    setIsConfirmOpen(true)
-  }
-
-  const handleConfirmDelete = () => {
-    if (selectedCountry?.id) {
-      deleteCountry(selectedCountry.id)
       setIsConfirmOpen(false)
     }
+  })
+
+  const handleConfirmDelete = () => {
+    if (selectedCountry?.id) deleteCountry(selectedCountry.id)
   }
 
-  if (isLoading) return <div className='p-6 text-center text-lg text-brand-500'>Loading Countries...</div>
-  if (isError) return <div className='p-6 text-center text-lg text-red-500'>Error loading country list.</div>
+  if (isLoading)
+    return <div className='p-20 text-center font-black text-blue-500 animate-pulse'>GLOBAL REGISTRY LOADING...</div>
 
   return (
-    <>
-      <div className='flex justify-between items-center mb-5'>
-        <input
-          type='text'
-          placeholder='Search by Name or Code...'
-          value={searchTerm}
-          onChange={(e) => {
-            setSearchTerm(e.target.value)
-            setCurrentPage(1)
-          }}
-          className='dark:text-white w-1/3 min-w-[200px] rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500'
-        />
-
-        <button
-          onClick={handleCreateNew}
-          className='btn btn-primary flex justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white shadow-brand-xs hover:bg-brand-600 transition-colors'
-        >
-          Add New Country
-        </button>
-      </div>
-
-      <div className='overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] shadow-lg'>
-        <div className='px-4 py-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg text-end'>
-          <span className='text-sm font-semibold text-indigo-700 dark:text-indigo-400'>
-            Total: **{filteredAndPaginatedCountries.totalItems}**
-          </span>
-        </div>
-        <div className='max-w-full overflow-x-auto'>
-          <Table>
-            <TableHeader className=' dark:text-white border-b border-gray-100 dark:border-white/[0.05] bg-gray-50 dark:bg-white/[0.05]'>
-              <TableRow>
-                <TableCell isHeader className='px-5 py-3 text-center'>
-                  Code
-                </TableCell>
-                <TableCell isHeader className='px-5 py-3 text-center'>
-                  Name
-                </TableCell>
-                <TableCell isHeader className='px-5 py-3 text-center'>
-                  Brands Count
-                </TableCell>
-                <TableCell isHeader className='px-5 py-3 text-center'>
-                  Actions
-                </TableCell>
-              </TableRow>
-            </TableHeader>
-
-            <TableBody>
-              {filteredAndPaginatedCountries.data.length === 0 ? (
-                <TableRow>
-                  <TableCell className='py-4 text-center text-gray-500'>
-                    {searchTerm ? 'No countries found.' : 'No countries have been registered yet.'}
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredAndPaginatedCountries.data.map((country) => (
-                  <TableRow key={country.id} className='dark:text-white'>
-                    <TableCell className='px-4 py-3 text-center truncate max-w-[100px]  '>
-                      {country.countryCode}
-                    </TableCell>
-                    <TableCell className='px-4 py-3 text-center font-medium truncate max-w-[200px]'>
-                      {country.countryName}
-                    </TableCell>
-                    <TableCell className='px-4 py-3 text-center'>{country.brands?.length || 0}</TableCell>
-                    <TableCell className='px-4 py-3 text-center'>
-                      <div className='flex justify-center gap-2'>
-                        <button
-                          onClick={() => handleOpenDetailModal(country, 'view')}
-                          className='text-sky-500 hover:text-sky-700 dark:hover:text-sky-300 text-sm p-1'
-                          title='View Details'
-                        >
-                          View
-                        </button>
-
-                        <button
-                          onClick={() => handleOpenDetailModal(country, 'edit')}
-                          className='text-brand-500 hover:text-brand-700 dark:hover:text-brand-300 text-sm p-1'
-                          title='Edit Country'
-                        >
-                          Edit
-                        </button>
-
-                        <button
-                          onClick={() => handleDeleteClick(country)}
-                          className='text-red-500 hover:text-red-700 dark:hover:text-red-300 text-sm p-1'
-                          title='Delete Country'
-                          disabled={isDeleting}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+    <div className='p-4 md:p-8 space-y-6 bg-slate-50/50 dark:bg-transparent min-h-screen'>
+      {/* Header */}
+      <div className='flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white dark:bg-gray-900 p-8 rounded-[2.5rem] shadow-sm border border-slate-100 dark:border-gray-800'>
+        <div className='flex items-center gap-5'>
+          {/* <div className='w-14 h-14 bg-blue-50 dark:bg-blue-900/20 rounded-2xl flex items-center justify-center text-blue-600'>
+            <Globe size={30} />
+          </div> */}
+          <div>
+            <h1 className='text-2xl font-black text-slate-800 dark:text-white tracking-tight'>Country Registry</h1>
+            <p className='text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mt-1'>
+              Active Regions: {filteredAndPaginatedCountries.totalItems}
+            </p>
+          </div>
         </div>
 
-        {filteredAndPaginatedCountries.totalItems > ITEMS_PER_PAGE && (
-          <div className='p-4 border-t border-gray-100 dark:border-white/[0.05] flex justify-center'>
-            <Pagination
-              currentPage={currentPage}
-              totalPages={Math.ceil(filteredAndPaginatedCountries.totalItems / ITEMS_PER_PAGE)}
-              onPageChange={setCurrentPage}
+        <div className='flex gap-4'>
+          <div className='relative'>
+            <Search className='absolute left-4 top-1/2 -translate-y-1/2 text-slate-400' size={18} />
+            <input
+              type='text'
+              placeholder='Code or name...'
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value)
+                setCurrentPage(1)
+              }}
+              className='pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-gray-800 rounded-2xl border-none text-sm font-bold w-full sm:w-64'
             />
           </div>
-        )}
+          <button
+            onClick={() => {
+              setSelectedCountry(null)
+              setIsViewMode(false)
+              setIsCountryModalOpen(true)
+            }}
+            className='bg-slate-900 dark:bg-blue-600 text-white px-6 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl active:scale-95 transition-all'
+          >
+            <Plus size={18} /> Add New
+          </button>
+        </div>
       </div>
 
+      {/* Table */}
+      <div className='bg-white dark:bg-gray-900 rounded-[3rem] shadow-sm border border-slate-100 dark:border-gray-800 overflow-hidden'>
+        <Table>
+          <TableHeader className='bg-slate-50/50 dark:bg-gray-800/50'>
+            <TableRow className='border-none'>
+              <TableCell
+                isHeader
+                className='px-8 py-6 text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]'
+              >
+                Region Code
+              </TableCell>
+              <TableCell
+                isHeader
+                className='px-6 py-6 text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]'
+              >
+                Country Name
+              </TableCell>
+              <TableCell
+                isHeader
+                className='px-6 py-6 text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]'
+              >
+                Brands
+              </TableCell>
+              <TableCell
+                isHeader
+                className='px-8 py-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]'
+              >
+                Actions
+              </TableCell>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredAndPaginatedCountries.data.map((country) => (
+              <TableRow
+                key={country.id}
+                className='group hover:bg-blue-50/30 transition-all border-b border-slate-50 dark:border-gray-800 last:border-0'
+              >
+                <TableCell className='px-8 py-7 text-center'>
+                  <span className='px-4 py-2 bg-slate-100 dark:bg-gray-800 rounded-xl text-xs font-black text-slate-600 dark:text-slate-400 font-mono tracking-widest uppercase border dark:border-gray-700'>
+                    {country.countryCode}
+                  </span>
+                </TableCell>
+                <TableCell className='px-6 py-7 text-center'>
+                  <div className='font-black text-slate-800 dark:text-white text-base flex items-center justify-center gap-2'>
+                    <Flag size={14} className='text-blue-500' /> {country.countryName}
+                  </div>
+                </TableCell>
+                <TableCell className='px-6 py-7 text-center'>
+                  <span className='px-3 py-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 rounded-full text-[10px] font-black'>
+                    {country.brands?.length || 0} PARTNERS
+                  </span>
+                </TableCell>
+                <TableCell className='px-8 py-7 text-right'>
+                  <div className='flex justify-end gap-2'>
+                    <button
+                      onClick={() => {
+                        setSelectedCountry(country)
+                        setIsViewMode(false)
+                        setIsCountryModalOpen(true)
+                      }}
+                      className='p-3 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-2xl transition-all shadow-sm bg-white dark:bg-gray-800 border border-slate-100'
+                    >
+                      <Edit3 size={18} />
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSelectedCountry(country)
+                        setIsConfirmOpen(true)
+                      }}
+                      className='p-3 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-2xl transition-all shadow-sm bg-white dark:bg-gray-800 border border-slate-100'
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        <div className='p-10 flex justify-center'>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={Math.ceil(filteredAndPaginatedCountries.totalItems / ITEMS_PER_PAGE)}
+            onPageChange={setCurrentPage}
+          />
+        </div>
+      </div>
       {isCountryModalOpen && (
         <CountryModal
           isOpen={isCountryModalOpen}
@@ -232,14 +208,13 @@ export default function BasicTableCountries() {
           isViewMode={isViewMode}
         />
       )}
-
       <ConfirmModal
         isOpen={isConfirmOpen}
         onClose={() => setIsConfirmOpen(false)}
         onConfirm={handleConfirmDelete}
-        title='Confirm Country Deletion'
-        message={`Are you sure you want to delete the country "${selectedCountry?.countryName}"? This action cannot be undone.`}
+        title='Delete Region'
+        message={`Permanent delete "${selectedCountry?.countryName}"?`}
       />
-    </>
+    </div>
   )
 }

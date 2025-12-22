@@ -268,7 +268,7 @@ const ScheduleFormModal: React.FC<ScheduleFormModalProps> = ({
 
   return (
     // Modal Overlay
-    <div className='fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-50 backdrop-blur-sm'>
+    <div className='fixed inset-0 z-[999] flex items-center justify-center bg-black/40 backdrop-blur-sm transition-opacity duration-300'>
       {/* Modal Content */}
       <div className='bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-xl mx-4'>
         {/* Modal Header */}

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Blog, BlogForm } from '../../types/media.type'
 import { blogsApi } from '../../api/media.api'
 import { uploadFile, UploadResult } from '../../utils/supabaseStorage'
+import { AlignLeft, ImageIcon, Info, Plus, Trash2, Type, X } from 'lucide-react'
 
 // Define validation error type
 interface FormErrors {
@@ -242,170 +243,242 @@ const BlogFormModal: React.FC<BlogFormModalProps> = ({ blogId, onClose, onSucces
   }
 
   return (
-    <div className='fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-50'>
-      <div className='bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto'>
-        <div className='flex justify-between items-center border-b pb-3 mb-4'>
-          <h2 className='text-2xl font-semibold text-gray-900 dark:text-white'>{modalTitle}</h2>
+    <div className='fixed inset-0 z-[999] flex items-center justify-center bg-slate-900/60 backdrop-blur-md transition-all duration-300 p-4'>
+      <div className='bg-white dark:bg-gray-900 rounded-[2.5rem] shadow-2xl max-w-3xl w-full max-h-[92vh] flex flex-col overflow-hidden border border-slate-200 dark:border-gray-800'>
+        {/* HEADER */}
+        <div className='flex justify-between items-center px-8 py-6 border-b border-slate-100 dark:border-gray-800 bg-slate-50/50 dark:bg-gray-800/30'>
+          <div>
+            <h2 className='text-2xl font-black text-slate-800 dark:text-white tracking-tight'>{modalTitle}</h2>
+            <p className='text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1 italic'>
+              Blog Creation Engine
+            </p>
+          </div>
           <button
             onClick={onClose}
-            className='text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+            className='p-2 hover:bg-rose-50 hover:text-rose-500 dark:hover:bg-rose-900/20 rounded-xl transition-all text-slate-400'
           >
-            &times;
+            <X size={24} />
           </button>
         </div>
 
-        {/* Display general API/submission error */}
-        {error && (
-          <div className='p-3 mb-4 text-sm text-red-800 rounded-lg bg-red-100 dark:bg-red-900/20 dark:text-red-400'>
-            {error}
-          </div>
-        )}
+        <div className='flex-1 overflow-y-auto p-8 custom-scrollbar'>
+          {/* Error Message Alert */}
+          {error && (
+            <div className='flex items-center gap-3 p-4 mb-6 text-sm text-rose-600 rounded-2xl bg-rose-50 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-800 font-bold'>
+              <Info size={18} />
+              {error}
+            </div>
+          )}
 
-        <form onSubmit={handleSubmit} className='space-y-4'>
-          {/* 1. Title */}
-          <div>
-            <label className='block text-sm font-medium text-gray-700 dark:text-gray-300'>Title</label>
-            <input
-              type='text'
-              name='title'
-              value={formData.title}
-              onChange={handleChange}
-              className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white ${formErrors.title ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
-            />
-            {formErrors.title && <p className='mt-1 text-xs text-red-500'>{formErrors.title}</p>}
-          </div>
-
-          {/* 2. Description */}
-          <div>
-            <label className='block text-sm font-medium text-gray-700 dark:text-gray-300'>Short Description</label>
-            <textarea
-              name='description'
-              value={formData.description}
-              onChange={handleChange}
-              rows={3}
-              className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white ${formErrors.description ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
-            />
-            {formErrors.description && <p className='mt-1 text-xs text-red-500'>{formErrors.description}</p>}
-          </div>
-
-          {/* 3. Thumbnail File Input */}
-          <div>
-            <label className='block text-sm font-medium text-gray-700 dark:text-gray-300'>
-              Thumbnail Image {isEditMode && '(Choose new file to replace)'}
-            </label>
-            <input
-              type='file'
-              name='file'
-              accept='image/*'
-              onChange={handleFileChange}
-              className='mt-1 block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400'
-            />
-
-            {(formData.thumbnail || selectedFile) && (
-              <div className='mt-2 flex items-center space-x-3'>
-                <img
-                  src={selectedFile ? URL.createObjectURL(selectedFile) : formData.thumbnail}
-                  alt='Thumbnail Preview'
-                  className='w-20 h-12 object-cover rounded-md border dark:border-gray-700'
-                />
-                {formData.thumbnail && !selectedFile && (
-                  <p className='text-sm text-gray-500 dark:text-gray-400 truncate'>Currently using existing image.</p>
-                )}
+          <form onSubmit={handleSubmit} className='space-y-10'>
+            {/* 1. GENERAL INFORMATION */}
+            <div className='space-y-6'>
+              <div className='flex items-center gap-2 mb-2'>
+                <Type size={18} className='text-indigo-500' />
+                <h3 className='font-black text-slate-800 dark:text-white uppercase text-xs tracking-widest'>
+                  General Information
+                </h3>
               </div>
-            )}
 
-            {selectedFile && (
-              <p className='mt-1 text-sm text-green-600 dark:text-green-400'>File selected: {selectedFile.name}</p>
-            )}
-            {formErrors.thumbnail && <p className='mt-1 text-xs text-red-500'>{formErrors.thumbnail}</p>}
-          </div>
-
-          {/* 4 & 5. Sections Management */}
-          <div className='pt-4 border-t dark:border-gray-700'>
-            <h3 className='text-lg font-semibold text-gray-900 dark:text-white mb-3'>
-              Section Contents ({formData.sections.length})
-            </h3>
-
-            {formErrors.sections && (
-              <p className='p-2 mb-2 text-xs text-red-700 bg-red-100 rounded dark:bg-red-900/20 dark:text-red-400'>
-                {formErrors.sections}
-              </p>
-            )}
-
-            {formData.sections.map((section, index) => (
-              <div
-                key={index}
-                className={`p-4 mb-4 border rounded-md bg-gray-50 dark:bg-gray-700/50 ${formErrors.sectionDetails && formErrors.sectionDetails[index] ? 'border-red-400 dark:border-red-600' : 'border-gray-200 dark:border-gray-700'}`}
-              >
-                <div className='flex justify-between items-center mb-2'>
-                  <h4 className='font-medium text-sm text-indigo-600 dark:text-indigo-400'>Section {index + 1}</h4>
-                  {formData.sections.length > 1 && (
-                    <button
-                      type='button'
-                      onClick={() => handleRemoveSection(index)}
-                      className='text-red-500 hover:text-red-700 text-xs font-medium'
-                    >
-                      Remove
-                    </button>
-                  )}
-                </div>
-
-                <div>
-                  <label className='block text-xs font-medium text-gray-700 dark:text-gray-300'>Section Subtitle</label>
+              <div className='grid grid-cols-1 gap-6'>
+                {/* Title Input */}
+                <div className='space-y-2'>
+                  <label className='text-[11px] font-black text-slate-400 uppercase tracking-wider ml-1'>
+                    Post Title
+                  </label>
                   <input
                     type='text'
-                    value={section.subtitle}
-                    onChange={(e) => handleSectionChange(index, 'subtitle', e.target.value)}
-                    className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm dark:bg-gray-600 dark:text-white ${formErrors.sectionDetails && formErrors.sectionDetails[index]?.subtitle ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-500'}`}
+                    name='title'
+                    value={formData.title}
+                    onChange={handleChange}
+                    placeholder='E.g. 10 Steps to Glowing Skin...'
+                    className={`w-full px-5 py-4 bg-slate-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-4 ring-indigo-500/10 transition-all text-sm font-bold dark:text-white outline-none ${
+                      formErrors.title ? 'ring-2 ring-rose-500/50' : ''
+                    }`}
                   />
-                  {formErrors.sectionDetails && formErrors.sectionDetails[index]?.subtitle && (
-                    <p className='mt-1 text-xs text-red-500'>{formErrors.sectionDetails[index].subtitle}</p>
-                  )}
+                  {formErrors.title && <p className='text-[10px] text-rose-500 font-bold ml-2'>{formErrors.title}</p>}
                 </div>
 
-                <div className='mt-2'>
-                  <label className='block text-xs font-medium text-gray-700 dark:text-gray-300'>Content</label>
+                {/* Description Textarea */}
+                <div className='space-y-2'>
+                  <label className='text-[11px] font-black text-slate-400 uppercase tracking-wider ml-1'>
+                    Short Description
+                  </label>
                   <textarea
-                    value={section.content}
-                    onChange={(e) => handleSectionChange(index, 'content', e.target.value)}
-                    rows={4}
-                    className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm dark:bg-gray-600 dark:text-white ${formErrors.sectionDetails && formErrors.sectionDetails[index]?.content ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-500'}`}
+                    name='description'
+                    value={formData.description}
+                    onChange={handleChange}
+                    rows={3}
+                    placeholder='Give a brief summary of this article...'
+                    className={`w-full px-5 py-4 bg-slate-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-4 ring-indigo-500/10 transition-all text-sm font-bold dark:text-white outline-none resize-none ${
+                      formErrors.description ? 'ring-2 ring-rose-500/50' : ''
+                    }`}
                   />
-                  {formErrors.sectionDetails && formErrors.sectionDetails[index]?.content && (
-                    <p className='mt-1 text-xs text-red-500'>{formErrors.sectionDetails[index].content}</p>
+                  {formErrors.description && (
+                    <p className='text-[10px] text-rose-500 font-bold ml-2'>{formErrors.description}</p>
                   )}
                 </div>
               </div>
-            ))}
-            <button
-              type='button'
-              onClick={handleAddSection}
-              className='text-sm text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium'
-            >
-              + Add New Section
-            </button>
-          </div>
+            </div>
 
-          {/* Submit Button */}
-          <div className='flex justify-end pt-4 border-t dark:border-gray-700'>
-            <button
-              type='button'
-              onClick={onClose}
-              className='mr-3 inline-flex justify-center rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600'
-            >
-              Cancel
-            </button>
-            <button
-              type='submit'
-              disabled={isSubmitting || isUploading}
-              className={`inline-flex justify-center rounded-md border border-transparent py-2 px-4 text-sm font-medium text-white shadow-sm ${
-                isSubmitting || isUploading ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'
-              }`}
-            >
-              {isSubmitting || isUploading ? 'Processing...' : isEditMode ? 'Update Blog Post' : 'Create Blog Post'}
-            </button>
-          </div>
-        </form>
+            {/* 2. THUMBNAIL UPLOAD */}
+            <div className='space-y-4'>
+              <div className='flex items-center gap-2'>
+                <ImageIcon size={18} className='text-indigo-500' />
+                <h3 className='font-black text-slate-800 dark:text-white uppercase text-xs tracking-widest'>
+                  Cover Media
+                </h3>
+              </div>
+
+              <div className='relative group'>
+                <div
+                  className={`flex flex-col items-center justify-center border-2 border-dashed rounded-[2.5rem] p-8 transition-all ${
+                    selectedFile || formData.thumbnail
+                      ? 'border-indigo-200 bg-indigo-50/30 dark:border-indigo-900/30 dark:bg-indigo-900/10'
+                      : 'border-slate-200 dark:border-gray-800 hover:border-indigo-400 hover:bg-slate-50'
+                  }`}
+                >
+                  {formData.thumbnail || selectedFile ? (
+                    <div className='relative group/img w-full'>
+                      <img
+                        src={selectedFile ? URL.createObjectURL(selectedFile) : formData.thumbnail}
+                        alt='Preview'
+                        className='w-full max-h-56 object-cover rounded-[2rem] shadow-xl border border-white dark:border-gray-700'
+                      />
+                      <div className='absolute inset-0 bg-black/40 rounded-[2rem] opacity-0 group-hover/img:opacity-100 flex items-center justify-center transition-all backdrop-blur-[2px]'>
+                        <p className='text-white text-xs font-black uppercase tracking-widest'>Change Thumbnail</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className='text-center py-4'>
+                      <div className='w-14 h-14 bg-indigo-50 dark:bg-gray-800 rounded-2xl flex items-center justify-center mx-auto mb-4 text-indigo-500'>
+                        <Plus size={28} />
+                      </div>
+                      <p className='text-sm font-bold text-slate-600 dark:text-slate-300'>Drop your image here</p>
+                      <p className='text-[10px] text-slate-400 mt-2 uppercase font-black tracking-tighter'>
+                        Support: JPG, PNG, WEBP (Max 5MB)
+                      </p>
+                    </div>
+                  )}
+                  <input
+                    type='file'
+                    accept='image/*'
+                    onChange={handleFileChange}
+                    className='absolute inset-0 opacity-0 cursor-pointer'
+                  />
+                </div>
+                {formErrors.thumbnail && (
+                  <p className='text-[10px] text-rose-500 font-bold mt-2 ml-2'>{formErrors.thumbnail}</p>
+                )}
+              </div>
+            </div>
+
+            {/* 3. SECTION CONTENT BUILDER */}
+            <div className='pt-8 border-t border-slate-100 dark:border-gray-800 space-y-6'>
+              <div className='flex items-center justify-between'>
+                <div className='flex items-center gap-2'>
+                  <AlignLeft size={18} className='text-indigo-500' />
+                  <h3 className='font-black text-slate-800 dark:text-white uppercase text-xs tracking-widest'>
+                    Post Sections ({formData.sections.length})
+                  </h3>
+                </div>
+                <button
+                  type='button'
+                  onClick={handleAddSection}
+                  className='flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 px-5 py-2.5 rounded-xl hover:bg-indigo-100 transition-all border border-indigo-100 dark:border-indigo-800'
+                >
+                  <Plus size={14} /> Add New Section
+                </button>
+              </div>
+
+              {formErrors.sections && (
+                <p className='p-3 text-[10px] font-bold text-rose-600 bg-rose-50 rounded-xl border border-rose-100 uppercase tracking-widest text-center'>
+                  {formErrors.sections}
+                </p>
+              )}
+
+              <div className='space-y-6'>
+                {formData.sections.map((section, index) => (
+                  <div
+                    key={index}
+                    className='group relative p-7 bg-slate-50/50 dark:bg-gray-800/40 rounded-[2.5rem] border border-transparent hover:border-indigo-100 dark:hover:border-indigo-900/50 transition-all shadow-sm'
+                  >
+                    <div className='flex justify-between items-center mb-5'>
+                      <div className='flex items-center gap-3'>
+                        <span className='w-8 h-8 flex items-center justify-center bg-white dark:bg-gray-800 rounded-full text-[12px] font-black text-indigo-500 shadow-sm border border-slate-100 dark:border-gray-700'>
+                          {index + 1}
+                        </span>
+                        <span className='text-[10px] font-black text-slate-400 uppercase tracking-widest'>
+                          Section Content
+                        </span>
+                      </div>
+                      {formData.sections.length > 1 && (
+                        <button
+                          type='button'
+                          onClick={() => handleRemoveSection(index)}
+                          className='p-2.5 text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl transition-all'
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      )}
+                    </div>
+
+                    <div className='space-y-5'>
+                      <div className='space-y-2'>
+                        <label className='text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1'>
+                          Subtitle
+                        </label>
+                        <input
+                          type='text'
+                          placeholder='E.g. Why hydration matters...'
+                          value={section.subtitle}
+                          onChange={(e) => handleSectionChange(index, 'subtitle', e.target.value)}
+                          className='w-full px-5 py-3.5 bg-white dark:bg-gray-800 border border-slate-100 dark:border-gray-700 rounded-2xl focus:ring-4 ring-indigo-500/10 transition-all text-sm font-bold dark:text-white outline-none shadow-sm'
+                        />
+                      </div>
+
+                      <div className='space-y-2'>
+                        <label className='text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1'>
+                          Body Text
+                        </label>
+                        <textarea
+                          placeholder='Enter the detailed content for this section...'
+                          value={section.content}
+                          onChange={(e) => handleSectionChange(index, 'content', e.target.value)}
+                          rows={4}
+                          className='w-full px-5 py-4 bg-white dark:bg-gray-800 border border-slate-100 dark:border-gray-700 rounded-2xl focus:ring-4 ring-indigo-500/10 transition-all text-sm font-medium dark:text-white outline-none shadow-sm resize-none'
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </form>
+        </div>
+
+        {/* FOOTER ACTIONS */}
+        <div className='px-8 py-6 border-t border-slate-100 dark:border-gray-800 flex justify-end items-center gap-4 bg-slate-50/50 dark:bg-gray-800/30'>
+          <button
+            type='button'
+            onClick={onClose}
+            className='px-6 py-3 text-xs font-black uppercase tracking-[0.2em] text-slate-400 hover:text-slate-800 dark:hover:text-white transition-all'
+          >
+            Discard
+          </button>
+          <button
+            type='submit'
+            onClick={handleSubmit}
+            disabled={isSubmitting || isUploading}
+            className={`px-10 py-4 rounded-2xl text-xs font-black uppercase tracking-[0.2em] text-white shadow-2xl transition-all active:scale-95 ${
+              isSubmitting || isUploading
+                ? 'bg-slate-300 cursor-not-allowed shadow-none'
+                : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-500/30 hover:shadow-indigo-500/40'
+            }`}
+          >
+            {isSubmitting || isUploading ? 'Saving...' : isEditMode ? 'Update Article' : 'Publish Article'}
+          </button>
+        </div>
       </div>
     </div>
   )

@@ -1,18 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Edit3, Eye, FilterX, Globe, Info, Plus, Search, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { toast } from 'react-toastify'
-import { Search, Plus, Globe, Building2, Edit3, Trash2, Eye, Info, FilterX } from 'lucide-react'
 
 import brandApi from '../../../api/brand.api'
 import countriesApi from '../../../api/country.api'
 import { Role } from '../../../constants/Roles'
 import { useAppContext } from '../../../context/AuthContext'
 import { Brand, BrandForm } from '../../../types/brands.type'
+import { Country } from '../../../types/contries.type'
 import BrandModal from '../../BrandModal/BrandModal'
 import ConfirmModal from '../../CalendarModelDetail/ConfirmModal'
 import { Table, TableBody, TableCell, TableHeader, TableRow } from '../../ui/table'
-import { Country } from '../../../types/contries.type'
 
 const ITEMS_PER_PAGE = 8
 
@@ -99,9 +99,9 @@ export default function BasicTableBrands() {
       {/* STATS HEADER */}
       <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
         <div className='bg-white dark:bg-white/[0.03] p-6 rounded-[2.5rem] border border-gray-100 dark:border-white/[0.05] flex items-center gap-6 shadow-sm'>
-          <div className='p-4 bg-brand-50 text-brand-600 rounded-3xl'>
+          {/* <div className='p-4 bg-brand-50 text-brand-600 rounded-3xl'>
             <Building2 size={28} />
-          </div>
+          </div> */}
           <div>
             <p className='text-[10px] font-black uppercase tracking-widest text-gray-400'>Total Brand Partners</p>
             <h3 className='text-3xl font-black dark:text-white'>{allBrands.length}</h3>

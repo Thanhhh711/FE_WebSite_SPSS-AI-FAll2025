@@ -1,7 +1,8 @@
+import { CheckCircle2, FileText, Layers } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 import { toast } from 'react-toastify'
-import ModalRegistration from '../RegistrationModal/ModalRegistration'
 import { SkinType, SkinTypeForm } from '../../types/skin.type'
+import ModalRegistration from '../RegistrationModal/ModalRegistration'
 // import StaffEmailLookup from '../../utils/StaffEmailLookup'
 
 interface SkinTypeModalProps {
@@ -102,78 +103,111 @@ export default function SkinTypeModal({ isOpen, onClose, skinType, onSave, isVie
   const baseInputClass =
     'w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm text-gray-800 dark:text-white/90 focus:border-brand-500 focus:ring-1 focus:ring-brand-500'
 
-  const errorClass = 'mt-1 text-xs text-red-500'
   const getInputClass = (fieldName: keyof SkinTypeForm) => {
     return `${baseInputClass} ${errors[fieldName] ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`
   }
 
   return (
     <ModalRegistration isOpen={isOpen} onClose={onClose} title={title}>
-      <div className='p-6'>
-        {skinType && isViewMode && (
-          <div className='space-y-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg text-gray-700 dark:text-gray-300'>
-            <p className='text-sm'>
-              <span className='font-semibold'>Type Name:</span> {skinType.name}
-            </p>
-            <p className='text-sm whitespace-pre-wrap'>
-              <span className='font-semibold'>Description:</span> {skinType.description}
-            </p>
-          </div>
-        )}
-        {!isViewMode && (
-          <div className='space-y-4'>
-            <div>
-              <label htmlFor='name' className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'></label>
+      <div className='w-full bg-white dark:bg-gray-900 overflow-hidden'>
+        {/* CONTENT SECTION */}
+        <div className='p-8'>
+          {skinType && isViewMode ? (
+            // VIEW MODE GIAO DIỆN SANG TRỌNG
+            <div className='space-y-6'>
+              <div className='flex items-center gap-5 p-5 bg-slate-50 dark:bg-gray-800/50 rounded-[1.5rem] border border-slate-100 dark:border-gray-700'>
+                <div className='w-14 h-14 bg-indigo-100 dark:bg-indigo-900/30 rounded-2xl flex items-center justify-center text-indigo-600'>
+                  <Layers size={28} />
+                </div>
+                <div>
+                  <p className='text-[10px] font-black uppercase tracking-[0.2em] text-slate-400'>
+                    Skin Type Classification
+                  </p>
+                  <p className='text-xl font-black text-slate-800 dark:text-white tracking-tight'>{skinType.name}</p>
+                </div>
+              </div>
 
-              <input
-                id='name'
-                type='text'
-                placeholder='E.g., Oily, Dry, Combination, Sensitive'
-                value={form.name}
-                onChange={handleChange}
-                className={getInputClass('name')}
-                maxLength={50}
-              />
-              {errors.name && <p className={errorClass}>{errors.name}</p>}
+              <div className='p-6 bg-slate-50 dark:bg-gray-800/50 rounded-[1.5rem] border border-slate-100 dark:border-gray-700'>
+                <div className='flex items-center gap-2 mb-3'>
+                  <FileText size={16} className='text-indigo-500' />
+                  <p className='text-[10px] font-black uppercase tracking-[0.2em] text-slate-400'>
+                    Detailed Description
+                  </p>
+                </div>
+                <p className='text-sm font-medium text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap italic'>
+                  "{skinType.description}"
+                </p>
+              </div>
             </div>
-            <div>
-              <label
-                htmlFor='description'
-                className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'
-              ></label>
+          ) : (
+            // EDIT / CREATE MODE
+            <div className='space-y-7'>
+              {/* Type Name Field */}
+              <div className='space-y-2.5'>
+                <label className='flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1'>
+                  <Layers size={14} /> Skin Type Name
+                </label>
+                <input
+                  id='name'
+                  type='text'
+                  placeholder='E.g., Oily, Dry, Combination, Sensitive'
+                  value={form.name}
+                  onChange={handleChange}
+                  className={`${getInputClass('name')} w-full px-5 py-4 bg-slate-50 dark:bg-gray-800/50 border-2 border-transparent focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-2xl transition-all outline-none font-bold text-sm dark:text-white`}
+                  maxLength={50}
+                />
+                {errors.name && (
+                  <p className='text-[10px] font-black text-rose-500 uppercase ml-1 tracking-wider animate-pulse'>
+                    {errors.name}
+                  </p>
+                )}
+              </div>
 
-              <textarea
-                id='description'
-                placeholder='Detailed description of the skin type and its characteristics...'
-                rows={4}
-                value={form.description}
-                onChange={handleChange}
-                className={getInputClass('description') + ' min-h-[100px]'}
-                maxLength={500}
-              />
-              {errors.description && <p className={errorClass}>{errors.description}</p>}
+              {/* Description Field */}
+              <div className='space-y-2.5'>
+                <label className='flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1'>
+                  <FileText size={14} /> Clinical Characteristics
+                </label>
+                <textarea
+                  id='description'
+                  placeholder='Detailed description of the skin type and its characteristics...'
+                  rows={5}
+                  value={form.description}
+                  onChange={handleChange}
+                  className={`${getInputClass('description')} w-full px-5 py-4 bg-slate-50 dark:bg-gray-800/50 border-2 border-transparent focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-2xl transition-all outline-none font-bold text-sm dark:text-white min-h-[140px] resize-none leading-relaxed`}
+                  maxLength={500}
+                />
+                {errors.description && (
+                  <p className='text-[10px] font-black text-rose-500 uppercase ml-1 tracking-wider animate-pulse'>
+                    {errors.description}
+                  </p>
+                )}
+              </div>
             </div>
-          </div>
-        )}
-      </div>
-      {/* FOOTER */}
-      <div className='flex items-center gap-3 p-6 border-t border-gray-100 dark:border-gray-800 modal-footer sm:justify-end'>
-        <button
-          onClick={onClose}
-          type='button'
-          className='flex w-full justify-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] sm:w-auto'
-        >
-          {isViewMode ? 'Close' : 'Cancel'}
-        </button>
-        {!isViewMode && (
+          )}
+        </div>
+
+        {/* FOOTER SECTION */}
+        <div className='flex flex-col sm:flex-row items-center gap-3 p-8 border-t border-slate-50 dark:border-gray-800 bg-slate-50/30 dark:bg-transparent sm:justify-end'>
           <button
-            onClick={handleSave}
+            onClick={onClose}
             type='button'
-            className='flex w-full justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white shadow-brand-xs hover:bg-brand-600 sm:w-auto'
+            className='w-full sm:w-auto px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-gray-800 transition-all'
           >
-            {isEditing ? 'Save Changes' : 'Create Skin Type'}
+            {isViewMode ? 'Exit Detail' : 'Discard'}
           </button>
-        )}
+
+          {!isViewMode && (
+            <button
+              onClick={handleSave}
+              type='button'
+              className='w-full sm:w-auto px-10 py-4 bg-slate-900 dark:bg-indigo-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3'
+            >
+              <CheckCircle2 size={16} />
+              {isEditing ? 'Save Changes' : 'Create Skin Type'}
+            </button>
+          )}
+        </div>
       </div>
     </ModalRegistration>
   )

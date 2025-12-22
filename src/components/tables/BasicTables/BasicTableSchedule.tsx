@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 // Giả định import các components UI tương tự mẫu BasicTableRoom.tsx
 import { Table, TableBody, TableCell, TableHeader, TableRow } from '../../ui/table'
 
+import { CalendarIcon, Edit3, Filter, MapPin, Plus, Search, Trash2, User, Zap } from 'lucide-react'
 import { scheduleApi } from '../../../api/schedulars.api'
 import userApi from '../../../api/user.api'
 import { Role } from '../../../constants/Roles'
@@ -14,11 +15,11 @@ import { useAppContext } from '../../../context/AuthContext'
 import { ScheduleWork } from '../../../types/appoinment.type'
 import StaffEmailLookup from '../../../utils/StaffEmailLookup'
 import { formatDateToDDMMYYYY } from '../../../utils/validForm'
-import AppointmentDetailModal from '../../SchedulaModal/AppointmentDetailModal'
 import ConfirmModal from '../../CalendarModelDetail/ConfirmModal'
-import ScheduleFormModal from '../../SchedulaModal/ScheduleFormModal'
 import Pagination from '../../pagination/Pagination'
+import AppointmentDetailModal from '../../SchedulaModal/AppointmentDetailModal'
 import { GenerateScheduleFromRegistrationModal } from '../../SchedulaModal/GenerateScheduleFromRegistrationModal'
+import ScheduleFormModal from '../../SchedulaModal/ScheduleFormModal'
 
 const ITEMS_PER_PAGE = 10
 
@@ -178,7 +179,7 @@ export default function WorkSchedulesManagement() {
     }
   }, [selectedSchedule?.staffId])
 
-  const { mutate: deleteSchedule, isPending: isDeleting } = useMutation({
+  const { mutate: deleteSchedule } = useMutation({
     mutationFn: (id: string) => scheduleApi.deleteSchedule(id),
     onSuccess: (data) => {
       showToast(data.data.message, 'success')
@@ -241,182 +242,214 @@ export default function WorkSchedulesManagement() {
 
   return (
     <>
-      <h2 className='text-2xl font-bold mb-5 dark:text-white'>Work Schedule Management</h2>
+      {/* HEADER SECTION: Title & Main Filters */}
+      <div className='flex flex-col gap-6 bg-white dark:bg-gray-900 p-8 rounded-[2.5rem] shadow-sm border border-slate-100 dark:border-gray-800 transition-all mb-6'>
+        <div className='flex flex-col md:flex-row md:items-center justify-between gap-6'>
+          <div className='flex items-center gap-5'>
+            <div>
+              <h1 className='text-2xl font-black text-slate-800 dark:text-white tracking-tight'>Work Schedules</h1>
+              <p className='text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mt-1'>
+                Shift Management • {allSchedules.length} Total Slots
+              </p>
+            </div>
+          </div>
 
-      <div className='flex justify-between items-center mb-5'>
-        <div className='flex items-center gap-3'>
-          {/* Thanh Tìm kiếm */}
-          <input
-            type='text'
-            placeholder='Search by Room...'
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value)
-              setCurrentPage(1)
-            }}
-            className=' dark:text-gray-300 w-1/3 min-w-[200px] rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
-          />
+          {canModify && (
+            <div className='flex flex-wrap gap-3'>
+              <button
+                onClick={handleOpenGenerateModal}
+                className='bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 px-6 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-emerald-100 transition-all active:scale-95 border border-emerald-100 dark:border-emerald-800'
+              >
+                <Zap size={18} /> Auto-Generate
+              </button>
+              <button
+                onClick={() => handleOpenModal(null)}
+                className='bg-slate-900 dark:bg-blue-600 hover:scale-[1.02] text-white px-6 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl transition-all active:scale-95'
+              >
+                <Plus size={18} /> Add Schedule
+              </button>
+            </div>
+          )}
+        </div>
 
-          {/* SELECT CHỌN BEAUTY ADVISOR */}
-          {CURRENT_USER_ROLE !== Role.BEAUTY_ADVISOR && (
-            <select
-              className='w-[200px] dark:text-gray-300 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none'
-              value={selectedBAId || 'all'}
+        {/* FILTER BAR */}
+        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-6 border-t border-slate-50 dark:border-gray-800'>
+          <div className='relative group'>
+            <Search
+              className='absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors'
+              size={18}
+            />
+            <input
+              type='text'
+              placeholder='Search by Room...'
+              value={searchTerm}
               onChange={(e) => {
-                setSelectedBAId(e.target.value)
+                setSearchTerm(e.target.value)
                 setCurrentPage(1)
               }}
-              disabled={!beautyAdvisors.length || selectedBAId === undefined}
-            >
-              {!beautyAdvisors.length && <option value='all'>Loading Beauty Advisors...</option>}
-              {beautyAdvisors.map((ba) => (
-                <option key={ba.userId} value={ba.userId}>
-                  {ba.emailAddress}
-                </option>
-              ))}
-            </select>
+              className='pl-12 pr-4 py-3 bg-slate-50 dark:bg-gray-800/50 border-none rounded-xl focus:ring-4 ring-blue-500/10 w-full transition-all text-sm font-bold dark:text-white outline-none'
+            />
+          </div>
+
+          {CURRENT_USER_ROLE !== Role.BEAUTY_ADVISOR && (
+            <div className='relative'>
+              <User size={18} className='absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none' />
+              <select
+                className='pl-12 pr-4 py-3 bg-slate-50 dark:bg-gray-800/50 border-none rounded-xl focus:ring-4 ring-blue-500/10 w-full transition-all text-sm font-bold dark:text-white outline-none appearance-none'
+                value={selectedBAId || 'all'}
+                onChange={(e) => {
+                  setSelectedBAId(e.target.value)
+                  setCurrentPage(1)
+                }}
+                disabled={!beautyAdvisors.length || selectedBAId === undefined}
+              >
+                {!beautyAdvisors.length && <option value='all'>Loading Staff...</option>}
+                {beautyAdvisors.map((ba) => (
+                  <option key={ba.userId} value={ba.userId}>
+                    {ba.emailAddress}
+                  </option>
+                ))}
+              </select>
+            </div>
           )}
 
-          {/* INPUT LỌC THEO NGÀY */}
-          <input
-            type='date'
-            value={filterDate}
-            onChange={(e) => {
-              setFilterDate(e.target.value)
-              setCurrentPage(1)
-            }}
-            className='dark:text-gray-300 w-[150px] rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
-          />
-
-          {/* Lọc Trạng thái */}
-          <select
-            className='dark:text-gray-300 w-[150px] rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none'
-            value={filterStatus === undefined ? '' : filterStatus.toString()}
-            onChange={(e) => {
-              const value = e.target.value
-              setFilterStatus(value === '' ? undefined : (parseInt(value) as WorkScheduleStatus))
-              setCurrentPage(1)
-            }}
-          >
-            <option value='' disabled={filterStatus !== undefined}>
-              Filter by Status
-            </option>
-            <option value={WorkScheduleStatus.Active.toString()}>Active</option>
-            <option value={WorkScheduleStatus.Booked.toString()}>Booked</option>
-            <option value={WorkScheduleStatus.InActive.toString()}>InActive</option>
-          </select>
-        </div>
-
-        {/* Create New Button */}
-        {canModify && (
-          <div className='flex gap-3'>
-            <button
-              onClick={() => handleOpenModal(null)}
-              className='flex justify-center rounded-lg bg-blue-500 px-4 py-2.5 text-sm font-medium text-white shadow-md hover:bg-blue-600 transition-colors'
-            >
-              Add New Schedule
-            </button>
-            {/* NÚT MỚI: Generate from Registration */}
-            <button
-              onClick={handleOpenGenerateModal}
-              className='flex justify-center rounded-lg bg-green-500 px-4 py-2.5 text-sm font-medium text-white shadow-md hover:bg-green-600 transition-colors'
-            >
-              Generate from Registration
-            </button>
+          <div className='relative'>
+            <CalendarIcon
+              size={18}
+              className='absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none'
+            />
+            <input
+              type='date'
+              value={filterDate}
+              onChange={(e) => {
+                setFilterDate(e.target.value)
+                setCurrentPage(1)
+              }}
+              className='pl-12 pr-4 py-3 bg-slate-50 dark:bg-gray-800/50 border-none rounded-xl focus:ring-4 ring-blue-500/10 w-full transition-all text-sm font-bold dark:text-white outline-none'
+            />
           </div>
-        )}
+
+          <div className='relative'>
+            <Filter size={18} className='absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none' />
+            <select
+              className='pl-12 pr-4 py-3 bg-slate-50 dark:bg-gray-800/50 border-none rounded-xl focus:ring-4 ring-blue-500/10 w-full transition-all text-sm font-bold dark:text-white outline-none appearance-none'
+              value={filterStatus === undefined ? '' : filterStatus.toString()}
+              onChange={(e) => {
+                const value = e.target.value
+                setFilterStatus(value === '' ? undefined : (parseInt(value) as WorkScheduleStatus))
+                setCurrentPage(1)
+              }}
+            >
+              <option value=''>All Statuses</option>
+              <option value={WorkScheduleStatus.Active.toString()}>Active</option>
+              <option value={WorkScheduleStatus.Booked.toString()}>Booked</option>
+              <option value={WorkScheduleStatus.InActive.toString()}>InActive</option>
+            </select>
+          </div>
+        </div>
       </div>
 
-      {/* ... (Phần hiển thị bảng và pagination giữ nguyên) ... */}
-      <div className='overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03] shadow-lg'>
-        <div className='flex items-center justify-end mb-4'>
-          <div className='px-4 py-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg'>
-            <span className='text-sm font-semibold text-indigo-700 dark:text-indigo-400'>
-              Total: **{allSchedules.length}**
-            </span>
-          </div>
-        </div>
+      {/* TABLE SECTION */}
+      <div className='bg-white dark:bg-gray-900 rounded-[3rem] shadow-sm border border-slate-100 dark:border-gray-800 overflow-hidden'>
         <div className='max-w-full overflow-x-auto'>
           <Table>
-            {/* Table Header */}
-            <TableHeader className='dark:text-gray-300 border-b border-gray-100 dark:border-white/[0.05] bg-gray-50 dark:bg-white/[0.05]'>
-              <TableRow>
-                <TableCell isHeader className='px-5 py-3 text-start'>
-                  Staff Email
+            <TableHeader className='bg-slate-50/50 dark:bg-gray-800/50'>
+              <TableRow className='border-none'>
+                <TableCell
+                  isHeader
+                  className='px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]'
+                >
+                  Staff
                 </TableCell>
-                <TableCell isHeader className='px-5 py-3 text-start'>
-                  Date
+                <TableCell
+                  isHeader
+                  className='px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]'
+                >
+                  Schedule
                 </TableCell>
-                <TableCell isHeader className='px-5 py-3 text-start'>
-                  Time Slot
+                <TableCell
+                  isHeader
+                  className='px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]'
+                >
+                  Location
                 </TableCell>
-                <TableCell isHeader className='px-5 py-3 text-start'>
-                  Room
-                </TableCell>
-                <TableCell isHeader className='px-5 py-3 text-start'>
+                <TableCell
+                  isHeader
+                  className='px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]'
+                >
                   Status
                 </TableCell>
-                <TableCell isHeader className='px-5 py-3 text-start'>
-                  Notes
-                </TableCell>
-                <TableCell isHeader className='px-5 py-3 text-end'>
+                <TableCell
+                  isHeader
+                  className='px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right'
+                >
                   Actions
                 </TableCell>
               </TableRow>
             </TableHeader>
 
-            {/* Table Body */}
             <TableBody>
               {filteredAndPaginatedSchedules.data.length === 0 ? (
                 <TableRow>
-                  <TableCell className='py-4 text-center text-gray-500'>No schedules found.</TableCell>
+                  <TableCell className='py-20 text-center text-slate-400 font-bold italic uppercase tracking-widest'>
+                    No schedules match your filters.
+                  </TableCell>
                 </TableRow>
               ) : (
                 filteredAndPaginatedSchedules.data.map((schedule) => (
-                  <TableRow key={schedule.id} className='dark:text-white'>
-                    <TableCell className='px-5 py-4 font-medium truncate max-w-[150px]'>
-                      <StaffEmailLookup staffId={schedule.staffId} />
+                  <TableRow
+                    key={schedule.id}
+                    className='group hover:bg-blue-50/30 dark:hover:bg-blue-900/10 transition-all border-b border-slate-50 dark:border-gray-800 last:border-0'
+                  >
+                    <TableCell className='px-8 py-7'>
+                      <div className='font-black text-slate-800 dark:text-white text-sm'>
+                        <StaffEmailLookup staffId={schedule.staffId} />
+                      </div>
                     </TableCell>
 
-                    {/* Định dạng ngày (Giữ nguyên Moment) */}
-                    <TableCell className='px-4 py-3 text-start'>{formatDateToDDMMYYYY(schedule.shiftDate)}</TableCell>
-
-                    <TableCell className='px-4 py-3 text-start'>
-                      {schedule.startTime} - {schedule.endTime}
+                    <TableCell className='px-8 py-7'>
+                      <div className='flex flex-col gap-1'>
+                        <span className='font-bold text-slate-700 dark:text-slate-200 text-sm'>
+                          {formatDateToDDMMYYYY(schedule.shiftDate)}
+                        </span>
+                        <span className='text-[11px] font-black text-blue-500 uppercase tracking-tighter bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded-md w-fit italic'>
+                          {schedule.startTime} - {schedule.endTime}
+                        </span>
+                      </div>
                     </TableCell>
-                    <TableCell className='px-4 py-3 text-start'>{schedule.room?.roomName || 'Not room'}</TableCell>
-                    <TableCell className='px-4 py-3 text-start'>{getStatusTag(schedule)}</TableCell>
-                    <TableCell className='px-4 py-3 text-start truncate max-w-[100px]'>{schedule.notes}</TableCell>
 
-                    <TableCell className='px-4 py-3 text-end'>
-                      <div className='flex justify-end gap-2'>
+                    <TableCell className='px-8 py-7'>
+                      <div className='flex items-center gap-2 text-slate-500 dark:text-slate-400 font-medium text-sm'>
+                        <MapPin size={14} className='text-slate-300' />
+                        {schedule.room?.roomName || 'N/A'}
+                      </div>
+                    </TableCell>
+
+                    <TableCell className='px-8 py-7'>{getStatusTag(schedule)}</TableCell>
+
+                    <TableCell className='px-8 py-7 text-right'>
+                      <div className='flex justify-end gap-2.5'>
                         <button
                           onClick={() => handleViewAppointmentsClick(schedule)}
-                          className='text-sky-500 hover:text-sky-700 text-sm p-1'
-                          title='View Appointments'
+                          className='px-4 py-2 text-[10px] font-black uppercase tracking-wider text-blue-600 bg-blue-50 dark:bg-blue-900/40 rounded-xl hover:bg-blue-100 transition-all border border-blue-100 dark:border-blue-800'
                         >
-                          View Appts ({schedule.appointments ? schedule.appointments.length : 0})
+                          Appts ({schedule.appointments?.length || 0})
                         </button>
-
-                        {/* Nút Edit/Delete (Thay thế Button và Popconfirm) */}
                         {canModify && (
                           <>
                             <button
                               onClick={() => handleOpenModal(schedule)}
-                              className='text-blue-500 hover:text-blue-700 text-sm p-1'
-                              title='Edit Schedule'
+                              className='p-3 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-gray-800 rounded-2xl transition-all shadow-sm bg-white dark:bg-gray-900 border border-slate-100 dark:border-gray-700'
+                              title='Edit'
                             >
-                              Edit
+                              <Edit3 size={16} />
                             </button>
-
-                            {/* Thay thế Popconfirm bằng logic gọi ConfirmModal */}
                             <button
                               onClick={() => handleDeleteClick(schedule)}
-                              className='text-red-500 hover:text-red-700 text-sm p-1'
-                              title='Delete Schedule'
-                              disabled={isDeleting && selectedSchedule?.id === schedule.id}
+                              className='p-3 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-gray-800 rounded-2xl transition-all shadow-sm bg-white dark:bg-gray-900 border border-slate-100 dark:border-gray-700'
+                              title='Delete'
                             >
-                              {isDeleting && selectedSchedule?.id === schedule.id ? 'Deleting...' : 'Delete'}
+                              <Trash2 size={16} />
                             </button>
                           </>
                         )}
@@ -430,14 +463,8 @@ export default function WorkSchedulesManagement() {
         </div>
 
         {filteredAndPaginatedSchedules.totalItems > ITEMS_PER_PAGE && (
-          <div className='p-4 border-t border-gray-100 dark:border-white/[0.05] flex justify-center'>
-            <Pagination
-              currentPage={currentPage}
-              // Truyền tổng số trang đã tính toán
-              totalPages={totalPages}
-              // Truyền hàm cập nhật trang
-              onPageChange={setCurrentPage}
-            />
+          <div className='p-10 flex justify-center bg-slate-50/30 dark:bg-transparent border-t dark:border-gray-800'>
+            <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
           </div>
         )}
       </div>

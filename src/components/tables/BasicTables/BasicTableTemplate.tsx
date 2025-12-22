@@ -60,9 +60,9 @@ export default function BasicTableTemplate() {
 
   // Hàm helper để tìm thông tin slot nhanh
   const getSlotInfo = (slotId: string) => {
+    if (!Array.isArray(slots)) return undefined
     return slots.find((s) => s.id === slotId)
   }
-
   const updateMutation = useMutation({
     mutationFn: ({ id, body }: { id: string; body: TemplateForm }) => templateApi.updateTemplate(id, body),
     onSuccess: () => {

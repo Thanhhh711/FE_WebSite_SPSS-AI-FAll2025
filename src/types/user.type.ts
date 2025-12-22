@@ -35,6 +35,7 @@ export interface User {
   phoneNumber: string
   avatarUrl: string | null
   status: Status
+  isExpert: string
   skinTypeId: string | null
   skinTypeName: string | null
   skinType: any | null
@@ -99,4 +100,27 @@ export interface Address {
   ward: string
   postCode: string
   province: string
+}
+
+export interface SystermUserForm {
+  roleId: string
+  status: string
+  isExpert: boolean
+
+  userName: string
+  password: string
+
+  surName: string
+  firstName: string
+  emailAddress: string
+  phoneNumber: string
+  doB: string // ISO date string (VD: 2025-12-22T06:57:40.610Z)
+  avatarUrl: string
+
+  certificate: string
+  specialties: number[]
+  yearsExperience: number
+  education: string
+  training: string
+  clinic: string
 }

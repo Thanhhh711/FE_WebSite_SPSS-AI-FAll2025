@@ -47,3 +47,23 @@ export function StaffEmailLookupString({ staffId }: { staffId: string }) {
 
   return staffEmail
 }
+
+export function AvatarStaff({ staffId, className }: { staffId: string; className?: string }) {
+  const { data: avatarUrl } = useQuery({
+    queryKey: ['staffAvatar', staffId],
+    queryFn: async () => {
+      const res = await userApi.getUsersById(staffId)
+      return res.data.data.avatarUrl
+    },
+    enabled: !!staffId,
+    staleTime: Infinity
+  })
+
+  return (
+    <img
+      src={avatarUrl || '/default-avatar.png'}
+      alt='Staff Avatar'
+      className={className ?? 'w-full h-full object-cover'}
+    />
+  )
+}

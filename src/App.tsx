@@ -170,9 +170,24 @@ export default function App() {
             <Route path={AppPath.BASIC_TABLES_BRAND} element={<BasicTablesBrand />} />
           </Route>
         </Route>
+
+        <Route
+          element={
+            <ProtectedRoute
+              allowedRoles={[Role.BEAUTY_ADVISOR, Role.ADMIN, Role.SCHEDULE_MANAGER, Role.STORE_STAFF]}
+              userRole={userRole}
+            />
+          }
+        >
+          <Route element={<AppLayout />}>
+            <Route path={`${AppPath.PROFILE}/:id`} element={<UserProfiles />} />
+          </Route>
+        </Route>
         {/* === 404 FALLBACK === */}
         <Route path={AppPath.NOT_FOUND} element={<NotFound />} />
       </Routes>
+
+      {/* === CHo tất cả === */}
     </Router>
   )
 }

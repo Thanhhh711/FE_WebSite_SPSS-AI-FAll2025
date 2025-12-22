@@ -1,6 +1,6 @@
 import { SuccessResponse } from './../utils/utils.type'
 import { PagingData, UserByIdResponse } from '../types/auth.type'
-import { User, UserForm } from '../types/user.type'
+import { SystermUserForm, User, UserForm } from '../types/user.type'
 import http from '../utils/http'
 
 export const USERS = 'users'
@@ -12,7 +12,9 @@ const userApi = {
 
   getUsersById: (userId: string) => http.get<UserByIdResponse>(`${USERS}/${userId}`),
 
-  updateUser: (userId: string, body: UserForm) => http.put<UserByIdResponse>(`${USERS}/${userId}`, body),
+  updateUser: (userId: string, body: SystermUserForm) => http.put<UserByIdResponse>(`${USERS}/${userId}`, body),
+
+  editUser: (id: string, body: SystermUserForm) => http.put<SuccessResponse<User>>(`${USERS}/${id}`, body),
 
   // deleteUser: (userId: string) => http.delete(`${USERS}/${userId}`, body)
   lockUser: (userId: string, banReason: string) =>
@@ -23,5 +25,4 @@ const userApi = {
 
   getBeatyAdvisor: () => http.get<SuccessResponse<User[]>>(`${ACCOUNT}/beauty-advisor`)
 }
-
 export default userApi

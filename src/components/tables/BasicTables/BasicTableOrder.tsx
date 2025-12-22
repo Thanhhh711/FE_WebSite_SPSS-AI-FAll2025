@@ -7,6 +7,7 @@ import { OrderResponse, OrderStatus } from '../../../types/order.type'
 import { formatDateToDDMMYYYY, formatVND } from '../../../utils/validForm'
 import { OrderDetailModal } from '../../order/OrderDetailModal'
 import Pagination from '../../pagination/Pagination'
+import { AvatarStaff } from '../../../utils/StaffEmailLookup'
 
 const ITEMS_PER_PAGE = 10
 
@@ -148,7 +149,7 @@ export default function BasicTableOrder() {
                 <td className='py-5 px-8'>
                   <div className='flex items-center gap-3'>
                     <div className='w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center font-black text-brand-600 text-xs'>
-                      {order.user.userName.substring(0, 2).toUpperCase()}
+                      <AvatarStaff staffId={order.userId as string} />
                     </div>
                     <div>
                       <p className='font-black text-gray-900 dark:text-white leading-tight'>{order.user.userName}</p>
