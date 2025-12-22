@@ -4,7 +4,7 @@ import { Activity, ArrowLeft, Loader2, Plus, Save, Settings, Trash2, X } from 'l
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'react-toastify'
 import quizzApi from '../../api/quizz.api'
-import { CreateSkinTestRequest, EditQuizForm, ResultConfig, SkinSection } from '../../types/quizz.type'
+import { CreateSkinTestRequest, EditQuizForm, ResultConfig } from '../../types/quizz.type'
 import { SkinType } from '../../types/skin.type'
 import http from '../../utils/http'
 
