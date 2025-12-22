@@ -35,7 +35,7 @@ export interface User {
   phoneNumber: string
   avatarUrl: string | null
   status: Status
-  isExpert: string
+  isExpert: boolean
   skinTypeId: string | null
   skinTypeName: string | null
   skinType: any | null
