@@ -56,6 +56,22 @@ export interface Report {
   reportImages: ReportImage[]
 }
 
+export interface MedicalReportRequestEditForm {
+  staffId: string
+  customerId: string
+  reportDate: string
+  summary: string
+  diagnosis: string
+  observations: string
+  vitals: string
+  recommendation: string
+  nextFollowUpDate?: string
+  followUpInstructions?: string
+  status: ReportStatus
+  appointmentId?: string
+  imageUrls?: string[]
+}
+
 export enum ReportStatus {
   /// <summary>
   /// Báo cáo nháp (Draft)

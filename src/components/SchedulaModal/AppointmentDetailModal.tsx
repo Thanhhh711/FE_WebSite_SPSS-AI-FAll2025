@@ -69,7 +69,7 @@ const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
   const baseCellClasses = 'px-4 py-2 text-sm border-b border-gray-100 dark:border-gray-700'
 
   return (
-    <div className='fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-70 backdrop-blur-sm'>
+    <div className='fixed inset-0 z-[999] flex items-center justify-center bg-black/40 backdrop-blur-sm transition-opacity duration-300'>
       <div className='bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-4xl mx-4'>
         {/* Modal Header */}
         <div className='flex justify-between items-center p-5 border-b border-gray-200 dark:border-gray-700 flex-shrink-0'>

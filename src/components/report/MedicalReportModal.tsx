@@ -9,6 +9,7 @@ import { MedicalReportForm, ReportStatus } from '../../types/report.type'
 import { uploadFile } from '../../utils/supabaseStorage'
 import ModalRegistration from '../RegistrationModal/ModalRegistration'
 import { appointmentApi } from '../../api/appointment.api'
+import { Activity, Calendar, ClipboardList, Clock, FileText, ImageIcon, Plus, X } from 'lucide-react'
 
 // ----------------------------------------------------------------------
 // ✅ SUPABASE UPLOAD UTILITIES (Giả định import từ file khác, ví dụ: '../../utils/supabaseUtils')
@@ -195,201 +196,244 @@ export default function MedicalReportModal({ isOpen, onClose, customerId, appoim
 
   // Hiển thị trạng thái Loading tổng thể
   const isProcessing = createReportMutation.isPending || isUploading
-
+  const textareaClass = `${baseInputClass} resize-none focus:ring-2 focus:ring-indigo-500/20 min-h-[100px] transition-all`
   return (
     <ModalRegistration isOpen={isOpen} onClose={onClose} title='Create New Medical Report'>
-      <form onSubmit={handleSubmit}>
-        <div className='max-h-[70vh] overflow-y-auto'>
-          <div className='space-y-4 p-6'>
-            {/* Row 1: Report Date & Status */}
-            <div className='grid grid-cols-2 gap-4'>
-              <div>
-                <label className='mb-1.5 block text-sm font-medium text-gray-700'>Report Date</label>
-                <input
-                  type='date'
-                  name='reportDate'
-                  value={form.reportDate}
-                  onChange={handleChange}
-                  className={baseInputClass}
-                  required
-                />
+      <form
+        onSubmit={handleSubmit}
+        className='max-w-4xl mx-auto bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden'
+      >
+        <div className='max-h-[85vh] overflow-y-auto custom-scrollbar'>
+          {/* HEADER SECTION */}
+          <div className='bg-slate-50 border-b border-gray-100 p-6'>
+            <div className='flex items-center gap-3'>
+              <div className='p-2 bg-indigo-100 text-indigo-600 rounded-lg'>
+                <FileText size={24} />
               </div>
               <div>
-                <label className='mb-1.5 block text-sm font-medium text-gray-700'>Report Status</label>
-                <select name='status' value={form.status.toString()} onChange={handleChange} className={baseInputClass}>
-                  <option value={ReportStatus.Draft}>Draft</option>
-                  <option value={ReportStatus.InProgress}>In Progress</option>
-                  <option value={ReportStatus.Completed}>Completed</option>
-                  <option value={ReportStatus.Sent}>Sent to Customer</option>
-                  <option value={ReportStatus.NeedsReview}>Needs Review</option>
-                  <option value={ReportStatus.Approved}>Approved</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Diagnosis & Vitals */}
-            <div className='grid grid-cols-2 gap-4'>
-              <div>
-                <label className='mb-1.5 block text-sm font-medium text-gray-700'>Diagnosis</label>
-                <input
-                  type='text'
-                  name='diagnosis'
-                  value={form.diagnosis}
-                  onChange={handleChange}
-                  placeholder='Primary diagnosis'
-                  className={baseInputClass}
-                  required
-                />
-              </div>
-              <div>
-                <label className='mb-1.5 block text-sm font-medium text-gray-700'>Vitals</label>
-                <input
-                  type='text'
-                  name='vitals'
-                  value={form.vitals}
-                  onChange={handleChange}
-                  placeholder='Example: BP 120/80, HR 75'
-                  className={baseInputClass}
-                />
-              </div>
-            </div>
-
-            {/* Summary */}
-            <div>
-              <label className='mb-1.5 block text-sm font-medium text-gray-700'>Report Summary</label>
-              <textarea
-                name='summary'
-                rows={3}
-                value={form.summary}
-                onChange={handleChange}
-                placeholder='Brief summary of the patient status and visit outcome.'
-                className={`${baseInputClass} resize-none`}
-                required
-              />
-            </div>
-
-            {/* Observations & Recommendation */}
-            <div className='grid grid-cols-2 gap-4'>
-              <div>
-                <label className='mb-1.5 block text-sm font-medium text-gray-700'>Detailed Observations</label>
-                <textarea
-                  name='observations'
-                  rows={4}
-                  value={form.observations}
-                  onChange={handleChange}
-                  placeholder='Detailed notes about clinical observations.'
-                  className={`${baseInputClass} resize-none`}
-                />
-              </div>
-              <div>
-                <label className='mb-1.5 block text-sm font-medium text-gray-700'>Recommendation / Next Steps</label>
-                <textarea
-                  name='recommendation'
-                  rows={4}
-                  value={form.recommendation}
-                  onChange={handleChange}
-                  placeholder='Recommended treatment or next interventions.'
-                  className={`${baseInputClass} resize-none`}
-                />
-              </div>
-            </div>
-
-            {/* ------------------ ✅ ATTACHED IMAGES (INPUT FILE) ------------------ */}
-            <div>
-              <label className='mb-1.5 block text-sm font-medium text-gray-700'>Attached Images</label>
-              <div className='flex flex-col items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-indigo-500 transition relative'>
-                <input
-                  type='file'
-                  name='imageFiles'
-                  multiple // Cho phép chọn nhiều file
-                  onChange={handleFileChange}
-                  accept='image/*' // Chỉ chấp nhận định dạng ảnh
-                  className='absolute w-full h-full opacity-0 cursor-pointer'
-                />
-                <p className='text-sm text-gray-500'>
-                  Drag & drop files here, or <span className='font-medium text-indigo-600'>click to browse</span>.
-                </p>
-                <p className='text-xs text-gray-400 mt-0.5'>Supports JPEG, PNG, GIF, max 5MB per file.</p>
-              </div>
-            </div>
-
-            {/* ✅ PREVIEW CÁC FILES ĐÃ CHỌN */}
-            {selectedFiles.length > 0 && (
-              <div className='mt-3'>
-                <h5 className='mb-2 text-sm font-medium text-gray-700'>Files to Upload ({selectedFiles.length}):</h5>
-                <ul className='grid grid-cols-2 gap-3 text-xs text-gray-600'>
-                  {selectedFiles.map((file, index) => (
-                    <li
-                      key={index}
-                      className='p-2 bg-gray-50 border border-gray-200 rounded-lg truncate flex items-center justify-between'
-                    >
-                      <span>{file.name}</span>
-                      <span className='ml-2 text-gray-500'>({Math.round(file.size / 1024)} KB)</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Bottom Row: Follow-up Date, Instructions & Appointment ID */}
-            <div className='grid grid-cols-3 gap-4'>
-              <div>
-                <label className='mb-1.5 block text-sm font-medium text-gray-700'>Follow-Up Date</label>
-                <input
-                  type='date'
-                  name='nextFollowUpDate'
-                  value={form.nextFollowUpDate}
-                  onChange={handleChange}
-                  className={baseInputClass}
-                />
-              </div>
-              <div>
-                <label className='mb-1.5 block text-sm font-medium text-gray-700'>Follow-Up Instructions</label>
-                <input
-                  type='text'
-                  name='followUpInstructions'
-                  value={form.followUpInstructions}
-                  onChange={handleChange}
-                  placeholder='Detailed instructions.'
-                  className={baseInputClass}
-                />
-              </div>
-              <div>
-                <label className='mb-1.5 block text-sm font-medium text-gray-700'>Appointment</label>
-                <select name='appointmentId' value={appoimentId} className={baseInputClass}>
-                  <option value=''>Select an appointment (optional)</option>
-
-                  {appoiment && (
-                    <option key={appoiment.id} value={appoiment.id}>
-                      {appoiment.service?.name || 'Unnamed Service'} —
-                      {new Date(appoiment.startDateTime).toLocaleString()}
-                    </option>
-                  )}
-                </select>
+                <h3 className='text-lg font-bold text-gray-800'>Clinical Medical Report</h3>
+                <p className='text-sm text-gray-500 font-medium'>Documenting patient diagnosis and treatment plan</p>
               </div>
             </div>
           </div>
 
-          {/* Modal Footer */}
-          <div className='flex items-center gap-3 p-4 border-t border-gray-100 justify-end'>
+          <div className='p-8 space-y-10'>
+            {/* SECTION 1: APPOINTMENT & STATUS */}
+            <section className='space-y-6'>
+              <div className='flex items-center gap-2 text-indigo-600 border-b border-indigo-50 pb-2'>
+                <Calendar size={18} />
+                <h4 className='font-bold uppercase text-[11px] tracking-widest'>Appointment Details</h4>
+              </div>
+
+              <div className='space-y-5'>
+                <div className='w-full'>
+                  <label className='mb-2 block text-sm font-semibold text-gray-700'>Related Appointment</label>
+                  <select
+                    name='appointmentId'
+                    value={appoimentId}
+                    className={`${baseInputClass} bg-indigo-50/30 border-indigo-100 w-full cursor-not-allowed`}
+                    disabled
+                  >
+                    {appoiment && (
+                      <option value={appoiment.id}>
+                        {appoiment.service?.name} — {new Date(appoiment.startDateTime).toLocaleString('vi-VN')}
+                      </option>
+                    )}
+                  </select>
+                </div>
+
+                <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                  <div className='space-y-2'>
+                    <label className='block text-sm font-semibold text-gray-700'>Report Date</label>
+                    <input
+                      type='date'
+                      name='reportDate'
+                      value={form.reportDate}
+                      onChange={handleChange}
+                      className={baseInputClass}
+                      required
+                    />
+                  </div>
+                  <div className='space-y-2'>
+                    <label className='block text-sm font-semibold text-gray-700'>Report Status</label>
+                    <select
+                      name='status'
+                      value={form.status.toString()}
+                      onChange={handleChange}
+                      className={baseInputClass}
+                    >
+                      <option value={ReportStatus.Draft}>Draft</option>
+                      <option value={ReportStatus.Completed}>Completed</option>
+                      <option value={ReportStatus.Approved}>Approved</option>
+                      <option value={ReportStatus.InProgress}>InProgress</option>
+                      <option value={ReportStatus.NeedsReview}>NeedsReview</option>
+                      <option value={ReportStatus.Sent}>Sent</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* SECTION 2: MEDICAL DIAGNOSIS - Diagnosis 1 vòng (Full Width) */}
+            <section className='space-y-6'>
+              <div className='flex items-center gap-2 text-indigo-600 border-b border-indigo-50 pb-2'>
+                <Activity size={18} />
+                <h4 className='font-bold uppercase text-[11px] tracking-widest'>Medical Diagnosis</h4>
+              </div>
+
+              <div className='w-full'>
+                <label className='mb-2 block text-sm font-semibold text-gray-700'>
+                  Diagnosis <span className='text-red-500'>*</span>
+                </label>
+                <textarea
+                  name='diagnosis'
+                  rows={2}
+                  value={form.diagnosis}
+                  onChange={handleChange}
+                  placeholder='Enter primary clinical diagnosis...'
+                  className={`${textareaClass} min-h-[80px] font-medium w-full`}
+                  required
+                />
+              </div>
+
+              <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
+                <div className='md:col-span-1'>
+                  <label className='mb-2 block text-sm font-semibold text-gray-700'>Vitals</label>
+                  <textarea
+                    name='vitals'
+                    rows={3}
+                    value={form.vitals}
+                    onChange={handleChange}
+                    placeholder='BP, HR, Temp...'
+                    className={`${textareaClass} min-h-[100px]`}
+                  />
+                </div>
+                <div className='md:col-span-2'>
+                  <label className='mb-2 block text-sm font-semibold text-gray-700'>Executive Summary</label>
+                  <textarea
+                    name='summary'
+                    rows={3}
+                    value={form.summary}
+                    onChange={handleChange}
+                    placeholder='Brief summary of visit outcome...'
+                    className={`${textareaClass} min-h-[100px]`}
+                    required
+                  />
+                </div>
+              </div>
+            </section>
+
+            {/* SECTION 3: EVALUATION */}
+            <section className='space-y-4'>
+              <div className='flex items-center gap-2 text-indigo-600 border-b border-indigo-50 pb-2'>
+                <ClipboardList size={18} />
+                <h4 className='font-bold uppercase text-[11px] tracking-widest'>Evaluation</h4>
+              </div>
+              <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                <div>
+                  <label className='mb-2 block text-sm font-semibold text-gray-700'>Detailed Observations</label>
+                  <textarea
+                    name='observations'
+                    value={form.observations}
+                    onChange={handleChange}
+                    className={`${textareaClass} min-h-[150px]`}
+                  />
+                </div>
+                <div>
+                  <label className='mb-2 block text-sm font-semibold text-gray-700'>Recommendations</label>
+                  <textarea
+                    name='recommendation'
+                    value={form.recommendation}
+                    onChange={handleChange}
+                    className={`${textareaClass} min-h-[150px] bg-indigo-50/10 border-indigo-100`}
+                  />
+                </div>
+              </div>
+            </section>
+
+            {/* SECTION 4: IMAGING - Multi upload preview */}
+            <section className='space-y-4'>
+              <div className='flex items-center gap-2 text-indigo-600 border-b border-indigo-50 pb-2'>
+                <ImageIcon size={18} />
+                <h4 className='font-bold uppercase text-[11px] tracking-widest'>Medical Imaging</h4>
+              </div>
+              <div className='grid grid-cols-2 md:grid-cols-5 gap-4'>
+                <label className='aspect-square flex flex-col items-center justify-center border-2 border-dashed border-gray-200 rounded-2xl hover:bg-indigo-50 hover:border-indigo-300 transition-all cursor-pointer group'>
+                  <Plus size={24} className='text-indigo-600 group-hover:scale-110 transition-transform' />
+                  <span className='text-[10px] font-bold text-gray-400 mt-2 uppercase'>Add Media</span>
+                  <input type='file' multiple onChange={handleFileChange} accept='image/*' className='hidden' />
+                </label>
+                {selectedFiles.map((file, index) => (
+                  <div
+                    key={index}
+                    className='relative aspect-square rounded-2xl overflow-hidden border border-gray-100 shadow-sm'
+                  >
+                    <img src={URL.createObjectURL(file)} alt='preview' className='w-full h-full object-cover' />
+                    <button
+                      type='button'
+                      onClick={() => setSelectedFiles((prev) => prev.filter((_, i) => i !== index))}
+                      className='absolute top-1.5 right-1.5 p-1 bg-white/90 text-red-500 rounded-full shadow-sm hover:bg-red-50'
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {/* SECTION 5: FOLLOW-UP PLAN - Fix: Date 1 hàng, Instructions 1 hàng */}
+            <section className='bg-slate-50 p-6 rounded-2xl border border-gray-100 space-y-6'>
+              <div className='flex items-center gap-2 text-gray-700 pb-2 border-b border-gray-200'>
+                <Clock size={18} />
+                <h4 className='font-bold uppercase text-[11px] tracking-widest'>Follow-Up Plan</h4>
+              </div>
+
+              <div className='space-y-5'>
+                {/* Hàng 1: Follow-Up Date */}
+                <div className='w-full md:w-1/3'>
+                  {' '}
+                  {/* Giới hạn độ rộng date cho đẹp, hoặc dùng w-full nếu muốn dài hết */}
+                  <label className='mb-2 block text-sm font-semibold text-gray-700'>Follow-Up Date</label>
+                  <input
+                    type='date'
+                    name='nextFollowUpDate'
+                    value={form.nextFollowUpDate}
+                    onChange={handleChange}
+                    className={baseInputClass}
+                  />
+                </div>
+
+                {/* Hàng 2: Instructions nằm dưới */}
+                <div className='w-full'>
+                  <label className='mb-2 block text-sm font-semibold text-gray-700'>Instructions</label>
+                  <textarea
+                    name='followUpInstructions'
+                    rows={2}
+                    value={form.followUpInstructions}
+                    onChange={handleChange}
+                    placeholder='E.g. Take medication daily, avoid direct sunlight...'
+                    className={`${textareaClass} min-h-[60px] w-full`}
+                  />
+                </div>
+              </div>
+            </section>
+          </div>
+
+          {/* FOOTER */}
+          <div className='sticky bottom-0 bg-white/90 backdrop-blur-sm border-t border-gray-100 p-6 flex items-center justify-end gap-4 z-20'>
             <button
               onClick={onClose}
               type='button'
-              className='px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100'
-              disabled={isProcessing}
+              className='text-sm font-bold text-gray-400 hover:text-gray-600 uppercase tracking-wider'
             >
               Cancel
             </button>
             <button
               type='submit'
-              className='px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50'
-              disabled={isProcessing} // Disabled khi đang tạo report HOẶC đang upload ảnh
+              className='px-10 py-3 text-sm font-bold text-white bg-indigo-600 rounded-full hover:bg-indigo-700 shadow-lg active:scale-95 transition-all disabled:bg-gray-300'
+              disabled={isProcessing}
             >
-              {isUploading
-                ? 'Uploading Images...'
-                : createReportMutation.isPending
-                  ? 'Creating Report...'
-                  : 'Create Report'}
+              {isUploading ? 'Uploading...' : 'Create Report'}
             </button>
           </div>
         </div>

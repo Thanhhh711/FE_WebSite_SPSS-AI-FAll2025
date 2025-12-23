@@ -56,7 +56,7 @@ export default function BasicTableOrder() {
     () => ({
       total: orders.length,
       pending: orders.filter((o) => o.status === OrderStatus.Pending).length,
-      completed: orders.filter((o) => o.status === OrderStatus.Completed).length,
+      confirmed: orders.filter((o) => o.status === OrderStatus.Confirmed).length,
       cancelled: orders.filter((o) => o.status === OrderStatus.Cancelled).length
     }),
     [orders]
@@ -91,8 +91,8 @@ export default function BasicTableOrder() {
           icon={<Clock size={20} />}
         />
         <OrderStat
-          title='Success'
-          count={orderStats.completed}
+          title='Confirmed'
+          count={orderStats.confirmed}
           color='bg-emerald-50 text-emerald-600'
           icon={<CheckCircle size={20} />}
         />

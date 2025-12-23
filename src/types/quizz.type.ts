@@ -45,7 +45,7 @@ export interface SkinTestQuestion {
   id: string
   value: string
   section: SkinSection
-  options: SkinTestOption[]
+  quizOptions: SkinTestOption[]
 }
 
 export type SkinSection = 'OD' | 'SR' | 'PN' | 'WT'
@@ -94,4 +94,55 @@ export interface EditResultConfig {
   srScore?: string
   pnScore?: string
   wtScore?: string
+}
+
+export interface QuizQuestion {
+  quizSetId: string
+  value: string
+  section: string
+}
+
+export type QuizQuestionEditForm = Omit<QuizQuestion, 'quizSetId'>
+
+export interface QuestionOption {
+  questionId: string
+  value: string
+  score: number
+}
+
+export type QuestionOptionEditForm = Omit<QuestionOption, 'questionId'>
+
+export interface QuizSet {
+  name: string
+  isDefault: boolean
+}
+
+export interface SkinTypeScoreConfig {
+  skinTypeId: string
+  odScore: string
+  srScore: string
+  pnScore: string
+  wtScore: string
+}
+
+export interface QuizEditForm {
+  name: string
+  isDefault: boolean
+}
+
+export interface QuizSetEditSkinTypeScore {
+  skinTypeId: string
+  odScore: string
+  srScore: string
+  pnScore: string
+  wtScore: string
+}
+
+export interface QuizSetSkinTypeScore {
+  quizSetId: string
+  skinTypeId: string
+  odScore: string
+  srScore: string
+  pnScore: string
+  wtScore: string
 }

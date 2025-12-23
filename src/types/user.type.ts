@@ -64,6 +64,12 @@ export interface User {
   replies: any[]
   reviews: any[]
   transactions: any[]
+
+  yearsExperience: number | null
+  education: string | null
+  training: string | null
+  clinic: string | null
+  specialties: string[]
 }
 
 export interface UserForm {
@@ -108,7 +114,6 @@ export interface SystermUserForm {
   isExpert: boolean
 
   userName: string
-  password: string
 
   surName: string
   firstName: string
@@ -118,7 +123,7 @@ export interface SystermUserForm {
   avatarUrl: string
 
   certificate: string
-  specialties: number[]
+  specialties: string[]
   yearsExperience: number
   education: string
   training: string

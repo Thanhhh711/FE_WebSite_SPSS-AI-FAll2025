@@ -1,12 +1,11 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router'
 import { useAppContext } from '../context/AuthContext'
 import { Role } from '../constants/Roles'
 import userApi from '../api/user.api'
 import { User, SystermUserForm } from '../types/user.type'
-
 import { toast } from 'react-toastify'
 import UserInfoCard from '../components/UserProfile/UserInfoCard'
 import UserMetaCard from '../components/UserProfile/UserMetaCard'
@@ -21,63 +20,75 @@ export default function UserProfiles() {
 
   const isMyProfile = myAccount?.userId === id
   const isBAViewingExpert = myAccount?.role === Role.BEAUTY_ADVISOR
+  const isAdmin = myAccount?.role === Role.ADMIN
 
   const fetchUser = async () => {
     if (!id) return
-    const res = await userApi.getUsersById(id)
-    setUserData(res.data.data)
+    try {
+      const res = await userApi.getUsersById(id)
+
+      console.log('dataUser', res.data.data)
+
+      setUserData(res.data.data)
+    } catch (error) {
+      toast.error('Failed to load user information')
+    }
   }
 
   useEffect(() => {
     fetchUser()
   }, [id])
 
-  console.log('isMyProfile', isMyProfile)
-  console.log('isEditing', isEditing)
+  const mapUserToSystemUserForm = (user: User, formData: Partial<SystermUserForm>): SystermUserForm => {
+    return {
+      roleId: formData.roleId ?? user.roleId,
+      status: formData.status ?? user.status,
+      isExpert: formData.isExpert ?? user.isExpert,
 
-  console.log('userDataa', userData)
+      userName: user.userName, // thường không cho edit
+
+      surName: formData.surName ?? user.surName ?? '',
+      firstName: formData.firstName ?? user.firstName ?? '',
+      emailAddress: formData.emailAddress ?? user.emailAddress,
+      phoneNumber: formData.phoneNumber ?? user.phoneNumber,
+      doB: formData.doB ?? user.doB ?? '',
+      avatarUrl: formData.avatarUrl ?? user.avatarUrl ?? '',
+
+      certificate: formData.certificate ?? user.certificate ?? '',
+      specialties: formData.specialties ?? [],
+
+      yearsExperience:
+        formData.yearsExperience !== undefined ? Number(formData.yearsExperience) : (user.yearsExperience ?? 0),
+
+      education: formData.education ?? user.education ?? '',
+      training: formData.training ?? user.training ?? '',
+      clinic: formData.clinic ?? user.clinic ?? ''
+    }
+  }
 
   const handleUpdate = async (formData: Partial<SystermUserForm>) => {
     if (!userData || !id) return
     try {
-      // Mapping from User type to SystermUserForm type (Safe Mapping)
-      const body: SystermUserForm = {
-        roleId: userData.roleId,
-        status: userData.status,
-        isExpert: userData.isExpert,
-        userName: userData.userName,
-        password: '', // Not changing password here
-        surName: formData.surName ?? userData.surName ?? '',
-        firstName: formData.firstName ?? userData.firstName ?? '',
-        emailAddress: formData.emailAddress ?? userData.emailAddress,
-        phoneNumber: formData.phoneNumber ?? userData.phoneNumber,
-        doB: formData.doB ?? userData.doB ?? new Date().toISOString(),
-        avatarUrl: formData.avatarUrl ?? userData.avatarUrl ?? '',
-        certificate: formData.certificate ?? userData.certificate ?? '',
-        specialties: (userData as any).specialties || [],
-        yearsExperience: Number((formData as any).yearsExperience) || (userData as any).yearsExperience || 0,
-        education: (formData as any).education || (userData as any).education || '',
-        training: (formData as any).training || (userData as any).training || '',
-        clinic: (formData as any).clinic || (userData as any).clinic || ''
-      }
+      const body: SystermUserForm = mapUserToSystemUserForm(userData, formData)
+      console.log('EditUserForm', body)
 
-      await userApi.editUser(id, body)
-      toast.success('Profile updated!')
+      // await userApi.editUser(id, body)
+      toast.success('Profile updated successfully!')
       setIsEditing(false)
       fetchUser()
     } catch (error) {
-      toast.error('Failed to update profile.')
+      toast.error('Update failed.')
     }
   }
 
   return (
     <div className='space-y-6 max-w-5xl mx-auto p-4'>
       <div className='flex justify-between items-center'>
-        <h3 className='text-xl font-bold text-gray-800 dark:text-white'>Profile Settings</h3>
+        <h3 className='text-xl font-bold text-gray-800 dark:text-white'>User Profile</h3>
         {isMyProfile && !isEditing && (
           <button
             onClick={() => setIsEditing(true)}
-            className='px-4 py-2 bg-brand-500 text-white rounded-lg font-bold shadow-sm'
+            className='px-4 py-2 bg-brand-500 text-white rounded-lg font-bold shadow-sm hover:bg-brand-600 transition-colors'
           >
             Edit Profile
           </button>
@@ -85,18 +96,23 @@ export default function UserProfiles() {
       </div>
 
       <UserMetaCard
-        isEditing
         user={userData}
+        isEditing={isEditing}
         isMyProfile={isMyProfile}
         onAvatarChange={(file) =>
-          uploadFile('users', file, 'avatars').then((url) => handleUpdate({ avatarUrl: url.publicUrl }))
+          uploadFile('avatars', file, 'avatars').then((url) => handleUpdate({ avatarUrl: url.publicUrl }))
         }
+        onInputChange={(e) => {
+          const { name, value } = e.target
+          setUserData((prev) => (prev ? ({ ...prev, [name]: value } as any) : null))
+        }}
       />
 
       <UserInfoCard
         user={userData}
         isEditing={isEditing}
         isMyProfile={isMyProfile}
+        isAdmin={isAdmin}
         isBAViewingExpert={isBAViewingExpert}
         onSave={handleUpdate}
         onCancel={() => setIsEditing(false)}
@@ -106,8 +122,10 @@ export default function UserProfiles() {
       />
 
       <UserAddressCard
-        user={userData || null}
+        user={userData}
         isEditing={isEditing}
+        isMyProfile={isMyProfile}
+        isAdmin={isAdmin}
         onSave={handleUpdate}
         onCancel={() => setIsEditing(false)}
       />

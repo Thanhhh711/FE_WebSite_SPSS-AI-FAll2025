@@ -1,11 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { BookOpen, Edit3, HelpCircle, Layout, Plus, Trash2 } from 'lucide-react'
+import { BookOpen, Edit3, HelpCircle, Layout, Loader2, Plus, Trash2, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import quizzApi from '../../api/quizz.api'
+
 import { SkinTest } from '../../types/quizz.type'
 import QuizForm from './QuizForm'
 import QuizDetail from './QuizDetail'
+import { quizzApi } from '../../api/quizz.api'
+import EditQuizForm from './EditQuizForm'
 
 export const SkinTestManager = () => {
   const [quizzes, setQuizzes] = useState<SkinTest[]>([])
@@ -55,7 +57,7 @@ export const SkinTestManager = () => {
             >
               <HelpCircle size={20} className='text-indigo-500' /> Guide
             </button>
-            {!isFormOpen && (
+            {!isFormOpen && !editingQuiz && (
               <button
                 onClick={() => {
                   setIsFormOpen(true)
@@ -69,6 +71,7 @@ export const SkinTestManager = () => {
           </div>
         </header>
 
+        {/* Guide Modal */}
         {isGuideOpen && (
           <div className='fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm'>
             <div className='bg-white rounded-3xl p-8 max-w-2xl w-full shadow-2xl animate-in zoom-in-95 duration-200'>
@@ -80,33 +83,22 @@ export const SkinTestManager = () => {
                   <h2 className='text-2xl font-bold'>System Guide</h2>
                 </div>
                 <button onClick={() => setIsGuideOpen(false)} className='text-slate-400 hover:text-slate-600 p-2'>
-                  <Trash2 size={20} /> {/* Hoặc dùng icon X */}
+                  <X size={20} />
                 </button>
               </div>
 
               <div className='space-y-6'>
-                <GuideStep
-                  number='1'
-                  title='Create Survey'
-                  desc="Click 'Create New Test' and enter a name for your campaign. Only one quiz can be 'Default' at a time."
-                />
+                <GuideStep number='1' title='Create Survey' desc="Click 'Create New Test' and enter a name." />
                 <GuideStep
                   number='2'
                   title='Configure Questions'
-                  desc='Add questions and assign them to 4 Baumann categories: OD, SR, PN, or WT. Ensure each option has a numeric score.'
+                  desc='Add questions and assign them to categories: OD, SR, PN, or WT.'
                 />
                 <GuideStep
                   number='3'
                   title='Result Mapping'
-                  desc='For each of the 16 skin types, define the score ranges (e.g., 20-30) that will trigger that specific result.'
+                  desc='Define score ranges for each of the 16 skin types.'
                 />
-                <div className='p-4 bg-amber-50 rounded-xl border border-amber-100 flex gap-3'>
-                  <div className='text-amber-500'>⚠️</div>
-                  <p className='text-sm text-amber-800'>
-                    <strong>Note:</strong> Changes to the 'Default' quiz will immediately affect new users on the
-                    platform.
-                  </p>
-                </div>
               </div>
 
               <button
@@ -118,11 +110,21 @@ export const SkinTestManager = () => {
             </div>
           </div>
         )}
+
+        {/* Main Content Areas */}
         {viewingId ? (
           <QuizDetail id={viewingId} onClose={() => setViewingId(null)} />
+        ) : editingQuiz ? (
+          /* FORM EDIT RIÊNG BIỆT */
+          <EditQuizForm
+            quizId={editingQuiz.id}
+            onClose={() => {
+              setEditingQuiz(null)
+              fetchQuizzes()
+            }}
+          />
         ) : isFormOpen ? (
           <QuizForm
-            initialData={editingQuiz}
             onClose={() => {
               setIsFormOpen(false)
               fetchQuizzes()
@@ -131,7 +133,10 @@ export const SkinTestManager = () => {
         ) : (
           <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
             {loading ? (
-              <div className='col-span-full py-20 text-center text-slate-400'>Loading data...</div>
+              <div className='col-span-full py-20 text-center text-slate-400 flex flex-col items-center gap-3'>
+                <Loader2 className='animate-spin text-indigo-500' size={32} />
+                Loading data...
+              </div>
             ) : (
               quizzes.map((quiz) => (
                 <div
@@ -154,8 +159,8 @@ export const SkinTestManager = () => {
                     Updated: {new Date(quiz.createdTime).toLocaleDateString('en-US')}
                   </p>
 
-                  <div className='flex justify-between items-center pt-5 border-t border-slate-50'>
-                    <span className='px-3 py-1 bg-slate-100 rounded-full text-xs font-semibold text-slate-600'>
+                  <div className='flex justify-between items-center pt-5 border-t border-slate-50 dark:border-slate-700'>
+                    <span className='px-3 py-1 bg-slate-100 dark:bg-slate-700 rounded-full text-xs font-semibold text-slate-600 dark:text-slate-400'>
                       {quiz.totalQuestions} questions
                     </span>
                     <div className='flex gap-1'>
@@ -166,10 +171,7 @@ export const SkinTestManager = () => {
                         <Layout size={18} />
                       </button>
                       <button
-                        onClick={() => {
-                          setEditingQuiz(quiz)
-                          setIsFormOpen(true)
-                        }}
+                        onClick={() => setEditingQuiz(quiz)}
                         className='p-2.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors'
                       >
                         <Edit3 size={18} />
@@ -191,7 +193,6 @@ export const SkinTestManager = () => {
     </div>
   )
 }
-
 const GuideStep = ({ number, title, desc }: { number: string; title: string; desc: string }) => (
   <div className='flex gap-4'>
     <div className='flex-shrink-0 w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold border border-indigo-100'>

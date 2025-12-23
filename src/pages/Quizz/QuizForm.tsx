@@ -3,14 +3,15 @@
 import { Activity, ArrowLeft, Loader2, Plus, Save, Settings, Trash2, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'react-toastify'
-import quizzApi from '../../api/quizz.api'
-import { CreateSkinTestRequest, EditQuizForm, ResultConfig } from '../../types/quizz.type'
+
+import { CreateSkinTestRequest, ResultConfig } from '../../types/quizz.type'
 import { SkinType } from '../../types/skin.type'
 import http from '../../utils/http'
+import { quizzApi } from '../../api/quizz.api'
 
 const SKIN_TYPES_URL = 'skin-types'
 
-const QuizForm = ({ initialData, onClose }: { initialData?: any | null; onClose: () => void }) => {
+const QuizForm = ({ onClose }: { onClose: () => void }) => {
   const [skinTypes, setSkinTypes] = useState<SkinType[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -21,7 +22,7 @@ const QuizForm = ({ initialData, onClose }: { initialData?: any | null; onClose:
     resultConfigs: []
   })
 
-  // 1. Tính toán cận trên và cận dưới dựa trên tổng điểm các câu hỏi
+  // 1. Tính toán cận trên và cận dưới dựa trên tổng điểm các câu hỏi hiện có
   const sectionRanges = useMemo(() => {
     const ranges: Record<string, { min: number; max: number }> = {
       OD: { min: 0, max: 0 },
@@ -50,13 +51,15 @@ const QuizForm = ({ initialData, onClose }: { initialData?: any | null; onClose:
         const val = config[fieldKey] as string
         const errorKey = `${idx}-${fieldKey}`
         if (!val) return
+
         const parts = val.split('-')
         const minVal = parseInt(parts[0])
         const maxVal = parseInt(parts[1])
+
         if (parts.length !== 2 || isNaN(minVal) || isNaN(maxVal)) {
-          newErrors[errorKey] = 'Format: min-max (e.g. 10-20)'
+          newErrors[errorKey] = 'Format: min-max'
         } else if (minVal < sectionRanges[s].min || maxVal > sectionRanges[s].max) {
-          newErrors[errorKey] = `Out of range (${sectionRanges[s].min}-${sectionRanges[s].max})`
+          newErrors[errorKey] = `Out of range!`
         }
       })
     })
@@ -64,7 +67,7 @@ const QuizForm = ({ initialData, onClose }: { initialData?: any | null; onClose:
     return Object.keys(newErrors).length === 0
   }
 
-  // Khởi tạo dữ liệu
+  // Khởi tạo dữ liệu Skin Types
   useEffect(() => {
     const initData = async () => {
       setIsLoading(true)
@@ -73,49 +76,28 @@ const QuizForm = ({ initialData, onClose }: { initialData?: any | null; onClose:
         const types = resSkinTypes.data.data
         setSkinTypes(types)
 
-        if (initialData?.id) {
-          const resDetail = await quizzApi.getQuizzsById(initialData.id)
-          const d = resDetail.data.data
-          setFormData({
-            name: d.name,
-            isDefault: d.isDefault,
-            questions: d.questions.map((q: any) => ({
-              id: q.id, // Giữ ID nếu là Edit
-              value: q.value,
-              section: q.section,
-              options: q.options.map((o: any) => ({ id: o.id, value: o.value, score: o.score }))
-            })),
-            resultConfigs: d.results.map((r: any) => ({
-              skinTypeId: r.skinTypeId,
-              odScore: r.odScore,
-              srScore: r.srScore,
-              pnScore: r.pnScore,
-              wtScore: r.wtScore
-            }))
-          })
-        } else {
-          setFormData((prev) => ({
-            ...prev,
-            resultConfigs: types.map((t) => ({
-              skinTypeId: t.id,
-              odScore: '',
-              srScore: '',
-              pnScore: '',
-              wtScore: ''
-            }))
+        // Khởi tạo config trống cho mỗi loại da
+        setFormData((prev) => ({
+          ...prev,
+          resultConfigs: types.map((t) => ({
+            skinTypeId: t.id,
+            odScore: '',
+            srScore: '',
+            pnScore: '',
+            wtScore: ''
           }))
-        }
+        }))
       } catch (error) {
-        console.error('Error initializing form', error)
+        console.error('Error fetching skin types', error)
+        toast.error('Could not load skin types')
       } finally {
         setIsLoading(false)
       }
     }
     initData()
-  }, [initialData?.id])
+  }, [])
 
-  // --- CÁC HÀM XỬ LÝ STATE BẤT BIẾN (FIX LỖI NHÂN BẢN) ---
-
+  // --- XỬ LÝ STATE ---
   const updateQuestionField = (qIdx: number, field: string, value: any) => {
     setFormData((prev) => ({
       ...prev,
@@ -170,18 +152,12 @@ const QuizForm = ({ initialData, onClose }: { initialData?: any | null; onClose:
 
   const handleSave = async () => {
     if (!formData.name.trim()) return toast.error('Please enter a quiz name')
+    if (formData.questions.length === 0) return toast.error('Please add at least one question')
     if (!validateAllConfigs(formData.resultConfigs)) return
 
     try {
-      if (initialData?.id) {
-        console.log('EditFormQuizz', formData)
-
-        const data = await quizzApi.editQuizzs(initialData.id, formData as EditQuizForm)
-        toast.success(data?.data.message || 'Update quiz successfully')
-      } else {
-        const data = await quizzApi.createQuizzs(formData as CreateSkinTestRequest)
-        toast.success(data?.data.message || 'Create quiz successfully')
-      }
+      const data = await quizzApi.createQuizzs(formData as CreateSkinTestRequest)
+      toast.success(data?.data.message || 'Create quiz successfully')
       onClose()
     } catch (error) {
       toast.error('Error saving quiz data')
@@ -197,7 +173,7 @@ const QuizForm = ({ initialData, onClose }: { initialData?: any | null; onClose:
 
   return (
     <div className='space-y-6 pb-20 dark:bg-slate-950 transition-colors'>
-      {/* Sticky Header */}
+      {/* Header */}
       <div className='sticky top-4 z-20 flex flex-wrap items-center gap-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-4 rounded-3xl border dark:border-slate-800 shadow-lg'>
         <button
           onClick={onClose}
@@ -207,7 +183,7 @@ const QuizForm = ({ initialData, onClose }: { initialData?: any | null; onClose:
         </button>
         <input
           className='flex-1 min-w-[200px] bg-transparent text-xl font-bold outline-none dark:text-white placeholder:text-slate-400'
-          placeholder='Quiz Name...'
+          placeholder='Enter New Quiz Name...'
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
         />
@@ -225,7 +201,7 @@ const QuizForm = ({ initialData, onClose }: { initialData?: any | null; onClose:
             onClick={handleSave}
             className='bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-md active:scale-95 transition-all'
           >
-            <Save size={18} /> <span className='hidden sm:inline'>Save Quiz</span>
+            <Save size={18} /> <span>Create Quiz</span>
           </button>
         </div>
       </div>
@@ -234,36 +210,53 @@ const QuizForm = ({ initialData, onClose }: { initialData?: any | null; onClose:
         {/* Score Config Panel */}
         <div className='lg:col-span-4 space-y-6 order-2 lg:order-1'>
           <div className='bg-white dark:bg-slate-900 p-6 rounded-3xl border dark:border-slate-800 shadow-sm'>
-            <div className='flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-bold mb-6'>
+            <div className='flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-bold mb-2'>
               <Settings size={18} /> <span>SCORE CONFIG</span>
             </div>
+
+            {/* Thông báo tổng quan về cận điểm */}
+            {/* <p className='text-[11px] text-slate-500 mb-6 bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded-xl border border-indigo-100 dark:border-indigo-800'>
+              💡 Scores are based on your questions. Enter ranges like <b>10-20</b>.
+            </p> */}
+
             <div className='space-y-4 max-h-[700px] overflow-y-auto pr-2 custom-scrollbar'>
               {formData.resultConfigs.map((config, idx) => (
                 <div
                   key={config.skinTypeId}
                   className='p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border dark:border-slate-700'
                 >
-                  <p className='text-[10px] font-black text-slate-400 dark:text-slate-500 mb-3 uppercase tracking-widest'>
+                  <p className='text-[10px] font-black text-indigo-500 mb-3 uppercase tracking-widest'>
                     {skinTypes.find((t) => t.id === config.skinTypeId)?.name}
                   </p>
                   <div className='grid grid-cols-2 gap-3'>
-                    {['odScore', 'srScore', 'pnScore', 'wtScore'].map((field) => (
-                      <div key={field}>
-                        <label className='flex justify-between text-[9px] font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase'>
-                          <span>{field.replace('Score', '').toUpperCase()}</span>
-                        </label>
-                        <input
-                          className={`w-full text-xs p-2.5 rounded-xl border outline-none dark:bg-slate-900 dark:text-slate-100 ${errors[`${idx}-${field}`] ? 'border-red-500 bg-red-50 dark:bg-red-900/20' : 'border-slate-200 dark:border-slate-700 focus:ring-2 ring-indigo-500/20'}`}
-                          value={(config as any)[field]}
-                          onChange={(e) => {
-                            const nc = [...formData.resultConfigs]
-                            nc[idx] = { ...nc[idx], [field]: e.target.value }
-                            setFormData({ ...formData, resultConfigs: nc })
-                            validateAllConfigs(nc)
-                          }}
-                        />
-                      </div>
-                    ))}
+                    {['odScore', 'srScore', 'pnScore', 'wtScore'].map((field) => {
+                      const sectionKey = field.replace('Score', '').toUpperCase()
+                      const range = sectionRanges[sectionKey]
+                      return (
+                        <div key={field}>
+                          <label className='flex justify-between text-[9px] font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase'>
+                            <span>{sectionKey}</span>
+                            <span className='text-indigo-400'>
+                              ({range.min}-{range.max})
+                            </span>
+                          </label>
+                          <input
+                            placeholder={`${range.min}-${range.max}`}
+                            className={`w-full text-xs p-2.5 rounded-xl border outline-none dark:bg-slate-900 dark:text-slate-100 ${errors[`${idx}-${field}`] ? 'border-red-500 bg-red-50 dark:bg-red-900/20' : 'border-slate-200 dark:border-slate-700 focus:ring-2 ring-indigo-500/20'}`}
+                            value={(config as any)[field]}
+                            onChange={(e) => {
+                              const nc = [...formData.resultConfigs]
+                              nc[idx] = { ...nc[idx], [field]: e.target.value }
+                              setFormData({ ...formData, resultConfigs: nc })
+                              validateAllConfigs(nc)
+                            }}
+                          />
+                          {errors[`${idx}-${field}`] && (
+                            <p className='text-[8px] text-red-500 mt-1 font-bold'>{errors[`${idx}-${field}`]}</p>
+                          )}
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
               ))}
@@ -271,7 +264,7 @@ const QuizForm = ({ initialData, onClose }: { initialData?: any | null; onClose:
           </div>
         </div>
 
-        {/* Right: Question Editor */}
+        {/* Question Editor */}
         <div className='lg:col-span-8 space-y-6 order-1 lg:order-2 '>
           <div className='flex justify-between items-center bg-white p-5 rounded-2xl border dark:bg-slate-900/80 dark:text-gray-300 border-slate-200 shadow-sm'>
             <div className='flex items-center gap-2 font-bold'>
@@ -293,7 +286,7 @@ const QuizForm = ({ initialData, onClose }: { initialData?: any | null; onClose:
               >
                 <button
                   onClick={() => removeQuestion(qIdx)}
-                  className='absolute top-6 right-6 p-2 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100'
+                  className='absolute top-6 right-6 p-2 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity'
                 >
                   <Trash2 size={18} />
                 </button>
@@ -308,7 +301,7 @@ const QuizForm = ({ initialData, onClose }: { initialData?: any | null; onClose:
                         Question Text
                       </label>
                       <input
-                        className='w-full text-lg font-bold border-b-2 border-slate-100 focus:border-indigo-500 outline-none pb-2 transition-all'
+                        className='w-full text-lg font-bold border-b-2 border-slate-100 focus:border-indigo-500 outline-none pb-2 transition-all bg-transparent'
                         placeholder='Type your question...'
                         value={q.value}
                         onChange={(e) => updateQuestionField(qIdx, 'value', e.target.value)}
@@ -318,7 +311,7 @@ const QuizForm = ({ initialData, onClose }: { initialData?: any | null; onClose:
                     <div className='space-y-1.5'>
                       <label className='text-[10px] font-bold text-slate-400 uppercase'>Section Category</label>
                       <select
-                        className='block text-xs font-bold p-2.5 dark:bg-slate-900/80 dark:text-gray-300 rounded-xl bg-slate-100 border-none outline-none'
+                        className='block text-xs font-bold p-2.5 dark:bg-slate-800 dark:text-gray-300 rounded-xl bg-slate-100 border-none outline-none'
                         value={q.section}
                         onChange={(e) => updateQuestionField(qIdx, 'section', e.target.value)}
                       >
@@ -329,31 +322,29 @@ const QuizForm = ({ initialData, onClose }: { initialData?: any | null; onClose:
                       </select>
                     </div>
 
-                    {/* Answer Options Section */}
-                    <div className='space-y-3 pt-4 border-t border-slate-50'>
+                    <div className='space-y-3 pt-4 border-t border-slate-50 dark:border-slate-800'>
                       <label className='text-[10px] font-bold text-slate-400 uppercase'>Answer Options</label>
                       <div className='grid grid-cols-1 gap-3'>
                         {q.options.map((opt, oIdx) => (
-                          <div key={oIdx} className='flex gap-3 items-center group/opt'>
+                          <div key={oIdx} className='flex gap-3 items-center'>
                             <input
-                              className='flex-1 text-sm p-3 bg-slate-50 dark:bg-slate-900/80 dark:text-gray-300 rounded-2xl border border-transparent focus:bg-white focus:border-indigo-200 outline-none'
+                              className='flex-1 text-sm p-3 bg-slate-50 dark:bg-slate-800 dark:text-gray-300 rounded-2xl border border-transparent focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-200 outline-none'
                               placeholder='Option text...'
                               value={opt.value}
                               onChange={(e) => updateOptionField(qIdx, oIdx, 'value', e.target.value)}
                             />
-                            <div className='flex items-center gap-2 bg-slate-100 px-4 rounded-2xl border dark:bg-slate-900/80 dark:text-gray-300'>
+                            <div className='flex items-center gap-2 bg-slate-100 dark:bg-slate-800 px-4 rounded-2xl border dark:border-slate-700'>
                               <span className='text-[9px] font-black text-slate-400'>SCORE</span>
                               <input
                                 type='number'
-                                className='w-12 bg-transparent dark:bg-slate-900/80 dark:text-gray-300 font-bold text-sm py-3 outline-none text-center'
+                                className='w-12 bg-transparent font-bold text-sm py-3 outline-none text-center dark:text-white'
                                 value={opt.score}
                                 onChange={(e) => updateOptionField(qIdx, oIdx, 'score', Number(e.target.value))}
                               />
                             </div>
                             <button
-                              type='button'
                               onClick={() => removeOption(qIdx, oIdx)}
-                              className='p-2 text-slate-300 hover:text-red-500'
+                              className='p-2 text-slate-300 hover:text-red-500 transition-colors'
                             >
                               <X size={14} />
                             </button>

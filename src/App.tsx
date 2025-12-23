@@ -154,7 +154,7 @@ export default function App() {
         <Route element={<ProtectedRoute allowedRoles={[Role.BEAUTY_ADVISOR, Role.ADMIN]} userRole={userRole} />}>
           <Route element={<AppLayout />}>
             <Route path={AppPath.BASIC_TABLES_TEMPLATE} element={<BasicTablesTemplate />} />
-            <Route path={`${AppPath.PROFILE}/:id`} element={<UserProfiles />} />
+            {/* <Route path={`${AppPath.PROFILE}/:id`} element={<UserProfiles />} /> */}
 
             <Route path={`${AppPath.MEDICAL_RECORD}/:id`} element={<TreatmentPlanTab />} />
             <Route path={`${AppPath.REPORT}/:id`} element={<MedicalReportList />} />

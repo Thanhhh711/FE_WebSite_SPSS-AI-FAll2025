@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Activity, ArrowLeft, ChevronRight, ClipboardList, Clock, Loader2, Target, Hash } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import quizzApi from '../../api/quizz.api'
+
 import { SkinTestDetail } from '../../types/quizz.type'
+import { quizzApi } from '../../api/quizz.api'
 
 const QuizDetail = ({ id, onClose }: { id: string; onClose: () => void }) => {
   const [quiz, setQuiz] = useState<SkinTestDetail | null>(null)
@@ -101,7 +102,7 @@ const QuizDetail = ({ id, onClose }: { id: string; onClose: () => void }) => {
                   </div>
 
                   <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 ml-0 md:ml-14'>
-                    {q.options.map((opt) => (
+                    {q.quizOptions.map((opt) => (
                       <div
                         key={opt.id}
                         className='flex justify-between items-center p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800 group-hover:bg-white dark:group-hover:bg-slate-800 transition-colors'
