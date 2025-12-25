@@ -1,8 +1,14 @@
 import GridShape from '../../components/common/GridShape'
 import { Link } from 'react-router'
 import PageMeta from '../../components/common/PageMeta'
+import { useAppContext } from '../../context/AuthContext'
+import { roleRedirectPath } from '../../constants/Roles'
 
 export default function NotFound() {
+  const { profile } = useAppContext()
+
+  // Lấy đường dẫn dựa trên role, nếu chưa login thì mặc định về trang chủ hoặc login
+  const homePath = profile ? roleRedirectPath(profile.role) : '/'
   return (
     <>
       <PageMeta
@@ -22,7 +28,7 @@ export default function NotFound() {
           </p>
 
           <Link
-            to='/'
+            to={homePath}
             className='inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-5 py-3.5 text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200'
           >
             Back to Home Page

@@ -8,6 +8,7 @@ import QuizForm from './QuizForm'
 import QuizDetail from './QuizDetail'
 import { quizzApi } from '../../api/quizz.api'
 import EditQuizForm from './EditQuizForm'
+import ConfirmModal from '../../components/CalendarModelDetail/ConfirmModal'
 
 export const SkinTestManager = () => {
   const [quizzes, setQuizzes] = useState<SkinTest[]>([])
@@ -16,6 +17,9 @@ export const SkinTestManager = () => {
   const [editingQuiz, setEditingQuiz] = useState<SkinTest | null>(null)
   const [loading, setLoading] = useState(false)
   const [viewingId, setViewingId] = useState<string | null>(null)
+
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false)
+  const [quizToDelete, setQuizToDelete] = useState<string | null>(null)
   const fetchQuizzes = async () => {
     setLoading(true)
     try {
@@ -32,10 +36,23 @@ export const SkinTestManager = () => {
     fetchQuizzes()
   }, [])
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa bài test này?')) {
-      await quizzApi.deleteQuizzs(id)
-      fetchQuizzes()
+  // Hàm mở Modal xác nhận
+  const openConfirmDelete = (id: string) => {
+    setQuizToDelete(id)
+    setIsConfirmOpen(true)
+  }
+
+  // Hàm thực hiện xóa sau khi đã xác nhận
+  const handleConfirmDelete = async () => {
+    if (!quizToDelete) return
+
+    try {
+      await quizzApi.deleteQuizzs(quizToDelete)
+      fetchQuizzes() // Tải lại danh sách
+      setIsConfirmOpen(false)
+      setQuizToDelete(null)
+    } catch (error) {
+      console.error('Lỗi khi xóa:', error)
     }
   }
 
@@ -177,7 +194,7 @@ export const SkinTestManager = () => {
                         <Edit3 size={18} />
                       </button>
                       <button
-                        onClick={() => handleDelete(quiz.id)}
+                        onClick={() => openConfirmDelete(quiz.id)} // Gọi hàm mở Modal thay vì handleDelete cũ
                         className='p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors'
                       >
                         <Trash2 size={18} />
@@ -190,6 +207,17 @@ export const SkinTestManager = () => {
           </div>
         )}
       </div>
+
+      <ConfirmModal
+        isOpen={isConfirmOpen}
+        onClose={() => {
+          setIsConfirmOpen(false)
+          setQuizToDelete(null)
+        }}
+        onConfirm={handleConfirmDelete}
+        title='Delete Quiz'
+        message='Are you sure you want to delete this quiz? This action cannot be undone.'
+      />
     </div>
   )
 }

@@ -65,6 +65,28 @@ export default function MedicalReportDetail({ isOpen, onClose, reportId }: Medic
   const statusInfo = REPORT_STATUS_MAP[report?.status ?? 0] || REPORT_STATUS_MAP[0]
   const staffEmailElement = <StaffEmailLookup staffId={report?.staffId || ''} />
 
+  // const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false)
+  // const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0)
+
+  // // Hàm mở Modal khi click vào một ảnh bất kỳ
+  // const handleOpenPhoto = (index: number) => {
+  //   setCurrentPhotoIndex(index)
+  //   setIsPhotoModalOpen(true)
+  // }
+
+  // // Hàm chuyển sang ảnh trước đó
+  // const handlePrevPhoto = () => {
+  //   setCurrentPhotoIndex((prev) => (prev > 0 ? prev - 1 : prev))
+  // }
+
+  // // Hàm chuyển sang ảnh tiếp theo
+  // const handleNextPhoto = () => {
+  //   setCurrentPhotoIndex((prev) => (prev < (report.reportImages?.length || 0) - 1 ? prev + 1 : prev))
+  // }
+
+  // // Lấy URL của ảnh hiện tại dựa trên Index
+  // const currentPhotoUrl = report.reportImages?.[currentPhotoIndex]?.imageUrl || ''
+
   if (isLoading) {
     return (
       <ModalRegistration isOpen={isOpen} onClose={onClose} title='Loading Report...'>

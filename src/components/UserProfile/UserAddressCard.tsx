@@ -29,7 +29,7 @@ export default function UserAddressCard({ user, isEditing, isMyProfile, isAdmin,
   if (!user || (!isMyProfile && !isAdmin)) return null
 
   return (
-    <div className='p-6 border border-gray-200 rounded-2xl bg-white dark:bg-gray-800/10'>
+    <div className='p-6 border border-gray-200 rounded-2xl bg-white dark:bg-gray-800/10 dark:text-white'>
       <h4 className='text-lg font-semibold mb-6 text-gray-800 dark:text-white'>Address Information</h4>
       <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
         <div>

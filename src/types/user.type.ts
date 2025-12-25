@@ -69,7 +69,7 @@ export interface User {
   education: string | null
   training: string | null
   clinic: string | null
-  specialties: string[]
+  specialties: number[]
 }
 
 export interface UserForm {
@@ -119,13 +119,35 @@ export interface SystermUserForm {
   firstName: string
   emailAddress: string
   phoneNumber: string
-  doB: string // ISO date string (VD: 2025-12-22T06:57:40.610Z)
+  doB: string | null // ISO date string (VD: 2025-12-22T06:57:40.610Z)
   avatarUrl: string
 
   certificate: string
-  specialties: string[]
+  specialties: number[]
   yearsExperience: number
   education: string
   training: string
   clinic: string
+}
+
+export interface ResetPasswordRequest {
+  email: string
+  otp: string
+  newPassword: string
+}
+
+export enum SpecialtyType {
+  // Chuyên môn điều trị chính
+  GeneralDermatology = 1, // Da liễu tổng quát
+  CosmeticDermatology = 2, // Da liễu thẩm mỹ
+  DermatologicSurgery = 3, // Ngoại khoa da liễu
+  PediatricDermatology = 4, // Da liễu nhi khoa
+
+  // Các mảng chuyên sâu
+  LaserTreatment = 5, // Trị liệu Laser công nghệ cao
+  InjectablesSpecialist = 6, // Chuyên gia tiêm thẩm mỹ (Botox/Filler)
+  SkinRehabilitation = 7, // Phục hồi da
+  DermatoOncology = 8, // Ung thư da
+  HairAndScalpCare = 9, // Tóc & da đầu
+  AllergyAndImmunology = 10 // Dị ứng & miễn dịch da
 }

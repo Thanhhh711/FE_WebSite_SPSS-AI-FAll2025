@@ -327,7 +327,7 @@ export default function TreatmentSessionModal({
     : 'Select Room'
 
   return (
-    <div className='fixed inset-0 z-50 overflow-y-auto bg-gray-900 bg-opacity-75 flex items-center justify-center p-4'>
+    <div className='fixed inset-0 z-[999] flex items-center justify-center bg-black/40 backdrop-blur-sm transition-opacity duration-300'>
       <div className='bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col'>
         {/* Modal Header */}
         <div className='p-6 border-b border-gray-200'>

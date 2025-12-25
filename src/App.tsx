@@ -9,7 +9,6 @@ import { lazy, useContext } from 'react'
 import { AppContext } from './context/AuthContext'
 import AppLayout from './layout/AppLayout'
 import SignIn from './pages/AuthPages/SignIn'
-import SignUp from './pages/AuthPages/SignUp'
 import Calendar from './pages/Calendar'
 import BarChart from './pages/Charts/BarChart'
 import LineChart from './pages/Charts/LineChart'
@@ -24,6 +23,10 @@ import WorkSchedulesManagement from './components/tables/BasicTables/BasicTableS
 import ManageBlogs from './pages/Blogs/ManageBlogs'
 import AppoimentDashboard from './pages/Dashboard/AppoimentDashboard'
 
+import ChangePasswordPage from './pages/AuthPages/ChangePassword'
+import ForgotPasswordModal from './pages/AuthPages/ForgotPasswordModal'
+import TreatmentPlanTab from './pages/Patients/PatientDetail'
+import { SkinTestManager } from './pages/Quizz/ManagerQuizz'
 import MedicalReportList from './pages/Report/MedicalReportList'
 import BasicTablesBrand from './pages/Tables/BasicTablesBrand'
 import BasicTablesCategory from './pages/Tables/BasicTablesCategory'
@@ -48,8 +51,6 @@ import Images from './pages/UiElements/Images'
 import Videos from './pages/UiElements/Videos'
 import UserProfiles from './pages/UserProfiles'
 import { ErrorBoundary } from './utils/ErrorBoundary'
-import TreatmentPlanTab from './pages/Patients/PatientDetail'
-import { SkinTestManager } from './pages/Quizz/ManagerQuizz'
 
 const BasicTables = lazy(() => import('./pages/Tables/BasicTables'))
 
@@ -66,13 +67,15 @@ export default function App() {
       <Routes>
         {/* === AUTH ROUTES === */}
         <Route index path={AppPath.SIGN_IN} element={<SignIn />} />
-        <Route path={AppPath.SIGN_UP} element={<SignUp />} />
+        {/* <Route path={AppPath.SIGN_UP} element={<SignUp />} /> */}
+        <Route path={AppPath.CHANGE_PASSWORD} element={<ChangePasswordPage />} />
+        <Route path={AppPath.RESET_PASSWORD} element={<ForgotPasswordModal />} />
 
         {/* === ADMIN ROUTES === */}
         <Route element={<ProtectedRoute allowedRoles={[Role.ADMIN]} userRole={userRole} />}>
           <Route element={<AppLayout />}>
-            <Route index path={AppPath.HOME} element={<Home />} />
-            <Route index path={AppPath.DASHBOARD_APPOINTMENTS} element={<AppoimentDashboard />} />
+            {/* <Route index path={AppPath.HOME} element={<Home />} /> */}
+            {/* <Route index path={AppPath.DASHBOARD_APPOINTMENTS} element={<AppoimentDashboard />} /> */}
             {/* Tables */}
             <Route path={AppPath.BASIC_TABLES} element={<BasicTables />} />
 
@@ -153,6 +156,7 @@ export default function App() {
         {/* === Only BEAUTY_ADVISOR AND ADMIN === */}
         <Route element={<ProtectedRoute allowedRoles={[Role.BEAUTY_ADVISOR, Role.ADMIN]} userRole={userRole} />}>
           <Route element={<AppLayout />}>
+            <Route index path={AppPath.DASHBOARD_APPOINTMENTS} element={<AppoimentDashboard />} />
             <Route path={AppPath.BASIC_TABLES_TEMPLATE} element={<BasicTablesTemplate />} />
             {/* <Route path={`${AppPath.PROFILE}/:id`} element={<UserProfiles />} /> */}
 
@@ -164,6 +168,7 @@ export default function App() {
         {/* === PRODUCT STAFF AND ADMIN ROUTES === */}
         <Route element={<ProtectedRoute allowedRoles={[Role.ADMIN, Role.STORE_STAFF]} userRole={userRole} />}>
           <Route element={<AppLayout />}>
+            <Route index path={AppPath.HOME} element={<Home />} />
             <Route path={AppPath.BASIC_TABLES_ORDER} element={<BasicTablesOrder />} />
             <Route path={AppPath.BASIC_TABLES_PRODUCT} element={<BasicTablesProduct />} />
             <Route path={AppPath.BASIC_TABLES_CATEGORY} element={<BasicTablesCategory />} />

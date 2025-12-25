@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Box, Edit3, Eye, GitBranch, Layers, Plus, Search, Trash2 } from 'lucide-react'
+import { Box, Edit3, Eye, GitBranch, Plus, Search, Trash2 } from 'lucide-react'
 import { Fragment, useMemo, useState } from 'react'
 import { toast } from 'react-toastify'
 import { categoryApi } from '../../../api/category.api'
@@ -174,7 +174,7 @@ export default function BasicTableCategories() {
                 <TableRow className='border-none'>
                   <TableCell
                     isHeader
-                    className='px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]'
+                    className='px-8 py-6 text-[10px] text-left font-black text-slate-400 uppercase tracking-[0.2em]'
                   >
                     Category Name
                   </TableCell>
@@ -219,9 +219,6 @@ export default function BasicTableCategories() {
                     >
                       <TableCell className='px-8 py-7'>
                         <div className='flex items-center gap-4'>
-                          <div className='w-11 h-11 bg-slate-100 dark:bg-gray-800 rounded-xl flex items-center justify-center text-indigo-500 group-hover:scale-110 transition-transform'>
-                            <Layers size={20} />
-                          </div>
                           <span className='font-black text-slate-800 dark:text-white text-base tracking-tight'>
                             {category.categoryName}
                           </span>

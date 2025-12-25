@@ -1,15 +1,19 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // MedicalReportModal.tsx
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { toast } from 'react-toastify'
 // Assumed imports: types, API, and Modal UI component
+import { Activity, Calendar, ClipboardList, Clock, FileText, ImageIcon, Plus, X } from 'lucide-react'
+import { appointmentApi } from '../../api/appointment.api'
 import { reportApi } from '../../api/report.api'
-import { MedicalReportForm, ReportStatus } from '../../types/report.type'
+import { useAppContext } from '../../context/AuthContext'
+import { MedicalReportForm, MedicalReportRequestEditForm, ReportStatus } from '../../types/report.type'
 import { uploadFile } from '../../utils/supabaseStorage'
 import ModalRegistration from '../RegistrationModal/ModalRegistration'
-import { appointmentApi } from '../../api/appointment.api'
-import { Activity, Calendar, ClipboardList, Clock, FileText, ImageIcon, Plus, X } from 'lucide-react'
+import ModalPhotoViewer from '../ProductModal/ModalPhotoViewer'
+import ConfirmModal from '../CalendarModelDetail/ConfirmModal'
 
 // ----------------------------------------------------------------------
 // ✅ SUPABASE UPLOAD UTILITIES (Giả định import từ file khác, ví dụ: '../../utils/supabaseUtils')
@@ -47,6 +51,7 @@ interface MedicalReportModalProps {
   onClose: () => void
   customerId: string
   appoimentId: string
+  reportId?: string | null
 }
 
 const initialFormState: MedicalReportForm = {
@@ -67,28 +72,74 @@ const initialFormState: MedicalReportForm = {
 const baseInputClass =
   'w-full rounded-lg border border-gray-300 p-2.5 text-sm focus:border-indigo-500 focus:ring-indigo-500'
 
-export default function MedicalReportModal({ isOpen, onClose, customerId, appoimentId }: MedicalReportModalProps) {
+export default function MedicalReportModal({
+  isOpen,
+  onClose,
+  customerId,
+  appoimentId,
+  reportId
+}: MedicalReportModalProps) {
   console.log('customerId', customerId)
+
+  const { profile } = useAppContext()
 
   const [form, setForm] = useState<MedicalReportForm>({
     ...initialFormState,
     customerId
   })
 
+  // Thêm vào trong component MedicalReportModal
+  const [viewerConfig, setViewerConfig] = useState<{
+    isOpen: boolean
+    currentIndex: number
+    allImages: string[]
+  }>({
+    isOpen: false,
+    currentIndex: 0,
+    allImages: []
+  })
+
+  const [isDeleteReportModalOpen, setIsDeleteReportModalOpen] = useState(false)
+
+  // Hàm mở viewer
+  const openViewer = (index: number, images: string[]) => {
+    setViewerConfig({
+      isOpen: true,
+      currentIndex: index,
+      allImages: images
+    })
+  }
+
   console.log('appoimentsData', appoimentId)
+
+  const isEditMode = !!reportId
+
+  const { data: existingReport } = useQuery({
+    queryKey: ['medicalReport', reportId],
+    queryFn: () => reportApi.getReportByID(reportId as string), // Giả định bạn có hàm getById
+    enabled: isOpen && isEditMode && !!reportId
+  })
+
+  console.log('existingReport', existingReport?.data.data)
 
   const queryClient = useQueryClient()
 
   useEffect(() => {
     if (isOpen) {
-      setForm({
-        ...initialFormState,
-        customerId,
-        reportDate: formatDateToYYYYMMDD(new Date())
-      })
-      setSelectedFiles([]) // Reset files on open
+      if (isEditMode && existingReport?.data.data) {
+        const r = existingReport.data.data
+        setForm({
+          ...r,
+          reportDate: formatDateToYYYYMMDD(new Date(r.reportDate)),
+          nextFollowUpDate: r.nextFollowUpDate ? formatDateToYYYYMMDD(new Date(r.nextFollowUpDate)) : '',
+          imageUrls: r.reportImages?.map((img: any) => img.imageUrl) || [] // Map lại URL ảnh cũ
+        })
+      } else {
+        setForm({ ...initialFormState, customerId })
+      }
+      setSelectedFiles([])
     }
-  }, [isOpen, customerId])
+  }, [isOpen, isEditMode, existingReport, customerId])
 
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [isUploading, setIsUploading] = useState(false) // ✅ State mới cho trạng thái upload
@@ -120,6 +171,27 @@ export default function MedicalReportModal({ isOpen, onClose, customerId, appoim
       toast.error('Failed to create medical report. Please try again.')
       console.error(error)
     }
+  })
+
+  const updateReportMutation = useMutation({
+    mutationFn: (body: MedicalReportRequestEditForm) => reportApi.editReport(reportId as string, body),
+    onSuccess: () => {
+      // toast.success('Medical report updated successfully!')
+      queryClient.invalidateQueries({ queryKey: ['medicalReports', customerId] })
+      onClose()
+    },
+    onError: (error: any) => toast.error(error.message || 'Update failed')
+  })
+
+  // Mutation Xóa
+  const deleteReportMutation = useMutation({
+    mutationFn: () => reportApi.deleteReport(reportId as string),
+    onSuccess: () => {
+      toast.success('Report deleted successfully!')
+      queryClient.invalidateQueries({ queryKey: ['medicalReports', customerId] })
+      onClose()
+    },
+    onError: (error: any) => toast.error(error.message || 'Delete failed')
   })
 
   const { data: appoimentsData } = useQuery({
@@ -184,14 +256,31 @@ export default function MedicalReportModal({ isOpen, onClose, customerId, appoim
 
     console.log('finalForm', finalForm)
 
-    createReportMutation.mutate(finalForm, {
-      onSuccess: (data) => {
-        toast.success(data.data.message)
-      },
-      onError: (error) => {
-        toast.error(error.message)
-      }
-    })
+    if (isEditMode) {
+      updateReportMutation.mutate(
+        {
+          ...finalForm,
+          staffId: profile?.userId as string
+        },
+        {
+          onSuccess: (data) => {
+            toast.success(data.data.message)
+          },
+          onError: (error: any) => {
+            toast.error(error.message)
+          }
+        }
+      )
+    } else {
+      createReportMutation.mutate(finalForm, {
+        onSuccess: (data) => {
+          toast.success(data.data.message)
+        },
+        onError: (error) => {
+          toast.error(error.message)
+        }
+      })
+    }
   }
 
   // Hiển thị trạng thái Loading tổng thể
@@ -352,32 +441,60 @@ export default function MedicalReportModal({ isOpen, onClose, customerId, appoim
             </section>
 
             {/* SECTION 4: IMAGING - Multi upload preview */}
+            {/* SECTION 4: IMAGING */}
             <section className='space-y-4'>
               <div className='flex items-center gap-2 text-indigo-600 border-b border-indigo-50 pb-2'>
                 <ImageIcon size={18} />
                 <h4 className='font-bold uppercase text-[11px] tracking-widest'>Medical Imaging</h4>
               </div>
+
               <div className='grid grid-cols-2 md:grid-cols-5 gap-4'>
+                {/* Nút Add Media */}
                 <label className='aspect-square flex flex-col items-center justify-center border-2 border-dashed border-gray-200 rounded-2xl hover:bg-indigo-50 hover:border-indigo-300 transition-all cursor-pointer group'>
                   <Plus size={24} className='text-indigo-600 group-hover:scale-110 transition-transform' />
                   <span className='text-[10px] font-bold text-gray-400 mt-2 uppercase'>Add Media</span>
                   <input type='file' multiple onChange={handleFileChange} accept='image/*' className='hidden' />
                 </label>
-                {selectedFiles.map((file, index) => (
-                  <div
-                    key={index}
-                    className='relative aspect-square rounded-2xl overflow-hidden border border-gray-100 shadow-sm'
-                  >
-                    <img src={URL.createObjectURL(file)} alt='preview' className='w-full h-full object-cover' />
-                    <button
-                      type='button'
-                      onClick={() => setSelectedFiles((prev) => prev.filter((_, i) => i !== index))}
-                      className='absolute top-1.5 right-1.5 p-1 bg-white/90 text-red-500 rounded-full shadow-sm hover:bg-red-50'
+
+                {/* Logic hiển thị ảnh */}
+                {(() => {
+                  // Gộp URL cũ và URL tạm thời của file mới vào 1 mảng để viewer sử dụng
+                  const newFilesUrls = selectedFiles.map((file) => URL.createObjectURL(file))
+                  const allDisplayImages = [...form.imageUrls, ...newFilesUrls]
+
+                  return allDisplayImages.map((url, index) => (
+                    <div
+                      key={index}
+                      className='relative aspect-square rounded-2xl overflow-hidden border border-gray-100 shadow-sm group'
                     >
-                      <X size={14} />
-                    </button>
-                  </div>
-                ))}
+                      <img
+                        src={url}
+                        alt='report'
+                        className='w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform'
+                        onClick={() => openViewer(index, allDisplayImages)}
+                      />
+                      <button
+                        type='button'
+                        onClick={() => {
+                          if (index < form.imageUrls.length) {
+                            // Xóa ảnh cũ trong form state
+                            setForm((prev) => ({
+                              ...prev,
+                              imageUrls: prev.imageUrls.filter((_, i) => i !== index)
+                            }))
+                          } else {
+                            // Xóa file mới trong selectedFiles state
+                            const fileIndex = index - form.imageUrls.length
+                            setSelectedFiles((prev) => prev.filter((_, i) => i !== fileIndex))
+                          }
+                        }}
+                        className='absolute top-1.5 right-1.5 p-1 bg-white/90 text-red-500 rounded-full shadow-sm hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity'
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ))
+                })()}
               </div>
             </section>
 
@@ -420,24 +537,67 @@ export default function MedicalReportModal({ isOpen, onClose, customerId, appoim
           </div>
 
           {/* FOOTER */}
-          <div className='sticky bottom-0 bg-white/90 backdrop-blur-sm border-t border-gray-100 p-6 flex items-center justify-end gap-4 z-20'>
-            <button
-              onClick={onClose}
-              type='button'
-              className='text-sm font-bold text-gray-400 hover:text-gray-600 uppercase tracking-wider'
-            >
-              Cancel
-            </button>
-            <button
-              type='submit'
-              className='px-10 py-3 text-sm font-bold text-white bg-indigo-600 rounded-full hover:bg-indigo-700 shadow-lg active:scale-95 transition-all disabled:bg-gray-300'
-              disabled={isProcessing}
-            >
-              {isUploading ? 'Uploading...' : 'Create Report'}
-            </button>
+          <div className='sticky bottom-0 bg-white/90 backdrop-blur-sm border-t border-gray-100 p-6 flex items-center justify-between z-20'>
+            <div>
+              {isEditMode && (
+                <button
+                  type='button'
+                  onClick={() => setIsDeleteReportModalOpen(true)} // Mở modal thay vì alert
+                  className='text-sm font-bold text-red-500 hover:text-red-700 transition-colors flex items-center gap-1'
+                  disabled={isProcessing}
+                >
+                  <X size={16} /> Delete Report
+                </button>
+              )}
+            </div>
+
+            <div className='flex items-center gap-4'>
+              <button onClick={onClose} type='button' className='text-sm font-bold text-gray-400'>
+                Cancel
+              </button>
+              <button
+                type='submit'
+                className={`px-10 py-3 text-sm font-bold text-white rounded-full shadow-lg transition-all ${
+                  isEditMode ? 'bg-amber-500 hover:bg-amber-600' : 'bg-indigo-600 hover:bg-indigo-700'
+                }`}
+                disabled={isProcessing}
+              >
+                {isUploading ? 'Uploading...' : isEditMode ? 'Save Changes' : 'Create Report'}
+              </button>
+            </div>
           </div>
         </div>
       </form>
+
+      {/* Thêm vào ngay trước thẻ đóng </form> hoặc sau </form> */}
+      <ModalPhotoViewer
+        isOpen={viewerConfig.isOpen}
+        imageUrl={viewerConfig.allImages[viewerConfig.currentIndex]}
+        onClose={() => setViewerConfig((prev) => ({ ...prev, isOpen: false }))}
+        onPrev={
+          viewerConfig.currentIndex > 0
+            ? () => setViewerConfig((prev) => ({ ...prev, currentIndex: prev.currentIndex - 1 }))
+            : undefined
+        }
+        onNext={
+          viewerConfig.currentIndex < viewerConfig.allImages.length - 1
+            ? () => setViewerConfig((prev) => ({ ...prev, currentIndex: prev.currentIndex + 1 }))
+            : undefined
+        }
+      />
+
+      {/* Modal xác nhận xóa Report */}
+      <ConfirmModal
+        isOpen={isDeleteReportModalOpen}
+        title='Confirm Report Deletion'
+        message='Are you sure you want to delete this medical report? This action cannot be undone.'
+        is={false} // Show red button (Delete) instead of blue (Confirm)
+        onClose={() => setIsDeleteReportModalOpen(false)}
+        onConfirm={() => {
+          deleteReportMutation.mutate()
+          setIsDeleteReportModalOpen(false) // Close modal after confirmation
+        }}
+      />
     </ModalRegistration>
   )
 }

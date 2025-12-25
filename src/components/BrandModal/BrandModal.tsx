@@ -245,7 +245,7 @@ export default function BrandModal({ isOpen, onClose, brand, onSave, isViewMode,
               value={form.description}
               onChange={handleChange}
               placeholder='Detailed description of the brand.'
-              className={`dark:text-gray-300y ${baseInputClass} resize-none ${validationErrors.description ? 'border-red-500' : ''}`}
+              className={`dark:text-gray-300  ${baseInputClass} resize-none ${validationErrors.description ? 'border-red-500' : ''}`}
               readOnly={isReadOnly}
             />
             {renderError('description')}

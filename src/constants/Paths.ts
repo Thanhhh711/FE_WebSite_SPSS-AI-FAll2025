@@ -5,6 +5,8 @@ export enum AppPath {
   // ==== AUTH ====
   SIGN_IN = '/signin',
   SIGN_UP = '/signup',
+  CHANGE_PASSWORD = '/change_password',
+  RESET_PASSWORD = '/reset_password',
 
   // ==== DASHBOARD / HOME ====
   HOME = '/',

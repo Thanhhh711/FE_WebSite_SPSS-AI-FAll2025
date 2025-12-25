@@ -9,7 +9,7 @@ export const reportApi = {
   getSessionsById: (reportId: string) => http.get<SuccessResponse<Report>>(`${REPORT}/${reportId}`),
 
   getSessionsByCustomerId: (customerId: string) =>
-    http.get<SuccessResponse<Report>>(`${REPORT}/customer/${customerId}`),
+    http.get<SuccessResponse<Report[]>>(`${REPORT}/customer/${customerId}`),
 
   getSessionsByAppoinmentId: (appoimentId: string) =>
     http.get<SuccessResponse<Report>>(`${REPORT}/appointment/${appoimentId}`),
@@ -19,5 +19,7 @@ export const reportApi = {
   editReport: (id: string, body: MedicalReportRequestEditForm) =>
     http.put<SuccessResponse<Report>>(`${REPORT}/${id}`, body),
 
-  deleteReport: (id: string) => http.delete<SuccessResponse<Report>>(`${REPORT}/${id}`)
+  deleteReport: (id: string) => http.delete<SuccessResponse<Report>>(`${REPORT}/${id}`),
+
+  getReportByID: (id: string) => http.get<SuccessResponse<Report>>(`${REPORT}/${id}`)
 }

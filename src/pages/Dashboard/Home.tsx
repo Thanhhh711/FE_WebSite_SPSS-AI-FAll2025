@@ -57,8 +57,26 @@ export default function Dashboard() {
   }, [fetchData, selectedYear, selectedMonth])
 
   // Transform Business Metrics into chart-friendly format
-  const combinedChartData = useMemo(() => {
-    return [
+  const financialData = useMemo(
+    () => [
+      {
+        name: 'Total Revenue',
+        value: businessData.totalRevenue.currentValue,
+        color: '#ffc658',
+        isCurrency: true
+      },
+      {
+        name: 'Total Profit',
+        value: businessData.totalProfit.currentValue,
+        color: '#f97316',
+        isCurrency: true
+      }
+    ],
+    [businessData]
+  )
+
+  const operationalData = useMemo(
+    () => [
       {
         name: 'Total Products',
         value: businessData.totalProducts.currentValue,
@@ -70,21 +88,10 @@ export default function Dashboard() {
         value: businessData.totalOrders.currentValue,
         color: '#82ca9d',
         isCurrency: false
-      },
-      {
-        name: 'Total Revenue',
-        value: businessData.totalRevenue.currentValue,
-        color: '#ffc658',
-        isCurrency: true
-      },
-      {
-        name: 'Total Profit',
-        value: businessData.totalProfit.currentValue,
-        color: '#ffc658',
-        isCurrency: true
       }
-    ]
-  }, [businessData])
+    ],
+    [businessData]
+  )
 
   // Time filter handlers
   const handleTimeChange = (type: 'year' | 'month', value: number) => {
@@ -187,8 +194,19 @@ export default function Dashboard() {
         </div>
 
         {/* CHART SECTION */}
-        <div className='mt-8'>
-          <CombinedBarChart data={combinedChartData} selectedMonth={selectedMonth} selectedYear={selectedYear} />
+        <div className='mt-8 space-y-8'>
+          <CombinedBarChart
+            title='Financial Performance'
+            data={financialData}
+            selectedMonth={selectedMonth}
+            selectedYear={selectedYear}
+          />
+          <CombinedBarChart
+            title='Operational Metrics'
+            data={operationalData}
+            selectedMonth={selectedMonth}
+            selectedYear={selectedYear}
+          />
         </div>
       </>
     )

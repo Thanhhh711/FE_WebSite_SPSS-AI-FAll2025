@@ -1,5 +1,6 @@
 import { Role } from '../constants/Roles'
 import { AuthResponse } from '../types/auth.type'
+import { ResetPasswordRequest } from '../types/user.type'
 import http from '../utils/http'
 
 export const URL_LOGIN = 'authentication/login'
@@ -7,6 +8,8 @@ export const URL_REGISTER_PRIVILEGED = 'authentication/register-privileged'
 export const URL_LOGOUT = 'authentication/logout'
 export const URL_CHANGE_PASSWORD = 'authentication/change-password'
 export const URL_VERIFY_LOGIN = 'authentication/verify-login-otp'
+export const URL_FORGOT_PASSWORD = 'authentication/forgot-password'
+export const URL_REREST_PASSWORD = 'authentication/reset-password'
 // export const URL_REFRESH_TOKEN = 'refresh-access-token'
 
 const authApi = {
@@ -24,6 +27,9 @@ const authApi = {
 
   changePassWord: (body: { currentPassword: string; newPassword: string }) =>
     http.post<AuthResponse>(URL_CHANGE_PASSWORD, body),
+
+  forgotPassword: (body: { email: string }) => http.post<AuthResponse>(URL_FORGOT_PASSWORD, body),
+  resetPassword: (body: ResetPasswordRequest) => http.post<AuthResponse>(URL_REREST_PASSWORD, body),
 
   //   getProfile: async (params: { name: string }) => await http.get<GetProfileResponse>(URL_GET_USER + params.name)
 

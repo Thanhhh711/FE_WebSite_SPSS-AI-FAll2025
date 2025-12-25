@@ -16,6 +16,8 @@ const userApi = {
 
   editUser: (id: string, body: SystermUserForm) => http.put<SuccessResponse<User>>(`${USERS}/${id}`, body),
 
+  editStatusExpert: (id: string, body: string) => http.put<SuccessResponse<User>>(`${USERS}/${id}`, body),
+
   // deleteUser: (userId: string) => http.delete(`${USERS}/${userId}`, body)
   lockUser: (userId: string, banReason: string) =>
     http.patch<UserByIdResponse>(`${USERS}/${userId}/lock`, { banReason }),

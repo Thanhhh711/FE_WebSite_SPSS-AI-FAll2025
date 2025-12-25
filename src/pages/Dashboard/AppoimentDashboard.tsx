@@ -10,6 +10,8 @@ import { appointmentApi } from '../../api/appointment.api'
 import userApi from '../../api/user.api'
 import { User } from '../../types/user.type'
 import { formatDateToDDMMYYYY, formatVND } from '../../utils/validForm'
+import { Role } from '../../constants/Roles'
+import { useAppContext } from '../../context/AuthContext'
 
 // Định nghĩa lại ChartDataItem interface
 interface ChartDataItem {
@@ -97,11 +99,19 @@ const ErrorMessage: React.FC<{ message: string | null; theme: any }> = ({ messag
 export default function AppoimentDashboard() {
   const isDark = useGlobalThemeDetector() // Phát hiện theme toàn cục
 
+  const { profile } = useAppContext() // Lấy thông tin user hiện tại
+
+  // Xác định các quyền
+  const isAdmin = profile?.role === Role.ADMIN
+  const isBeautyAdvisor = profile?.role === Role.BEAUTY_ADVISOR
+
   const [loading, setLoading] = useState(false)
   const [advisorLoading, setAdvisorLoading] = useState(false)
   const [data, setData] = useState<AppointmentDashboard | null>(null)
   const [advisors, setAdvisors] = useState<User[]>([])
-  const [selectedAdvisor, setSelectedAdvisor] = useState<string | undefined>(undefined)
+  const [selectedAdvisor, setSelectedAdvisor] = useState<string | undefined>(
+    profile?.role === Role.BEAUTY_ADVISOR ? profile.userId : undefined
+  )
   const [dateRange, setDateRange] = useState<[Moment, Moment]>([moment().subtract(7, 'days'), moment()])
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
@@ -133,6 +143,12 @@ export default function AppoimentDashboard() {
     setErrorMessage(msg)
     setTimeout(() => setErrorMessage(null), 5000) // Tự động ẩn sau 5s
   }
+
+  useEffect(() => {
+    if (isBeautyAdvisor) {
+      setSelectedAdvisor(profile?.userId)
+    }
+  }, [profile, isBeautyAdvisor])
 
   // Hàm gọi API Lấy danh sách Beauty Advisor (Giữ nguyên)
   useEffect(() => {
@@ -260,34 +276,48 @@ export default function AppoimentDashboard() {
             <span style={{ marginRight: '8px', fontWeight: 'bold', color: themeColors.textSecondary }}>
               Beauty Advisor:
             </span>
-            <select
-              style={{
-                padding: '8px 12px',
-                borderRadius: '4px',
-                border: `1px solid ${themeColors.inputBorder}`,
-                width: '250px',
-                backgroundColor: themeColors.inputBackground,
-                color: themeColors.textPrimary
-              }}
-              value={selectedAdvisor || ''}
-              onChange={(e) => setSelectedAdvisor(e.target.value || undefined)}
-              disabled={advisorLoading}
-            >
-              {/* Thẻ option cần có nền động để phù hợp Dark Mode */}
-              <option style={{ backgroundColor: themeColors.cardBackground, color: themeColors.textPrimary }} value=''>
-                Select or leave empty for all
-              </option>
-              {advisors.map((advisor) => (
-                <option
-                  style={{ backgroundColor: themeColors.cardBackground, color: themeColors.textPrimary }}
-                  key={advisor.userId}
-                  value={advisor.userId}
-                >
-                  {`${advisor.lastName || ''} ${advisor.firstName || ''} (${advisor.userName})`}
-                </option>
-              ))}
-            </select>
-            {advisorLoading && <span style={{ marginLeft: '10px', color: themeColors.textSecondary }}>Loading...</span>}
+            {isAdmin ? (
+              // Nếu là Admin: Cho phép chọn thoải mái
+              <select
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: '4px',
+                  border: `1px solid ${themeColors.inputBorder}`,
+                  width: '250px',
+                  backgroundColor: themeColors.inputBackground,
+                  color: themeColors.textPrimary
+                }}
+                value={selectedAdvisor || ''}
+                onChange={(e) => setSelectedAdvisor(e.target.value || undefined)}
+                disabled={advisorLoading}
+              >
+                <option value=''>All Advisors</option>
+                {advisors.map((advisor) => (
+                  <option key={advisor.userId} value={advisor.userId}>
+                    {`${advisor.lastName || ''} ${advisor.firstName || ''} (${advisor.userName})`}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              // Nếu là Beauty Advisor: Chỉ hiển thị tên chính mình (Read-only)
+              <div
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: '4px',
+                  backgroundColor: isDark ? '#374151' : '#f5f5f5',
+                  border: `1px solid ${themeColors.border}`,
+                  minWidth: '200px',
+                  fontSize: '14px',
+                  fontWeight: 'bold'
+                }}
+              >
+                {profile?.emailAddress} (You)
+              </div>
+            )}
+
+            {isAdmin && advisorLoading && (
+              <span style={{ marginLeft: '10px', color: themeColors.textSecondary }}>Loading...</span>
+            )}
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center' }}>

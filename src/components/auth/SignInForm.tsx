@@ -15,6 +15,7 @@ import Input from '../form/input/InputField'
 import Button from '../ui/button/Button'
 import logo from '/public/images/logo/SPSS.png'
 import TwoFactorModal from '../../pages/AuthPages/VerifySignIn'
+import { AppPath } from '../../constants/Paths'
 
 interface FormData {
   usernameOrEmail: string
@@ -180,7 +181,7 @@ export default function SignInForm() {
                 </Label>
               </div>
               <Link
-                to='/reset-password'
+                to={AppPath.RESET_PASSWORD}
                 className='text-sm font-semibold text-pink-600 hover:text-pink-700 dark:text-pink-400 dark:hover:text-pink-300 transition-colors'
               >
                 Forgot password?

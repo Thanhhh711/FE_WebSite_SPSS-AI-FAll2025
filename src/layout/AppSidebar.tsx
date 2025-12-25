@@ -22,10 +22,15 @@ const navItems: NavItem[] = [
     icon: <GridIcon />,
     name: 'Dashboard',
     subItems: [
-      { name: 'Ecommerce', path: AppPath.HOME, pro: false, allowedRoles: [Role.ADMIN] },
-      { name: 'Appoiments', path: AppPath.DASHBOARD_APPOINTMENTS, pro: false, allowedRoles: [Role.ADMIN] }
-    ],
-    allowedRoles: [Role.ADMIN]
+      { name: 'Ecommerce', path: AppPath.HOME, pro: false, allowedRoles: [Role.ADMIN, Role.STORE_STAFF] },
+      {
+        name: 'Appoiments',
+        path: AppPath.DASHBOARD_APPOINTMENTS,
+        pro: false,
+        allowedRoles: [Role.ADMIN, Role.BEAUTY_ADVISOR]
+      }
+    ]
+    // allowedRoles: [Role.ADMIN]
   },
   {
     icon: <CalenderIcon />,
