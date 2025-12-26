@@ -90,7 +90,7 @@ export interface Product {
   texture: string
   skinIssues: string
   videoUrl: string | null
-
+  rating: number | null
   brandId: string
   productCategoryId: string
   keyActiveIngredients: string

@@ -4,7 +4,7 @@ import { Link, useLocation } from 'react-router'
 
 // Assume these icons are imported from an icon library
 import { AppPath } from '../constants/Paths'
-import { Role } from '../constants/Roles'
+import { Role, roleRedirectPath } from '../constants/Roles'
 import { AppContext } from '../context/AuthContext'
 import { useSidebar } from '../context/SidebarContext'
 import { CalenderIcon, ChevronDownIcon, DocsIcon, GridIcon, HorizontaLDots, TableIcon } from '../icons'
@@ -138,6 +138,13 @@ const navItems: NavItem[] = [
 
         path: AppPath.BASIC_TABLES_SHEDULES,
         allowedRoles: [Role.SCHEDULE_MANAGER, Role.ADMIN, Role.BEAUTY_ADVISOR]
+      },
+
+      {
+        name: 'Holidays',
+
+        path: AppPath.BASIC_TABLES_HOLIDAY,
+        allowedRoles: [Role.SCHEDULE_MANAGER, Role.ADMIN]
       }
     ]
     // allowedRoles: [Role.ADMIN]
@@ -192,6 +199,9 @@ const AppSidebar: React.FC = () => {
         ...item,
         subItems: item.subItems?.filter((sub) => !sub.allowedRoles || sub.allowedRoles.includes(userRole))
       }))
+
+  // Lấy đường dẫn dựa trên role, nếu chưa login thì mặc định về trang chủ hoặc login
+  const homePath = profile ? roleRedirectPath(profile.role) : '/'
 
   // useEffect(() => {
   //   let submenuMatched = false
@@ -350,7 +360,7 @@ const AppSidebar: React.FC = () => {
       onMouseLeave={() => setIsHovered(false)}
     >
       <div className={`py-8 flex ${!isExpanded && !isHovered ? 'lg:justify-center' : 'justify-start'}`}>
-        <Link to='/' className='flex items-center gap-3'>
+        <Link to={homePath} className='flex items-center gap-3'>
           {isExpanded || isHovered || isMobileOpen ? (
             <>
               <div className='flex items-center gap-3'>

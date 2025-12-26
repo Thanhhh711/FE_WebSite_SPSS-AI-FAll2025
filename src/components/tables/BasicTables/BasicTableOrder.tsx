@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { Search, ShoppingBag, Clock, CheckCircle, XCircle } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { orderApi } from '../../../api/order.api'
@@ -8,6 +8,9 @@ import { formatDateToDDMMYYYY, formatVND } from '../../../utils/validForm'
 import { OrderDetailModal } from '../../order/OrderDetailModal'
 import Pagination from '../../pagination/Pagination'
 import { AvatarStaff } from '../../../utils/StaffEmailLookup'
+import { toast } from 'react-toastify'
+import { useAppContext } from '../../../context/AuthContext'
+import { Role } from '../../../constants/Roles'
 
 const ITEMS_PER_PAGE = 10
 
@@ -40,15 +43,32 @@ const getOrderStatusStyles = (status: OrderStatus) => {
 }
 
 export default function BasicTableOrder() {
+  const { profile } = useAppContext()
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState<OrderStatus | 'all'>('all')
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedOrder, setSelectedOrder] = useState<OrderResponse | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
 
-  const { data: orders = [] } = useQuery({
+  const { data: orders = [], refetch } = useQuery({
     queryKey: ['orders'],
     queryFn: () => orderApi.getOrders().then((res) => res.data.data as OrderResponse[])
+  })
+
+  const completeOrderMutation = useMutation({
+    mutationFn: (orderId: string) =>
+      orderApi.changeStatusOrder(orderId, {
+        status: OrderStatus.Completed,
+        cancelReasonId: null
+      }),
+    onSuccess: (data) => {
+      toast.success(data.data.message)
+      // Refresh lại danh sách đơn hàng
+      refetch()
+    },
+    onError: () => {
+      toast.error('Có lỗi xảy ra khi cập nhật đơn hàng')
+    }
   })
 
   // Order Stats Logic
@@ -57,7 +77,8 @@ export default function BasicTableOrder() {
       total: orders.length,
       pending: orders.filter((o) => o.status === OrderStatus.Pending).length,
       confirmed: orders.filter((o) => o.status === OrderStatus.Confirmed).length,
-      cancelled: orders.filter((o) => o.status === OrderStatus.Cancelled).length
+      cancelled: orders.filter((o) => o.status === OrderStatus.Cancelled).length,
+      completed: orders.filter((o) => o.status === OrderStatus.Completed).length
     }),
     [orders]
   )
@@ -93,8 +114,15 @@ export default function BasicTableOrder() {
         <OrderStat
           title='Confirmed'
           count={orderStats.confirmed}
-          color='bg-emerald-50 text-emerald-600'
+          color='bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400'
           icon={<CheckCircle size={20} />}
+        />
+
+        <OrderStat
+          title='Completed'
+          count={orderStats.completed}
+          color='bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400'
+          icon={<ShoppingBag size={20} />} // Hoặc dùng <ClipboardCheck size={20} />
         />
         <OrderStat
           title='Cancelled'
@@ -169,15 +197,33 @@ export default function BasicTableOrder() {
                 </td>
                 <td className='py-5 px-8 font-black text-gray-900 dark:text-white'>{formatVND(order.orderTotal)}</td>
                 <td className='py-5 px-8 text-right'>
-                  <button
-                    onClick={() => {
-                      setSelectedOrder(order)
-                      setIsModalOpen(true)
-                    }}
-                    className='px-4 py-2 text-[10px] font-black text-brand-600 hover:bg-brand-50 rounded-xl uppercase tracking-widest transition-all'
-                  >
-                    Details
-                  </button>
+                  <div className='flex items-center justify-end gap-2'>
+                    {/* NÚT COMPLETED: Chỉ hiện khi đơn hàng là Confirmed hoặc Processing */}
+                    {profile?.role === Role.STORE_STAFF &&
+                      (order.status === OrderStatus.Confirmed || order.status === OrderStatus.Processing) && (
+                        <button
+                          onClick={() => {
+                            if (window.confirm('Xác nhận hoàn thành đơn hàng này?')) {
+                              completeOrderMutation.mutate(order.id)
+                            }
+                          }}
+                          disabled={completeOrderMutation.isPending}
+                          className='px-3 py-2 text-[10px] font-black text-white bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-300 rounded-xl uppercase tracking-widest transition-all shadow-sm'
+                        >
+                          {completeOrderMutation.isPending ? '...' : 'Complete'}
+                        </button>
+                      )}
+
+                    <button
+                      onClick={() => {
+                        setSelectedOrder(order)
+                        setIsModalOpen(true)
+                      }}
+                      className='px-4 py-2 text-[10px] font-black text-brand-600 hover:bg-brand-50 rounded-xl uppercase tracking-widest transition-all'
+                    >
+                      Details
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}

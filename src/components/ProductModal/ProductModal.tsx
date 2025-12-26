@@ -360,6 +360,7 @@ export default function ProductModal({ isOpen, onClose, product, onSave, isViewM
     <ModalRegistration isOpen={isOpen} onClose={onClose} title={title}>
       <div className='max-h-[70vh] overflow-y-auto custom-scrollbar'>
         <ProductFormFields
+          product={product ? product : null}
           form={form}
           handleChange={handleChange}
           handleImageFileChange={handleImageFileChange}

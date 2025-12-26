@@ -51,6 +51,7 @@ import Images from './pages/UiElements/Images'
 import Videos from './pages/UiElements/Videos'
 import UserProfiles from './pages/UserProfiles'
 import { ErrorBoundary } from './utils/ErrorBoundary'
+import BasicTableHoliday from './components/tables/BasicTables/BasicTableHoliday'
 
 const BasicTables = lazy(() => import('./pages/Tables/BasicTables'))
 
@@ -136,6 +137,8 @@ export default function App() {
         {/* === Scheular Manage and Admin === */}
         <Route element={<ProtectedRoute allowedRoles={[Role.SCHEDULE_MANAGER, Role.ADMIN]} userRole={userRole} />}>
           <Route element={<AppLayout />}>
+            <Route path={AppPath.BASIC_TABLES_HOLIDAY} element={<BasicTableHoliday />} />
+
             <Route path={AppPath.BASIC_TABLES_SLOT} element={<BasicTablesSlot />} />
             <Route path={AppPath.BASIC_TABLES_TEMPLATE} element={<BasicTablesTemplate />} />
             <Route path={AppPath.BASIC_TABLES_ROOM} element={<BasicTablesRoom />} />

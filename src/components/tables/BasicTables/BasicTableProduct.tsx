@@ -394,7 +394,7 @@ export default function BasicTableProduct({ onViewReviews }: BasicTableProductPr
                   </TableCell>
 
                   <TableCell className='px-4 font-black dark:text-white'>
-                    {product.price.toLocaleString('vi-VN')} <span className='text-[9px] text-gray-400'>VND</span>
+                    {product.marketPrice.toLocaleString('vi-VN')} <span className='text-[9px] text-gray-400'>VND</span>
                   </TableCell>
 
                   <TableCell className='px-4 text-center'>

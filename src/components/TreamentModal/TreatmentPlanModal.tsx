@@ -3,13 +3,13 @@ import { CreateTreatmentPlanDto, TreatmentPlan, TreatmentPlanStatus } from '../.
 import TreatmentSessionList from './TreamentSessionList'
 
 const PLAN_STATUS_NAMES: { [key: number]: string } = {
-  [TreatmentPlanStatus.Draft]: 'Nháp',
-  [TreatmentPlanStatus.PendingApproval]: 'Chờ Phê duyệt',
-  [TreatmentPlanStatus.Approved]: 'Đã Phê duyệt',
-  [TreatmentPlanStatus.InProgress]: 'Đang điều trị',
-  [TreatmentPlanStatus.Completed]: 'Hoàn thành',
-  [TreatmentPlanStatus.Cancelled]: 'Bị hủy',
-  [TreatmentPlanStatus.OnHold]: 'Tạm ngưng'
+  // [TreatmentPlanStatus.Draft]: 'Nháp',
+  // [TreatmentPlanStatus.PendingApproval]: 'Chờ Phê duyệt',
+  [TreatmentPlanStatus.Approved]: 'Approved',
+  // [TreatmentPlanStatus.InProgress]: 'Đang điều trị',
+  // [TreatmentPlanStatus.Completed]: 'Hoàn thành',
+  [TreatmentPlanStatus.Cancelled]: 'Cancelled'
+  // [TreatmentPlanStatus.OnHold]: 'Tạm ngưng'
 }
 
 const initialFormState: CreateTreatmentPlanDto = {

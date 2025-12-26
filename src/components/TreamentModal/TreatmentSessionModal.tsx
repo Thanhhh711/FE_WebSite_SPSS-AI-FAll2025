@@ -9,14 +9,15 @@ import { Role } from '../../constants/Roles'
 import { useAppContext } from '../../context/AuthContext'
 import { ScheduleWork } from '../../types/appoinment.type'
 import { TreatmentSession, TreatmentSessionForm, TreatmentSessionStatus } from '../../types/treatmentSession.type'
+import { treatmentPlanApi } from '../../api/treatmentPlan.api'
 
 const SESSION_STATUS_NAMES: { [key: number]: string } = {
   [TreatmentSessionStatus.Scheduled]: 'Scheduled',
-  [TreatmentSessionStatus.InProgress]: 'In Progress',
-  [TreatmentSessionStatus.Completed]: 'Completed',
-  [TreatmentSessionStatus.Cancelled]: 'Cancelled',
-  [TreatmentSessionStatus.Rescheduled]: 'Rescheduled',
-  [TreatmentSessionStatus.NoShow]: 'No Show'
+  // [TreatmentSessionStatus.InProgress]: 'In Progress',
+  [TreatmentSessionStatus.Completed]: 'Completed'
+  // [TreatmentSessionStatus.Cancelled]: 'Cancelled',
+  // [TreatmentSessionStatus.Rescheduled]: 'Rescheduled'
+  // [TreatmentSessionStatus.NoShow]: 'No Show'
 }
 
 export const initialFormState: TreatmentSessionForm = {
@@ -73,6 +74,24 @@ export default function TreatmentSessionModal({
     queryFn: roomApi.getRooms,
     staleTime: 1000 * 60 * 5
   })
+
+  // Thêm API vào treatmentPlanApi nếu chưa có (theo file bạn cung cấp ở trên)
+  // const { data: planResponse } = useQuery({
+  //   queryKey: ['treatmentPlan', planId],
+  //   queryFn: () => treatmentPlanApi.getTreateMentsById(planId),
+  //   enabled: !!planId
+  // })
+
+  const { data: planDetail } = useQuery({
+    queryKey: ['treatmentPlan', planId],
+    queryFn: () => treatmentPlanApi.getTreateMentsById(planId),
+    enabled: !!planId && isOpen // Chỉ chạy khi mở modal
+  })
+
+  const planData = planDetail?.data.data
+  const planMinDate = planData?.startDate?.substring(0, 10)
+  const planMaxDate = planData?.endDate?.substring(0, 10)
+
   const isAdmin = profile?.role === Role.ADMIN
   const userId = profile?.userId
 
@@ -294,6 +313,14 @@ export default function TreatmentSessionModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
+    // Kiểm tra ràng buộc ngày
+    if (planMinDate && planMaxDate) {
+      if (form.sessionDate < planMinDate || form.sessionDate > planMaxDate) {
+        toast.error(`Ngày phiên điều trị phải nằm trong khoảng từ ${planMinDate} đến ${planMaxDate}`)
+        return
+      }
+    }
+
     if (!form.roomId || !form.sessionDate || !form.startTime || !form.endTime) {
       toast.error('Vui lòng chọn lịch làm việc hoặc điền đầy đủ thông tin ngày/giờ/phòng.')
       return
@@ -303,8 +330,6 @@ export default function TreatmentSessionModal({
       ...form,
       planId: planId
     }
-
-    console.log('body', body)
 
     saveMutation.mutate(body)
   }
@@ -396,9 +421,11 @@ export default function TreatmentSessionModal({
                 onChange={handleChange}
                 className={baseInputClass}
                 required
-                // Trong Edit Mode, giữ nguyên nếu không muốn cho phép thay đổi lịch
-                readOnly={isEditing}
-                disabled={isEditing}
+                // Ràng buộc ngày ở đây
+                min={planMinDate}
+                max={planMaxDate}
+                // readOnly={isEditing}
+                // disabled={isEditing}
               />
             </div>
             {/* Start Time */}
@@ -411,8 +438,8 @@ export default function TreatmentSessionModal({
                 onChange={handleChange}
                 className={baseInputClass}
                 required
-                readOnly={isFieldsLocked || isEditing}
-                disabled={isFieldsLocked || isEditing}
+                readOnly={isFieldsLocked}
+                disabled={isFieldsLocked}
               />
             </div>
             {/* End Time */}
@@ -425,8 +452,10 @@ export default function TreatmentSessionModal({
                 onChange={handleChange}
                 className={baseInputClass}
                 required
-                readOnly={isFieldsLocked || isEditing}
-                disabled={isFieldsLocked || isEditing}
+                readOnly={isFieldsLocked}
+                disabled={isFieldsLocked}
+                // readOnly={isFieldsLocked || isEditing}
+                // disabled={isFieldsLocked || isEditing}
               />
             </div>
             {/* Room */}
@@ -439,7 +468,8 @@ export default function TreatmentSessionModal({
                 className={baseInputClass}
                 required
                 // Khóa trường Room nếu: (1) Ở chế độ Create và đã có Schedule được chọn, HOẶC (2) Ở chế độ Edit
-                disabled={isFieldsLocked || isEditing}
+                disabled={isFieldsLocked}
+                // disabled={isFieldsLocked || isEditing}
               >
                 {/* Trong chế độ Edit, vì trường Room bị disabled, 
                   chúng ta sẽ chỉ hiển thị option của Room hiện tại để đảm bảo giá trị đúng 

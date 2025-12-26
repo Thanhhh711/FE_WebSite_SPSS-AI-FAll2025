@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState } from 'react'
 import { categoryApi } from '../../api/category.api'
-import { ProductForm, ProductImage, ProductImageForm, ProductStatusEnum } from '../../types/product.type'
+import { Product, ProductForm, ProductImage, ProductImageForm, ProductStatusEnum } from '../../types/product.type'
 import { formatVND } from '../../utils/validForm'
 import ModalPhotoViewer from './ModalPhotoViewer'
+import { Star } from 'lucide-react'
 
 export type NewUploadedImage = ProductImageForm & { imagePath: string }
 export interface ProductFormState extends Omit<ProductForm, 'images' | 'expiryDate'> {
@@ -38,6 +39,7 @@ interface ProductFormFieldsProps {
   variationOptions: SelectOption[]
   brandOptions: SelectOption[]
   categoryOptions: SelectOption[]
+  product: Product | null
 }
 
 const baseInputClass =
@@ -180,7 +182,8 @@ export default function ProductFormFields({
   skinTypesOptions,
   variationOptions,
   brandOptions,
-  categoryOptions
+  categoryOptions,
+  product
 }: ProductFormFieldsProps) {
   // --- VIEW MODE --- (Hiển thị tĩnh, không có controls)
 
@@ -250,28 +253,53 @@ export default function ProductFormFields({
     fetchCategory()
   }, [form.productCategoryId])
 
-  // const handleSubmit = () => {
-  //   const isValid = validateForm()
-
-  //   if (isValid) {
-  //     // Nếu dữ liệu hợp lệ, mới gọi hàm onSave từ props truyền vào
-  //     onSave(form)
-  //     setErrors({}) // Xóa lỗi cũ
-  //   } else {
-  //     toast.error('Vui lòng kiểm tra lại các thông tin còn thiếu!')
-  //   }
-  // }
-
   if (isViewMode) {
     return (
       <div className='space-y-6'>
         <div className='p-6 bg-white dark:bg-gray-800   shadow-xl rounded-xl'>
-          <h3 className='text-2xl font-extrabold text-brand-700 dark:text-brand-300 mb-4 border-b pb-3'>
-            {form.name}
-            {form.englishName && (
-              <span className='text-lg font-light text-gray-500 dark:text-gray-400 ml-2'>({form.englishName})</span>
-            )}
-          </h3>
+          <div className='space-y-4 p-4'>
+            {/* Header Section */}
+            <div className='relative border-b border-gray-100 dark:border-gray-800 pb-4'>
+              <div className='flex flex-wrap items-baseline gap-2'>
+                <h3 className='text-3xl font-black bg-gradient-to-r from-brand-700 to-brand-500 bg-clip-text text-transparent dark:from-brand-300 dark:to-brand-100 tracking-tight'>
+                  {form.name}
+                </h3>
+
+                {form.englishName && (
+                  <span className='px-2 py-0.5 text-xs font-medium uppercase tracking-wider text-gray-500 bg-gray-100 dark:bg-gray-800 dark:text-gray-400 rounded-full border border-gray-200 dark:border-gray-700'>
+                    {form.englishName}
+                  </span>
+                )}
+              </div>
+              {/* Một đường line trang trí nhỏ bên dưới */}
+              <div className='absolute bottom-0 left-0 h-1 w-12 bg-brand-500 rounded-full -mb-[2px]'></div>
+            </div>
+
+            {/* Rating Section */}
+            <div className='flex items-center gap-3'>
+              <div className='flex items-center px-2 py-1 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-100 dark:border-yellow-800/50'>
+                <div className='flex items-center gap-0.5'>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star
+                      key={star}
+                      size={18}
+                      className={`transition-all duration-300 ${
+                        star <= (product?.rating ?? 0)
+                          ? 'fill-yellow-400 text-yellow-400 drop-shadow-[0_0_3px_rgba(250,204,21,0.5)]'
+                          : 'text-gray-300 dark:text-gray-700'
+                      }`}
+                    />
+                  ))}
+                </div>
+                <span className='ml-2 text-sm font-black text-yellow-700 dark:text-yellow-500'>
+                  {product?.rating?.toFixed(1) ?? '0.0'}
+                </span>
+              </div>
+
+              <span className='text-xs font-medium text-gray-400 dark:text-gray-500 italic'>(User reviews)</span>
+            </div>
+          </div>
+
           <dl className='grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6 text-gray-700 dark:text-gray-300 border-t border-gray-200 dark:border-gray-700 pt-4'>
             <div className='flex items-center'>
               <dt className='flex items-center font-semibold text-gray-500 dark:text-gray-400 w-1/3 min-w-[120px]'>
@@ -334,8 +362,7 @@ export default function ProductFormFields({
                 Selling Price:
               </dt>
               <dd className='text-3xl font-extrabold text-red-600 dark:text-red-400 ml-2 animate-pulse'>
-                {form.price.toLocaleString('vi-VN')}
-                <span className='text-base font-semibold ml-1'>VND</span>
+                {form.marketPrice > 0 ? `${form.marketPrice.toLocaleString('vi-VN')} VND` : 'N/A'}
               </dd>
             </div>
 
@@ -357,10 +384,11 @@ export default function ProductFormFields({
                     d='M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z'
                   ></path>
                 </svg>
-                Market Price:
+                Import Price:
               </dt>
-              <dd className='text-sm line-through text-gray-400 dark:text-gray-500 ml-2'>
-                {form.marketPrice > 0 ? `${form.marketPrice.toLocaleString('vi-VN')} VND` : 'N/A'}
+              <dd className='text-sm   text-gray-400 dark:text-gray-500 ml-2'>
+                {form.price.toLocaleString('vi-VN')}
+                <span className='text-base font-semibold ml-1'>VND</span>
               </dd>
             </div>
 

@@ -19,6 +19,7 @@ export enum AppPath {
   BASIC_TABLES_BRAND = '/basic-tables-brand',
   BASIC_TABLES_REGISTRATION = '/basic-tables-registration',
   BASIC_TABLES_SLOT = '/basic-tables-slot',
+  BASIC_TABLES_HOLIDAY = '/basic_tables_holiday',
   BASIC_TABLES_ROOM = '/basic-tables-room',
   BASIC_TABLES_TEMPLATE = '/basic-tables-template',
   BASIC_TABLES_SHEDULES = '/basic-tables-schedules',
