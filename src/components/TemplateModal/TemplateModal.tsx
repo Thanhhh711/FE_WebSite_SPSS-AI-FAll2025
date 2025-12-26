@@ -114,13 +114,13 @@ export default function TemplateModal({ isOpen, onClose, template, onSave, isVie
             <div className='grid grid-cols-2 gap-4'>
               <div className='p-3 bg-gray-50 dark:bg-gray-800 rounded-xl'>
                 <p className='text-[10px] font-bold text-gray-400 uppercase tracking-widest'>Duration</p>
-                <p className='text-sm font-semibold'>
+                <p className='text-sm font-semibold dark:text-gray-300'>
                   {template.startTime} - {template.endTime}
                 </p>
               </div>
               <div className='p-3 bg-gray-50 dark:bg-gray-800 rounded-xl'>
                 <p className='text-[10px] font-bold text-gray-400 uppercase tracking-widest'>Slot Assigned</p>
-                <span className='text-xs font-bold whitespace-nowrap'>
+                <span className='text-xs font-bold whitespace-nowrap dark:text-gray-300'>
                   {(() => {
                     const slotDetail = getSlotInfo(template.slotId)
                     return slotDetail ? `${slotDetail.slotMinutes}m / ${slotDetail.breakMinutes}m break` : 'Loading...'

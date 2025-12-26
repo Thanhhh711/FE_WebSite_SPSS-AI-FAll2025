@@ -15,12 +15,14 @@ import variationApi from '../../../api/variation.api'
 import { Category } from '../../../types/category.type'
 import { Variation, VariationForm } from '../../../types/variation.type'
 import VariationModal from '../../VariationModal/VariationModal'
+import { useAppContext } from '../../../context/AuthContext'
+import { Role } from '../../../constants/Roles'
 
 const ITEMS_PER_PAGE = 10
 
 export default function BasicTableVariations() {
   const queryClient = useQueryClient()
-
+  const { profile } = useAppContext()
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -29,11 +31,17 @@ export default function BasicTableVariations() {
   const [isViewMode, setIsViewMode] = useState(false)
 
   // --- API READ: Variations & Categories ---
-  const { data: variationsResponse, isLoading: isVariationsLoading } = useQuery({
+  const {
+    data: variationsResponse,
+    isLoading: isVariationsLoading,
+    refetch
+  } = useQuery({
     queryKey: ['variations'],
     queryFn: variationApi.getVariations,
     staleTime: 1000 * 60 * 1
   })
+
+  console.log('variationsResponse')
 
   const { data: categoriesResponse } = useQuery({
     queryKey: ['categories'],
@@ -82,7 +90,7 @@ export default function BasicTableVariations() {
     }
   })
 
-  const { mutate: deleteVariation, isPending: isDeleting } = useMutation({
+  const { mutate: deleteVariation } = useMutation({
     mutationFn: (id: string) => variationApi.deleteVariation(id),
     onSuccess: (res) => {
       toast.success(res.data.message || 'Variation deleted successfully!')
@@ -108,10 +116,10 @@ export default function BasicTableVariations() {
   }
 
   const handleDeleteClick = (variation: Variation) => {
-    if (variation.variationOptions.length > 0) {
-      toast.error('Cannot delete: Variation still has associated options.')
-      return
-    }
+    // if (variation.variationOptions.length > 0) {
+    //   toast.error('Cannot delete: Variation still has associated options.')
+    //   return
+    // }
     setSelectedVariation(variation)
     setIsConfirmOpen(true)
   }
@@ -159,12 +167,14 @@ export default function BasicTableVariations() {
             />
           </div>
 
-          <button
-            onClick={handleCreateNew}
-            className='bg-slate-900 dark:bg-indigo-600 hover:scale-[1.02] text-white px-8 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl transition-all active:scale-95'
-          >
-            <Plus size={18} /> Add New Variation
-          </button>
+          {profile?.role === Role.STORE_STAFF && (
+            <button
+              onClick={handleCreateNew}
+              className='bg-slate-900 dark:bg-indigo-600 hover:scale-[1.02] text-white px-8 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl transition-all active:scale-95'
+            >
+              <Plus size={18} /> Add New Variation
+            </button>
+          )}
         </div>
       </div>
 
@@ -176,16 +186,16 @@ export default function BasicTableVariations() {
               <TableRow className='border-none'>
                 <TableCell
                   isHeader
-                  className='px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] w-[30%]'
+                  className='px-8 py-6 text-[10px] text-left font-black text-slate-400 uppercase tracking-[0.2em] w-[30%]'
                 >
                   Variation Name
                 </TableCell>
-                <TableCell
+                {/* <TableCell
                   isHeader
                   className='px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] w-[30%]'
                 >
                   Category
-                </TableCell>
+                </TableCell> */}
                 <TableCell
                   isHeader
                   className='px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center w-[20%]'
@@ -211,7 +221,7 @@ export default function BasicTableVariations() {
               ) : (
                 filteredAndPaginatedVariations.data.map((variation) => {
                   const hasOptions = (variation.variationOptions || []).length > 0
-                  const isDisabled = isDeleting || hasOptions
+                  // const isDisabled = isDeleting || hasOptions
 
                   return (
                     <TableRow
@@ -219,16 +229,16 @@ export default function BasicTableVariations() {
                       className='group hover:bg-indigo-50/30 dark:hover:bg-indigo-900/10 transition-all border-b border-slate-50 dark:border-gray-800 last:border-0'
                     >
                       <TableCell className='px-8 py-7'>
-                        <span className='font-black text-slate-800 dark:text-white text-base tracking-tight'>
+                        <span className='font-black text-center text-slate-800 dark:text-white text-base tracking-tight'>
                           {variation.name}
                         </span>
                       </TableCell>
 
-                      <TableCell className='px-8 py-7'>
+                      {/* <TableCell className='px-8 py-7'>
                         <div className='inline-flex items-center px-3 py-1 bg-slate-100 dark:bg-gray-800 rounded-lg text-xs font-bold text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-gray-700'>
                           {getCategoryName(variation.productCategoryId)}
                         </div>
-                      </TableCell>
+                      </TableCell> */}
 
                       <TableCell className='px-8 py-7 text-center'>
                         <span
@@ -247,25 +257,39 @@ export default function BasicTableVariations() {
                           >
                             <Eye size={18} />
                           </button>
-                          <button
-                            onClick={() => handleOpenDetailModal(variation, 'edit')}
-                            className='p-3 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-gray-800 rounded-2xl transition-all shadow-sm bg-white dark:bg-gray-900 border border-slate-100 dark:border-gray-700'
-                            title='Edit Variation'
-                          >
-                            <Edit3 size={18} />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteClick(variation)}
-                            disabled={isDisabled}
-                            className={`p-3 rounded-2xl transition-all shadow-sm border ${
-                              isDisabled
-                                ? 'opacity-30 bg-slate-50 dark:bg-gray-900 text-slate-300 border-slate-100 dark:border-gray-800 cursor-not-allowed'
-                                : 'text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-gray-800 bg-white dark:bg-gray-900 border-slate-100 dark:border-gray-700'
-                            }`}
-                            title={hasOptions ? 'Variation has options - Cannot delete' : 'Delete Variation'}
-                          >
-                            <Trash2 size={18} />
-                          </button>
+
+                          {profile?.role === Role.STORE_STAFF && (
+                            <>
+                              <button
+                                onClick={() => handleOpenDetailModal(variation, 'edit')}
+                                className='p-3 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-gray-800 rounded-2xl transition-all shadow-sm bg-white dark:bg-gray-900 border border-slate-100 dark:border-gray-700'
+                                title='Edit Variation'
+                              >
+                                <Edit3 size={18} />
+                              </button>
+
+                              {/* <button
+                                onClick={() => handleDeleteClick(variation)}
+                                disabled={isDisabled}
+                                className={`p-3 rounded-2xl transition-all shadow-sm border ${
+                                  isDisabled
+                                    ? 'opacity-30 bg-slate-50 dark:bg-gray-900 text-slate-300 border-slate-100 dark:border-gray-800 cursor-not-allowed'
+                                    : 'text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-gray-800 bg-white dark:bg-gray-900 border-slate-100 dark:border-gray-700'
+                                }`}
+                                title={hasOptions ? 'Variation has options - Cannot delete' : 'Delete Variation'}
+                              >
+                                <Trash2 size={18} />
+                              </button> */}
+
+                              <button
+                                onClick={() => handleDeleteClick(variation)}
+                                className='p-3 rounded-2xl transition-all shadow-sm border text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-gray-800 bg-white dark:bg-gray-900 border-slate-100 dark:border-gray-700'
+                                title='Delete Variation'
+                              >
+                                <Trash2 size={18} />
+                              </button>
+                            </>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -296,6 +320,7 @@ export default function BasicTableVariations() {
           variation={selectedVariation}
           onSave={saveVariation}
           isViewMode={isViewMode}
+          refetch={refetch}
         />
       )}
 

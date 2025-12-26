@@ -9,6 +9,7 @@ import userApi from '../../api/user.api'
 import { formatDateToDDMMYYYY, formatDateValue } from '../../utils/validForm'
 import { Role } from '../../constants/Roles'
 import { ScheduleTemplate } from '../../types/templete.type'
+import { User } from '../../types/user.type'
 
 // Interfaces used in this component
 
@@ -18,10 +19,6 @@ interface Slot {
   breakMinutes: number
 }
 // Định nghĩa kiểu dữ liệu cho Beauty Advisor
-interface BeautyAdvisor {
-  userId: string
-  emailAddress: string
-}
 
 interface RegistrationModalProps {
   isOpen: boolean
@@ -33,7 +30,7 @@ interface RegistrationModalProps {
   templates: ScheduleTemplate[]
   slots: Slot[]
   // THÊM: Danh sách BA để chọn
-  beautyAdvisors: BeautyAdvisor[]
+  beautyAdvisors: User[]
   // THÊM: ID của nhân viên hiện tại/được chọn từ BasicTable (chỉ dùng trong Create)
   initialStaffId?: string
   // THÊM: Role của người dùng hiện tại
@@ -80,10 +77,13 @@ export default function RegistrationModal({
   const defaultStaffId = registration?.staffId || initialStaffId || ''
 
   const { data: userData } = useQuery({
-    queryKey: ['userName'],
+    queryKey: ['userName', registration?.staffId],
     queryFn: () => userApi.getUsersById(registration?.staffId as string),
     enabled: isOpen && !!registration?.staffId,
-    select: (data) => data.data.data.emailAddress
+    select: (res) => {
+      const { surName, firstName, emailAddress } = res.data.data
+      return surName && firstName ? `${surName} ${firstName}` : emailAddress
+    }
   })
 
   // Cập nhật: Thêm staffId vào state form
@@ -375,7 +375,7 @@ export default function RegistrationModal({
                     .filter((ba) => ba.userId !== 'all')
                     .map((ba) => (
                       <option key={ba.userId} value={ba.userId}>
-                        {ba.emailAddress}
+                        {ba.surName} {ba.firstName}
                       </option>
                     ))}
                 </select>

@@ -44,7 +44,13 @@ import ConfirmModal from '../CalendarModelDetail/ConfirmModal'
 // ----------------------------------------------------------------------
 
 // Helper function to format date to YYYY-MM-DD
-const formatDateToYYYYMMDD = (date: Date): string => date.toISOString().split('T')[0]
+export const formatDateToYYYYMMDD = (date: Date): string => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+
+  return `${year}-${month}-${day}`
+}
 
 interface MedicalReportModalProps {
   isOpen: boolean
@@ -220,8 +226,7 @@ export default function MedicalReportModal({
         setIsUploading(true)
 
         const bucket = 'reports'
-        // Map selected files to promises of uploadFile calls
-        // Sử dụng hàm mockUploadFile cho mục đích demo. Bạn cần thay bằng hàm uploadFile thực tế.
+
         const uploadPromises = selectedFiles.map((file) => uploadFile(bucket, file, customerId))
 
         // Wait for all uploads to complete
@@ -234,7 +239,6 @@ export default function MedicalReportModal({
 
         uploadedImageUrls = [...uploadedImageUrls, ...newUrls]
 
-        // Clear selected files state after successful upload
         setSelectedFiles([])
         setIsUploading(false)
         toast.info(`${newUrls.length} images uploaded successfully.`)
@@ -251,16 +255,17 @@ export default function MedicalReportModal({
       ...form,
       customerId: customerId,
       appointmentId: appoimentId,
-      imageUrls: uploadedImageUrls // Sử dụng danh sách URL đã cập nhật
+      imageUrls: uploadedImageUrls
     }
 
-    console.log('finalForm', finalForm)
+    // console.log('finalForm', finalForm)
 
     if (isEditMode) {
       updateReportMutation.mutate(
         {
           ...finalForm,
-          staffId: profile?.userId as string
+          staffId: profile?.userId as string,
+          nextFollowUpDate: finalForm.nextFollowUpDate === '' ? null : finalForm.nextFollowUpDate
         },
         {
           onSuccess: (data) => {

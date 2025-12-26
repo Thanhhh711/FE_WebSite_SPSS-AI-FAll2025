@@ -6,16 +6,14 @@ import userApi from '../api/user.api'
 export default function StaffEmailLookup({ staffId }: { staffId: string }) {
   console.log('Staff Id', staffId)
 
-  const { data: staffEmail, isLoading } = useQuery({
-    queryKey: ['staffEmail', staffId],
-    // Dùng staffId để fetch thông tin nhân viên
+  const { data: staffName, isLoading } = useQuery({
+    queryKey: ['staffName', staffId],
+    enabled: !!staffId,
     queryFn: async () => {
       const res = await userApi.getUsersById(staffId)
-      return res.data.data.emailAddress
-    },
-    // Chỉ fetch nếu staffId tồn tại
-    enabled: !!staffId,
-    staleTime: Infinity // Giả sử email nhân viên ít khi thay đổi
+      const { surName, firstName, emailAddress } = res.data.data
+      return surName && firstName ? `${surName} ${firstName}` : emailAddress
+    }
   })
 
   if (!staffId) {
@@ -27,25 +25,24 @@ export default function StaffEmailLookup({ staffId }: { staffId: string }) {
   }
 
   // Hiển thị email hoặc ID nếu không tìm thấy email
-  return <span>{staffEmail || staffId}</span>
+  return <span>{staffName || staffId}</span>
 }
 
 export function StaffEmailLookupString({ staffId }: { staffId: string }) {
   console.log('Staff Id', staffId)
 
-  const { data: staffEmail } = useQuery({
-    queryKey: ['staffEmail', staffId],
-    // Dùng staffId để fetch thông tin nhân viên
-    queryFn: async () => {
-      const res = await userApi.getUsersById(staffId)
-      return res.data.data.emailAddress
-    },
-    // Chỉ fetch nếu staffId tồn tại
+  const { data: staffDisplayName } = useQuery({
+    queryKey: ['staffDisplayName', staffId],
+    queryFn: () => userApi.getUsersById(staffId),
     enabled: !!staffId,
-    staleTime: Infinity // Giả sử email nhân viên ít khi thay đổi
+    staleTime: Infinity,
+    select: (res) => {
+      const { surName, firstName, emailAddress } = res.data.data
+      return surName && firstName ? `${surName} ${firstName}` : emailAddress
+    }
   })
 
-  return staffEmail
+  return staffDisplayName
 }
 
 export function AvatarStaff({ staffId, className }: { staffId: string; className?: string }) {

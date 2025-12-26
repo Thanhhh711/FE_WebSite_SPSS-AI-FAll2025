@@ -29,11 +29,13 @@ const showToast = (msg: string, type: 'success' | 'error') => {
 }
 
 // Định nghĩa kiểu dữ liệu cho Beauty Advisor (giả định)
-interface BeautyAdvisor {
-  userId: string
-  emailAddress: string
-  // ... các trường khác
-}
+// interface BeautyAdvisor {
+//   userId: string
+//   emailAddress: string
+//   surName?: string
+//   firstName?: string
+//   // ... các trường khác
+// }
 
 // HÀM TIỆN ÍCH MỚI: Trích xuất ngày YYYY-MM-DD để so sánh
 const getYYYYMMDD = (dateString: string) => {
@@ -49,7 +51,7 @@ export default function WorkSchedulesManagement() {
   const [filterDate, setFilterDate] = useState<string>('') // Định dạng YYYY-MM-DD
 
   // STATE ĐÃ CÓ: Danh sách Beauty Advisor và ID được chọn
-  const [beautyAdvisors, setBeautyAdvisors] = useState<BeautyAdvisor[]>([])
+  const [beautyAdvisors, setBeautyAdvisors] = useState<any[]>([])
   const [selectedBAId, setSelectedBAId] = useState<string | undefined>(undefined)
 
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false)
@@ -79,7 +81,11 @@ export default function WorkSchedulesManagement() {
       try {
         const response = await userApi.getBeatyAdvisor()
 
-        const allOption = { userId: 'all', emailAddress: 'All Beauty Advisors' }
+        const allOption = {
+          userId: 'all',
+          emailAddress: 'All Beauty Advisors'
+        }
+
         setBeautyAdvisors([allOption, ...response.data.data])
 
         setSelectedBAId('all')
@@ -306,7 +312,7 @@ export default function WorkSchedulesManagement() {
                 {!beautyAdvisors.length && <option value='all'>Loading Staff...</option>}
                 {beautyAdvisors.map((ba) => (
                   <option key={ba.userId} value={ba.userId}>
-                    {ba.emailAddress}
+                    {[ba.surName, ba.firstName].filter(Boolean).join(' ') || ba.emailAddress}
                   </option>
                 ))}
               </select>
@@ -357,25 +363,25 @@ export default function WorkSchedulesManagement() {
               <TableRow className='border-none'>
                 <TableCell
                   isHeader
-                  className='px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]'
+                  className='text-left px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]'
                 >
                   Staff
                 </TableCell>
                 <TableCell
                   isHeader
-                  className='px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]'
+                  className='text-left px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]'
                 >
                   Schedule
                 </TableCell>
                 <TableCell
                   isHeader
-                  className='px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]'
+                  className='text-left px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]'
                 >
                   Location
                 </TableCell>
                 <TableCell
                   isHeader
-                  className='px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]'
+                  className='text-left  px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]'
                 >
                   Status
                 </TableCell>

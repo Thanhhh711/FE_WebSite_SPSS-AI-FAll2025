@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Box, Edit3, Eye, GitBranch, Plus, Search, Trash2 } from 'lucide-react'
+import { Box, Edit3, Eye, Plus, Search, Trash2 } from 'lucide-react'
 import { Fragment, useMemo, useState } from 'react'
 import { toast } from 'react-toastify'
 import { categoryApi } from '../../../api/category.api'
@@ -178,21 +178,21 @@ export default function BasicTableCategories() {
                   >
                     Category Name
                   </TableCell>
-                  <TableCell
+                  {/* <TableCell
                     isHeader
                     className='px-6 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]'
                   >
                     Parent Category
-                  </TableCell>
-                  <TableCell
+                  </TableCell> */}
+                  {/* <TableCell
                     isHeader
                     className='px-6 py-6 text-[10px] text-left font-black text-slate-400 uppercase tracking-[0.2em]'
                   >
                     Subcategories
-                  </TableCell>
+                  </TableCell> */}
                   <TableCell
                     isHeader
-                    className='px-6 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]'
+                    className='px-6 py-6 text-[10px] text-left font-black text-slate-400 uppercase tracking-[0.2em]'
                   >
                     Products
                   </TableCell>
@@ -225,7 +225,7 @@ export default function BasicTableCategories() {
                         </div>
                       </TableCell>
 
-                      <TableCell className='px-6 py-7'>
+                      {/* <TableCell className='px-6 py-7'>
                         <div className='inline-flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-gray-800 text-slate-600 dark:text-slate-400 rounded-xl text-xs font-bold'>
                           <GitBranch size={14} /> {category.parentCategory?.categoryName || 'Root Category'}
                         </div>
@@ -235,7 +235,7 @@ export default function BasicTableCategories() {
                         <span className='font-black text-slate-700 text-start  dark:text-slate-300'>
                           {category.inverseParentCategory?.length || 0}
                         </span>
-                      </TableCell>
+                      </TableCell> */}
 
                       <TableCell className='px-6 py-7'>
                         <div className='flex items-center gap-2 text-slate-500'>

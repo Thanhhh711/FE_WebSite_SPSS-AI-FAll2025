@@ -219,7 +219,7 @@ export default function BasicTableRegistration() {
               >
                 {beautyAdvisors.map((ba) => (
                   <option key={ba.userId} value={ba.userId}>
-                    {ba.emailAddress}
+                    {[ba.surName, ba.firstName].filter(Boolean).join(' ') || ba.emailAddress}
                   </option>
                 ))}
               </select>

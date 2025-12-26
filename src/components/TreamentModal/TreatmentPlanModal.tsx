@@ -78,7 +78,6 @@ export default function TreatmentPlanModal({
   // Trong TreatmentPlanModal.tsx
 
   const handleFormSave = () => {
-    // 1. ✅ Kiểm tra bước 1: Hàm có được gọi không?
     console.log('[MODAL] handleFormSave: Bắt đầu chạy.')
 
     // ******************************************************
@@ -101,13 +100,10 @@ export default function TreatmentPlanModal({
 
     const planId = plan?.id
 
-    // 2. ✅ Kiểm tra bước 2: Hàm có gọi onSave không?
     console.log('[MODAL] handleFormSave: Gọi onSave. PlanId:', planId)
 
-    // Đây là dòng cuối cùng trước khi chuyển giao quyền kiểm soát
     onSave(form, planId)
 
-    // 3. ✅ Kiểm tra bước 3: Dòng này có chạy không?
     console.log('[MODAL] handleFormSave: Hoàn thành.')
   }
 

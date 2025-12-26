@@ -15,15 +15,25 @@ interface VariationModalProps {
   variation: Variation | null
   onSave: (data: VariationForm & { id?: string }) => void
   isViewMode: boolean
+  refetch: () => void
 }
 
 // --- MAIN COMPONENT ---
-export default function VariationModal({ isOpen, onClose, variation, onSave, isViewMode }: VariationModalProps) {
+export default function VariationModal({
+  isOpen,
+  onClose,
+  variation,
+  onSave,
+  isViewMode,
+  refetch
+}: VariationModalProps) {
   const isEditing = !!variation && !isViewMode
   const isCreating = !variation && !isViewMode
 
+  console.log()
+
   // Fetch Categories
-  const { data: categoriesResponse, refetch } = useQuery({
+  const { data: categoriesResponse } = useQuery({
     queryKey: ['categories'],
     queryFn: categoryApi.getCategories,
     staleTime: 1000 * 60 * 5,
@@ -33,19 +43,20 @@ export default function VariationModal({ isOpen, onClose, variation, onSave, isV
 
   // --- Khởi tạo Form State ---
   const [form, setForm] = useState<VariationForm>({
-    name: variation?.name || '',
-    productCategoryId: variation?.productCategoryId || ''
+    name: variation?.name || ''
+    // productCategoryId: variation?.productCategoryId || ''
   })
   const [errors, setErrors] = useState<Partial<Record<keyof VariationForm, string>>>({})
 
   useEffect(() => {
     if (variation) {
       setForm({
-        name: variation.name,
-        productCategoryId: variation.productCategoryId
+        name: variation.name
+        // productCategoryId: variation.productCategoryId
       })
     } else {
-      setForm({ name: '', productCategoryId: '' })
+      // setForm({ name: '', productCategoryId: '' })
+      setForm({ name: '' })
     }
     setErrors({})
   }, [variation])
@@ -61,10 +72,10 @@ export default function VariationModal({ isOpen, onClose, variation, onSave, isV
       newErrors.name = 'Variation Name cannot be empty.'
       isValid = false
     }
-    if (!data.productCategoryId) {
-      newErrors.productCategoryId = 'Product Category is required.'
-      isValid = false
-    }
+    // if (!data.productCategoryId) {
+    //   newErrors.productCategoryId = 'Product Category is required.'
+    //   isValid = false
+    // }
 
     setErrors(newErrors)
     return isValid
@@ -82,6 +93,8 @@ export default function VariationModal({ isOpen, onClose, variation, onSave, isV
   const title = isCreating ? 'Create New Variation' : isEditing ? 'Edit Variation' : 'Variation Details'
 
   const getCategoryName = (id: string) => {
+    console.log('id', id)
+
     return allCategories.find((cat) => cat.id === id)?.categoryName || 'Unknown Category'
   }
 
@@ -129,7 +142,7 @@ export default function VariationModal({ isOpen, onClose, variation, onSave, isV
             </div>
 
             {/* Product Category Select */}
-            <div>
+            {/* <div>
               <label
                 htmlFor='productCategoryId'
                 className='text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block'
@@ -151,7 +164,7 @@ export default function VariationModal({ isOpen, onClose, variation, onSave, isV
                 ))}
               </select>
               {errors.productCategoryId && <p className='mt-1 text-xs text-red-500'>{errors.productCategoryId}</p>}
-            </div>
+            </div> */}
 
             {/* Variation Options Management (Chỉ trong Edit Mode) */}
             {isEditing && variation?.id && (

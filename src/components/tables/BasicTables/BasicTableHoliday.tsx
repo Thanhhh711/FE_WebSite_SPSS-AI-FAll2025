@@ -130,7 +130,7 @@ export default function BasicTableHoliday() {
               required
               value={formData.holidayDate}
               onChange={(e) => setFormData({ ...formData, holidayDate: e.target.value })}
-              className='w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-900 border-none focus:ring-2 focus:ring-brand-500 font-medium'
+              className='w-full px-4 py-3 rounded-xl bg-gray-50 dark:text-gray-300 dark:bg-gray-900 border-none focus:ring-2 focus:ring-brand-500 font-medium'
             />
           </div>
           <div className='space-y-1'>
@@ -141,7 +141,7 @@ export default function BasicTableHoliday() {
               required
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className='w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-900 border-none focus:ring-2 focus:ring-brand-500 font-medium'
+              className='w-full px-4 py-3 rounded-xl bg-gray-50 dark:text-gray-300 dark:bg-gray-900 border-none focus:ring-2 focus:ring-brand-500 font-medium'
             />
           </div>
           <div className='flex items-end gap-2'>
@@ -176,7 +176,7 @@ export default function BasicTableHoliday() {
             setSearchTerm(e.target.value)
             setCurrentPage(1) // Reset về trang 1 khi tìm kiếm
           }}
-          className='w-full pl-12 pr-4 py-3 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl outline-none focus:ring-2 focus:ring-brand-500 transition-all shadow-sm'
+          className='w-full pl-12 pr-4 py-3 bg-white dark:text-gray-300 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl outline-none focus:ring-2 focus:ring-brand-500 transition-all shadow-sm'
         />
         <Search className='absolute left-4 top-3.5 text-gray-400 group-focus-within:text-brand-500' size={18} />
       </div>

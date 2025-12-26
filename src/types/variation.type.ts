@@ -24,7 +24,7 @@ export interface VarionOptionInResponse {
 
 export interface VariationForm {
   name: string
-  productCategoryId: string
+  // productCategoryId: string
 }
 
 export interface VariationOptionForm {

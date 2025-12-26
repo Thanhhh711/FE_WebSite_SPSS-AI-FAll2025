@@ -139,14 +139,20 @@ const AppointmentCalendar: React.FC = () => {
     queryKey: ['patientName', selectedUserId],
     queryFn: () => userApi.getUsersById(selectedUserId!),
     enabled: isOpen && !!selectedUserId,
-    select: (data) => data.data.data.emailAddress
+    select: (res) => {
+      const { surName, firstName, emailAddress } = res.data.data
+      return surName && firstName ? `${surName} ${firstName}` : emailAddress
+    }
   })
 
   const { data: doctorData, isLoading: isDoctorLoading } = useQuery({
     queryKey: ['doctorName', selectedStaffId],
     queryFn: () => userApi.getUsersById(selectedStaffId!),
     enabled: isOpen && !!selectedStaffId,
-    select: (data) => data.data.data.emailAddress
+    select: (res) => {
+      const { surName, firstName } = res.data.data
+      return `${surName} ${firstName}`
+    }
   })
 
   const { data: sessionData } = useQuery({

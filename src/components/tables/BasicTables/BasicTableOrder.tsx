@@ -140,7 +140,7 @@ export default function BasicTableOrder() {
             placeholder='Search by ID or Customer...'
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className='w-full pl-12 pr-4 py-3 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl outline-none focus:ring-2 focus:ring-brand-500 transition-all shadow-sm'
+            className='w-full pl-12 pr-4 py-3 bg-white dark:bg-gray-900 dark:text-gray-300 border border-gray-100 dark:border-gray-800 rounded-2xl outline-none focus:ring-2 focus:ring-brand-500 transition-all shadow-sm'
           />
           <Search className='absolute left-4 top-3.5 text-gray-400 group-focus-within:text-brand-500' size={18} />
         </div>

@@ -95,7 +95,7 @@ export default function TreatmentPlanTab() {
       updateTreatmentPlanMutation.mutate({ planId, body })
       setIsModalOpen(false)
     } else {
-      console.log('create')
+      console.log('create', body)
 
       // Logic TẠO MỚI
       createTreatmentPlanMutation.mutate(body)

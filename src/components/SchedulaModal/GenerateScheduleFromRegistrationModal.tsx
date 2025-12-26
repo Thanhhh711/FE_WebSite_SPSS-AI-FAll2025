@@ -121,7 +121,7 @@ export const GenerateScheduleFromRegistrationModal: React.FC<GenerateScheduleMod
               <option value=''>-- Select Advisor --</option>
               {staffList?.map((staff: User) => (
                 <option key={staff.userId} value={staff.userId}>
-                  {staff.emailAddress}
+                  {staff.surName} {staff.firstName}
                 </option>
               ))}
             </select>

@@ -403,7 +403,7 @@ export default function TreatmentSessionModal({
                 .filter((u) => u.roleName === Role.BEAUTY_ADVISOR)
                 .map((staff) => (
                   <option key={staff.userId} value={staff.userId}>
-                    {staff.emailAddress}
+                    {staff.surName} {staff.firstName}
                   </option>
                 ))}
             </select>
@@ -424,8 +424,8 @@ export default function TreatmentSessionModal({
                 // Ràng buộc ngày ở đây
                 min={planMinDate}
                 max={planMaxDate}
-                // readOnly={isEditing}
-                // disabled={isEditing}
+                readOnly={isEditing}
+                disabled={isEditing}
               />
             </div>
             {/* Start Time */}
@@ -452,10 +452,10 @@ export default function TreatmentSessionModal({
                 onChange={handleChange}
                 className={baseInputClass}
                 required
-                readOnly={isFieldsLocked}
-                disabled={isFieldsLocked}
-                // readOnly={isFieldsLocked || isEditing}
-                // disabled={isFieldsLocked || isEditing}
+                // readOnly={isFieldsLocked}
+                // disabled={isFieldsLocked}
+                readOnly={isFieldsLocked || isEditing}
+                disabled={isFieldsLocked || isEditing}
               />
             </div>
             {/* Room */}
@@ -468,8 +468,8 @@ export default function TreatmentSessionModal({
                 className={baseInputClass}
                 required
                 // Khóa trường Room nếu: (1) Ở chế độ Create và đã có Schedule được chọn, HOẶC (2) Ở chế độ Edit
-                disabled={isFieldsLocked}
-                // disabled={isFieldsLocked || isEditing}
+                // disabled={isFieldsLocked}
+                disabled={isFieldsLocked || isEditing}
               >
                 {/* Trong chế độ Edit, vì trường Room bị disabled, 
                   chúng ta sẽ chỉ hiển thị option của Room hiện tại để đảm bảo giá trị đúng 

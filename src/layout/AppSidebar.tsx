@@ -8,6 +8,7 @@ import { Role, roleRedirectPath } from '../constants/Roles'
 import { AppContext } from '../context/AuthContext'
 import { useSidebar } from '../context/SidebarContext'
 import { CalenderIcon, ChevronDownIcon, DocsIcon, GridIcon, HorizontaLDots, TableIcon } from '../icons'
+import { FileText } from 'lucide-react'
 
 type NavItem = {
   name: string
@@ -29,8 +30,8 @@ const navItems: NavItem[] = [
         pro: false,
         allowedRoles: [Role.ADMIN, Role.BEAUTY_ADVISOR]
       }
-    ]
-    // allowedRoles: [Role.ADMIN]
+    ],
+    allowedRoles: [Role.ADMIN, Role.BEAUTY_ADVISOR, Role.STORE_STAFF]
   },
   {
     icon: <CalenderIcon />,
@@ -117,7 +118,7 @@ const navItems: NavItem[] = [
         name: 'Variation',
 
         path: AppPath.BASIC_TABLES_VARIATION,
-        allowedRoles: [Role.ADMIN]
+        allowedRoles: [Role.ADMIN, Role.STORE_STAFF]
       },
       {
         name: 'Slot',
@@ -159,7 +160,7 @@ const navItems: NavItem[] = [
 
   {
     name: 'Quizs',
-    icon: <DocsIcon />,
+    icon: <FileText />,
     path: AppPath.QUIZZS,
     allowedRoles: [Role.ADMIN]
   }

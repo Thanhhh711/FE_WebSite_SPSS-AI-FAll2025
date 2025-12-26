@@ -95,7 +95,7 @@ export default function ServiceManagementTable() {
                 setSearchTerm(e.target.value)
                 setCurrentPage(1)
               }}
-              className='pl-10 pr-4 py-3 bg-slate-100 dark:bg-gray-800 dark:text- border-none rounded-2xl focus:ring-2 ring-indigo-500/20 w-full sm:w-64 transition-all text-sm font-medium'
+              className='pl-10 pr-4 py-3 dark:text-gray-300 bg-slate-100 dark:bg-gray-800 dark:text-border-none rounded-2xl focus:ring-2 ring-indigo-500/20 w-full sm:w-64 transition-all text-sm font-medium'
             />
           </div>
           {profile?.role === Role.ADMIN && (

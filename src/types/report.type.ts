@@ -65,7 +65,7 @@ export interface MedicalReportRequestEditForm {
   observations: string
   vitals: string
   recommendation: string
-  nextFollowUpDate?: string
+  nextFollowUpDate?: string | null
   followUpInstructions?: string
   status: ReportStatus
   appointmentId?: string

@@ -110,7 +110,7 @@ export default function TreatmentSessionList({ planId, isViewMode, refetchPlan }
                 Date & Time
               </th>
               <th className='px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase'>
-                Staff ID
+                Staff
               </th>
               <th className='px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase'>
                 Status

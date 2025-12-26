@@ -83,7 +83,6 @@ export default function App() {
             <Route path={AppPath.BASIC_TABLES_COUNTRIES} element={<BasicTablesCountries />} />
             <Route path={AppPath.BASIC_TABLES_VOUCHER} element={<BasicTablesVoucher />} />
 
-            <Route path={AppPath.BASIC_TABLES_VARIATION} element={<BasicTablesVariation />} />
             <Route
               path={AppPath.BASIC_TABLES_SKINCONDITION}
               element={
@@ -176,6 +175,7 @@ export default function App() {
             <Route path={AppPath.BASIC_TABLES_PRODUCT} element={<BasicTablesProduct />} />
             <Route path={AppPath.BASIC_TABLES_CATEGORY} element={<BasicTablesCategory />} />
             <Route path={AppPath.BASIC_TABLES_BRAND} element={<BasicTablesBrand />} />
+            <Route path={AppPath.BASIC_TABLES_VARIATION} element={<BasicTablesVariation />} />
           </Route>
         </Route>
 

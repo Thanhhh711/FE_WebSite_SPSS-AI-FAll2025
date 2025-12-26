@@ -209,7 +209,10 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
               {doctorId ? (
                 (() => {
                   const currentDoctor = pagingData?.find((u) => u.userId === doctorId)
-                  const displayedDoctorName = currentDoctor?.firstName || currentDoctor?.emailAddress || doctorName
+                  const displayedDoctorName =
+                    currentDoctor?.surName && currentDoctor?.firstName
+                      ? `${currentDoctor.surName} ${currentDoctor.firstName}`
+                      : currentDoctor?.emailAddress || doctorName
 
                   return (
                     <div
@@ -258,7 +261,11 @@ const EventModalForm: React.FC<EventModalFormProps> = ({
               {patientId ? (
                 (() => {
                   const currentPatient = pagingData?.find((u) => u.userId === patientId)
-                  const displayedPatientName = currentPatient?.firstName || currentPatient?.emailAddress || patientName
+
+                  const displayedPatientName =
+                    currentPatient?.surName && currentPatient?.firstName
+                      ? `${currentPatient.surName} ${currentPatient.firstName}`
+                      : currentPatient?.emailAddress || patientName
 
                   return (
                     <div
