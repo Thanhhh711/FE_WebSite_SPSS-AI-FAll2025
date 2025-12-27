@@ -15,7 +15,7 @@ export interface ScheduleRequest {
   endTime: string // HH:mm hoặc HH:mm:ss
   slotIndex: number
   status: number
-  registrationId: string
+  // registrationId: string
   roomId: string
   notes: string
 }

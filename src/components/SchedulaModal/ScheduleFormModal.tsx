@@ -49,8 +49,7 @@ const ScheduleFormModal: React.FC<ScheduleFormModalProps> = ({
     roomId: '',
     status: WorkScheduleStatus.Active.toString(),
     notes: '',
-    slotIndex: 0, // New field
-    registrationId: '' // New field
+    slotIndex: 0 // New field
   })
 
   const [isSaving, setIsSaving] = useState(false)
@@ -169,8 +168,7 @@ const ScheduleFormModal: React.FC<ScheduleFormModalProps> = ({
           roomId: scheduleToEdit?.room?.id ?? '',
           status: (scheduleToEdit?.status ?? WorkScheduleStatus.Active).toString(),
           notes: scheduleToEdit?.notes ?? '',
-          slotIndex: scheduleToEdit?.slotIndex ?? 0,
-          registrationId: '' // Registrations are fetched separately based on staffId
+          slotIndex: scheduleToEdit?.slotIndex ?? 0
         })
       } else {
         // Reset/Default for Create Mode
@@ -180,9 +178,8 @@ const ScheduleFormModal: React.FC<ScheduleFormModalProps> = ({
           startTime: '09:00',
           endTime: '17:00',
           status: WorkScheduleStatus.Active.toString(),
-          notes: '',
-          registrationId: '',
-          slotId: ''
+          notes: ''
+
           // staffId and roomId will be set by the fetch functions' logic
         }))
       }
@@ -206,6 +203,8 @@ const ScheduleFormModal: React.FC<ScheduleFormModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
+    console.log('formData', formData)
+
     // Validation check
     if (
       !formData.staffId ||
@@ -213,8 +212,7 @@ const ScheduleFormModal: React.FC<ScheduleFormModalProps> = ({
       !formData.startTime ||
       !formData.endTime ||
       !formData.roomId ||
-      !formData.slotIndex ||
-      !formData.registrationId
+      formData.slotIndex == null
     ) {
       showToast('Please fill in all required fields.', 'error')
       return
@@ -231,6 +229,8 @@ const ScheduleFormModal: React.FC<ScheduleFormModalProps> = ({
         endTime: formData.endTime + ':00'
       }
 
+      console.log('body', body)
+
       if (isEditMode && scheduleToEdit) {
         const data = await scheduleApi.updateScheduleById(scheduleToEdit.id, body)
         refetch()
@@ -244,6 +244,7 @@ const ScheduleFormModal: React.FC<ScheduleFormModalProps> = ({
           endTime: formData.endTime + ':00'
         }
 
+        console.log('bodyCreate', bodyCreate)
         // Assuming createSchedule is the correct method name
         const res = await scheduleApi.createSchedule(bodyCreate)
         refetch()
