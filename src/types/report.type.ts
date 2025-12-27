@@ -8,8 +8,8 @@ export interface MedicalReportForm {
   observations: string
   vitals: string
   recommendation: string
-  nextFollowUpDate: string // ISO date string
-  followUpInstructions: string
+  nextFollowUpDate?: string | null // ISO date string
+  followUpInstructions?: string
   status: number
   appointmentId: string
   imageUrls: string[]

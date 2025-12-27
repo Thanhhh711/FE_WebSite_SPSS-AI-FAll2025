@@ -277,14 +277,31 @@ export default function MedicalReportModal({
         }
       )
     } else {
-      createReportMutation.mutate(finalForm, {
-        onSuccess: (data) => {
-          toast.success(data.data.message)
-        },
-        onError: (error) => {
-          toast.error(error.message)
-        }
+      console.log('formCrete', {
+        ...finalForm,
+        customerId,
+        appointmentId: appoimentId,
+        imageUrls: uploadedImageUrls,
+        nextFollowUpDate: finalForm.nextFollowUpDate === '' ? null : finalForm.nextFollowUpDate
       })
+
+      createReportMutation.mutate(
+        {
+          ...finalForm,
+          customerId,
+          appointmentId: appoimentId,
+          imageUrls: uploadedImageUrls,
+          nextFollowUpDate: finalForm.nextFollowUpDate === '' ? null : finalForm.nextFollowUpDate
+        },
+        {
+          onSuccess: (data) => {
+            toast.success(data.data.message)
+          },
+          onError: (error) => {
+            toast.error(error.message)
+          }
+        }
+      )
     }
   }
 
@@ -519,7 +536,7 @@ export default function MedicalReportModal({
                   <input
                     type='date'
                     name='nextFollowUpDate'
-                    value={form.nextFollowUpDate}
+                    value={form.nextFollowUpDate ?? ''}
                     onChange={handleChange}
                     className={baseInputClass}
                   />

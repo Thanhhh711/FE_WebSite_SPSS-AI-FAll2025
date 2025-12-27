@@ -197,10 +197,23 @@ export default function TreatmentPlanModal({
                   Estimated Cost (VND)
                 </label>
                 <input
-                  type='number'
+                  type='text'
                   name='estimatedCost'
-                  value={form.estimatedCost}
-                  onChange={handleChange}
+                  // Hiển thị có dấu phẩy: 1.000.000
+                  value={Number(form.estimatedCost || 0).toLocaleString('vi-VN')}
+                  onChange={(e) => {
+                    // 1. Loại bỏ các ký tự không phải số
+                    const rawValue = e.target.value.replace(/\D/g, '')
+
+                    // 2. Chuyển thành kiểu number để khớp với DTO
+                    const numberValue = rawValue === '' ? 0 : Number(rawValue)
+
+                    // 3. Cập nhật vào state
+                    setForm((prev) => ({
+                      ...prev,
+                      estimatedCost: numberValue // Bây giờ đã là kiểu number, TS sẽ không báo lỗi
+                    }))
+                  }}
                   readOnly={isViewMode}
                   className={baseInputClass}
                 />
