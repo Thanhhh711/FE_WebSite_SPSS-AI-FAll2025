@@ -4,6 +4,7 @@ import { useParams } from 'react-router'
 import { reportApi } from '../../api/report.api'
 import MedicalReportModal from '../../components/report/MedicalReportModal'
 import { Report, ReportStatus } from '../../types/report.type'
+import { FileSearch } from 'lucide-react'
 
 const formatDateToDDMMYYYY = (date: string): string => new Date(date).toLocaleDateString('en-GB')
 
@@ -56,6 +57,8 @@ export default function MedicalReportList() {
     enabled: !!customerId
   })
 
+  const reports = reportsResponse?.data.data
+
   const handleEdit = (report: Report) => {
     setSelectedReportId(report.id)
     setSelectedApptId(report.appointmentId)
@@ -67,11 +70,21 @@ export default function MedicalReportList() {
   return (
     <div className='p-6 bg-white dark:bg-gray-900 rounded-lg shadow'>
       <div className='space-y-4'>
-        {reportsResponse?.data.data?.map((report: Report) => (
-          <ReportCard key={report.id} report={report} onEdit={handleEdit} />
-        ))}
+        {/* KIỂM TRA NẾU CÓ DỮ LIỆU THÌ MỚI MAP, KHÔNG THÌ HIỆN THÔNG BÁO */}
+        {reports && reports.length > 0 ? (
+          reports.map((report: Report) => <ReportCard key={report.id} report={report} onEdit={handleEdit} />)
+        ) : (
+          <div className='flex flex-col items-center justify-center py-12 px-4 border-2 border-dashed border-gray-200 rounded-xl'>
+            <div className='p-4 bg-gray-50 rounded-full mb-4'>
+              <FileSearch size={48} className='text-gray-300' />
+            </div>
+            <h3 className='text-lg font-semibold text-gray-700'>No Medical Reports Found</h3>
+            <p className='text-sm text-gray-500 text-center max-w-[300px] mt-1'>
+              There are no medical records for this customer yet. New reports will appear here once created.
+            </p>
+          </div>
+        )}
       </div>
-
       {isModalOpen && (
         <MedicalReportModal
           isOpen={isModalOpen}

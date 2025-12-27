@@ -356,12 +356,12 @@ export default function MedicalReportModal({
                       onChange={handleChange}
                       className={baseInputClass}
                     >
-                      <option value={ReportStatus.Draft}>Draft</option>
-                      <option value={ReportStatus.Completed}>Completed</option>
+                      {/* <option value={ReportStatus.Draft}>Draft</option>
+                      <option value={ReportStatus.Completed}>Completed</option> */}
                       <option value={ReportStatus.Approved}>Approved</option>
-                      <option value={ReportStatus.InProgress}>InProgress</option>
+                      {/* <option value={ReportStatus.InProgress}>InProgress</option>
                       <option value={ReportStatus.NeedsReview}>NeedsReview</option>
-                      <option value={ReportStatus.Sent}>Sent</option>
+                      <option value={ReportStatus.Sent}>Sent</option> */}
                     </select>
                   </div>
                 </div>

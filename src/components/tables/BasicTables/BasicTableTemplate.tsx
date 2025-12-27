@@ -181,16 +181,16 @@ export default function BasicTableTemplate() {
             <TableHeader>
               <TableRow className='bg-gray-50/50 dark:bg-white/[0.02]'>
                 {/* Thiết lập % độ rộng cho từng cột */}
-                <TableCell isHeader className='w-[25%] px-5 py-4'>
+                <TableCell isHeader className='text-left w-[25%] px-5 py-4'>
                   Template Name
                 </TableCell>
-                <TableCell isHeader className='w-[25%] px-5 py-4'>
+                <TableCell isHeader className='text-left w-[25%] px-5 py-4'>
                   Slot & Timing
                 </TableCell>
-                <TableCell isHeader className='w-[30%] px-5 py-4'>
+                <TableCell isHeader className='text-left w-[30%] px-5 py-4'>
                   Description
                 </TableCell>
-                <TableCell isHeader className='w-[20%] px-5 py-4 text-right'>
+                <TableCell isHeader className='text-left w-[20%] px-5 py-4 text-right'>
                   Actions
                 </TableCell>
               </TableRow>
