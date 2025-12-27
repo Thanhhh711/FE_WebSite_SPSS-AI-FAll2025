@@ -1,9 +1,6 @@
 import { useEffect, useState } from 'react'
 
-import { useQuery } from '@tanstack/react-query'
 import { toast } from 'react-toastify'
-import { categoryApi } from '../../api/category.api'
-import { Category } from '../../types/category.type'
 import { Variation, VariationForm } from '../../types/variation.type'
 import ModalRegistration from '../RegistrationModal/ModalRegistration'
 import VariationOptionManager from './VariationOptionManager'
@@ -33,13 +30,13 @@ export default function VariationModal({
   console.log()
 
   // Fetch Categories
-  const { data: categoriesResponse } = useQuery({
-    queryKey: ['categories'],
-    queryFn: categoryApi.getCategories,
-    staleTime: 1000 * 60 * 5,
-    enabled: isOpen
-  })
-  const allCategories: Category[] = categoriesResponse?.data.data || []
+  // const { data: categoriesResponse } = useQuery({
+  //   queryKey: ['categories'],
+  //   queryFn: categoryApi.getCategories,
+  //   staleTime: 1000 * 60 * 5,
+  //   enabled: isOpen
+  // })
+  // const allCategories: Category[] = categoriesResponse?.data.data || []
 
   // --- Khởi tạo Form State ---
   const [form, setForm] = useState<VariationForm>({
@@ -93,11 +90,11 @@ export default function VariationModal({
 
   const title = isCreating ? 'Create New Variation' : isEditing ? 'Edit Variation' : 'Variation Details'
 
-  const getCategoryName = (id: string) => {
-    console.log('id', id)
+  // const getCategoryName = (id: string) => {
+  //   console.log('id', id)
 
-    return allCategories.find((cat) => cat.id === id)?.categoryName || 'Unknown Category'
-  }
+  //   return allCategories.find((cat) => cat.id === id)?.categoryName || 'Unknown Category'
+  // }
 
   return (
     <ModalRegistration isOpen={isOpen} onClose={onClose} title={title}>
@@ -109,9 +106,9 @@ export default function VariationModal({
               <span className='font-semibold'>Name:</span>{' '}
               <span className='font-bold text-brand-600'>{variation.name}</span>
             </p>
-            <p className='text-sm text-gray-700 dark:text-gray-300'>
+            {/* <p className='text-sm text-gray-700 dark:text-gray-300'>
               <span className='font-semibold'>Category:</span> {getCategoryName(variation.productCategoryId)}
-            </p>
+            </p> */}
 
             {/* Sử dụng VariationOptionManager */}
             <VariationOptionManager

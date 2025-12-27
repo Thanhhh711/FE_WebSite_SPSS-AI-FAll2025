@@ -175,13 +175,13 @@ export default function CategoryModal({ isOpen, onClose, category, onSave, isVie
               <span className='font-semibold'>Name:</span>
               <span className='font-bold text-brand-600'>{category.categoryName}</span>
             </p>
-            <p className='text-sm text-gray-700 dark:text-gray-300'>
+            {/* <p className='text-sm text-gray-700 dark:text-gray-300'>
               <span className='font-semibold'>Parent:</span>
               {category.parentCategory?.categoryName || 'None (Root Category)'}
             </p>
             <p className='text-sm text-gray-700 dark:text-gray-300'>
               <span className='font-semibold'>Subcategories:</span> {category.inverseParentCategory.length}
-            </p>
+            </p> */}
             <p className='text-sm text-gray-700 dark:text-gray-300'>
               <span className='font-semibold'>Products:</span> {category.products.length}
             </p>

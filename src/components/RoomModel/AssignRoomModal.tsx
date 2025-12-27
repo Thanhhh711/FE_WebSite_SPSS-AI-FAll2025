@@ -145,7 +145,7 @@ export default function AssignRoomModal({ isOpen, onClose, onAssign }: AssignRoo
             {staffList.map((staff) => (
               // Giả định User có userId và emailAddress
               <option key={staff.userId} value={staff.userId}>
-                {staff.emailAddress || staff.userId}
+                {staff.surName && staff.firstName ? `${staff.surName} ${staff.firstName}` : staff.userId}
               </option>
             ))}
           </select>

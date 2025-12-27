@@ -63,7 +63,7 @@ export const SkinTestManager = () => {
         <header className='flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10'>
           <div>
             <h1 className='text-3xl font-extrabold tracking-tight text-slate-900 dark:text-gray-300'>
-              Skin Test Management
+              Quizz Management
             </h1>
             <p className='text-slate-500 mt-1'>Set up and customize Baumann skin type surveys.</p>
           </div>

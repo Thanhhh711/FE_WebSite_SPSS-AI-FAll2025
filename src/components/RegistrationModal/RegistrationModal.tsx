@@ -358,7 +358,7 @@ export default function RegistrationModal({
             {!isBA && (
               <div>
                 <label htmlFor='staffId' className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>
-                  Staff Email *
+                  Staff Name *
                 </label>
 
                 <select
