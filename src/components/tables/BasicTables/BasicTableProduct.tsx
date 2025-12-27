@@ -1,20 +1,20 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Edit3, Eye, MessageSquare, Plus, RotateCcw, Search, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { toast } from 'react-toastify'
-import { Search, Plus, Package, AlertTriangle, CheckCircle2, Eye, Edit3, Trash2, MessageSquare } from 'lucide-react'
 
-import { Table, TableBody, TableCell, TableHeader, TableRow } from '../../ui/table'
-import ConfirmModal from '../../CalendarModelDetail/ConfirmModal'
+import brandApi from '../../../api/brand.api'
+import { categoryApi } from '../../../api/category.api'
 import { productApi } from '../../../api/product.api'
 import { Role } from '../../../constants/Roles'
 import { useAppContext } from '../../../context/AuthContext'
 import { Product, ProductForm, ProductStatusEnum } from '../../../types/product.type'
 import { formatVND, normalizeProductData, parseNumber } from '../../../utils/validForm'
+import ConfirmModal from '../../CalendarModelDetail/ConfirmModal'
 import ProductModal from '../../ProductModal/ProductModal'
-import { categoryApi } from '../../../api/category.api'
-import brandApi from '../../../api/brand.api'
+import { Table, TableBody, TableCell, TableHeader, TableRow } from '../../ui/table'
 
 const ITEMS_PER_PAGE = 10
 
@@ -32,15 +32,15 @@ const getStatusLabel = (status: ProductStatusEnum) => {
 }
 
 // --- Sub-component Thẻ Thống Kê ---
-const StatCard = ({ title, count, icon, color }: any) => (
-  <div className='bg-white dark:bg-gray-800/40 p-6 rounded-[2rem] border border-gray-100 dark:border-white/[0.05] shadow-sm flex items-center justify-between group hover:shadow-md transition-all'>
-    <div>
-      <p className='text-[10px] font-black text-gray-400 uppercase tracking-[0.15em] mb-1'>{title}</p>
-      <h3 className='text-2xl font-black text-gray-900 dark:text-white tracking-tight'>{count}</h3>
-    </div>
-    <div className={`p-4 rounded-2xl ${color}`}>{icon}</div>
-  </div>
-)
+// const StatCard = ({ title, count, icon, color }: any) => (
+//   <div className='bg-white dark:bg-gray-800/40 p-6 rounded-[2rem] border border-gray-100 dark:border-white/[0.05] shadow-sm flex items-center justify-between group hover:shadow-md transition-all'>
+//     <div>
+//       <p className='text-[10px] font-black text-gray-400 uppercase tracking-[0.15em] mb-1'>{title}</p>
+//       <h3 className='text-2xl font-black text-gray-900 dark:text-white tracking-tight'>{count}</h3>
+//     </div>
+//     <div className={`p-4 rounded-2xl ${color}`}>{icon}</div>
+//   </div>
+// )
 
 interface BasicTableProductProps {
   onViewReviews: (productItemId: string, productName: string) => void
@@ -61,6 +61,7 @@ export default function BasicTableProduct({ onViewReviews }: BasicTableProductPr
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('')
   const [selectedBrandId, setSelectedBrandId] = useState<string>('')
   const [priceRange, setPriceRange] = useState<{ min: string; max: string }>({ min: '', max: '' })
+  const [stockStatus, setStockStatus] = useState<'all' | 'low' | 'out'>('all')
   // --- 2. LẤY DỮ LIỆU ---
   const { data: products = [] } = useQuery({
     queryKey: ['products'],
@@ -118,7 +119,11 @@ export default function BasicTableProduct({ onViewReviews }: BasicTableProductPr
   const stats = useMemo(
     () => ({
       total: products.length,
+      // Low stock: Có hàng nhưng dưới 10
       lowStock: products.filter((p) => p.quantityInStock < 10 && p.quantityInStock > 0).length,
+      // Out of stock: Bằng 0
+      outOfStock: products.filter((p) => p.quantityInStock <= 0).length,
+      // Active: Dựa theo enum trạng thái của bạn
       active: products.filter((p) => p.status === ProductStatusEnum.InStock).length
     }),
     [products]
@@ -128,30 +133,36 @@ export default function BasicTableProduct({ onViewReviews }: BasicTableProductPr
     const term = searchTerm.toLowerCase().trim()
 
     const filtered = products.filter((p) => {
-      // 1. Lọc theo Search Term
+      // 1. Search Term
       const matchesSearch = p.name.toLowerCase().includes(term)
 
-      // 2. Lọc theo Category ID (Dựa trên cấu trúc Category của bạn)
+      // 2. Category & Brand
       const matchesCategory = selectedCategoryId === '' || p.productCategoryId === selectedCategoryId
-
-      // 3. Lọc theo Brand ID
       const matchesBrand = selectedBrandId === '' || p.brandId === selectedBrandId
 
-      // 4. Lọc theo Price
-      const min = parseNumber(priceRange.min) // Chuyển "1.000" -> 1000
+      // 3. Price Range
+      const min = parseNumber(priceRange.min)
       const max = priceRange.max ? parseNumber(priceRange.max) : Infinity
-
       const matchesPrice = p.price >= min && p.price <= max
 
-      return matchesSearch && matchesCategory && matchesBrand && matchesPrice
+      // 4. MỚI: Lọc theo tình trạng kho (Giả định p.stock là số lượng tồn kho)
+      let matchesStock = true
+      if (stockStatus === 'low') {
+        matchesStock = p.quantityInStock > 0 && p.quantityInStock < 10 // Dưới 10 là Low Stock
+      } else if (stockStatus === 'out') {
+        matchesStock = p.quantityInStock <= 0 // Bằng hoặc dưới 0 là Out Stock
+      }
+
+      return matchesSearch && matchesCategory && matchesBrand && matchesPrice && matchesStock
     })
 
     const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE)
     return {
       items: filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE),
-      totalPages
+      totalPages,
+      totalItems: filtered.length // Trả về để hiện "Showing X products"
     }
-  }, [products, searchTerm, currentPage, selectedCategoryId, selectedBrandId, priceRange])
+  }, [products, searchTerm, currentPage, selectedCategoryId, selectedBrandId, priceRange, stockStatus])
   // --- 5. HANDLERS ---
   const handleOpenCreateModal = () => {
     setSelectedProduct(null)
@@ -193,144 +204,173 @@ export default function BasicTableProduct({ onViewReviews }: BasicTableProductPr
     setCurrentPage(1)
   }
   return (
-    <div className='space-y-8 p-2 max-w-[1600px] mx-auto'>
-      {/* THẺ THỐNG KÊ */}
-      <div className='grid grid-cols-1 sm:grid-cols-3 gap-6'>
-        <StatCard
-          title='Total Products'
-          count={stats.total}
-          color='bg-blue-50 text-blue-600'
-          icon={<Package size={24} />}
-        />
-        <StatCard
-          title='Low Stock'
-          count={stats.lowStock}
-          color='bg-amber-50 text-amber-600'
-          icon={<AlertTriangle size={24} />}
-        />
-        <StatCard
-          title='In Stock'
-          count={stats.active}
-          color='bg-emerald-50 text-emerald-600'
-          icon={<CheckCircle2 size={24} />}
-        />
+    <div className='space-y-6 p-2 max-w-[1600px] mx-auto'>
+      {/* HÀNG THỐNG KÊ NHỎ GỌN (Đặt phía trên cùng) */}
+      <div className='flex flex-wrap items-center gap-y-2 gap-x-5 mb-4'>
+        {/* Total */}
+        <div className='flex items-center gap-2 px-3 py-1.5 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-100 dark:border-gray-800'>
+          <div className='w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]'></div>
+          <span className='text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400'>
+            Total:
+          </span>
+          <span className='text-xs font-bold text-gray-900 dark:text-white'>{stats.total}</span>
+        </div>
+
+        {/* Low Stock */}
+        <div className='flex items-center gap-2 px-3 py-1.5 bg-amber-50/50 dark:bg-amber-500/5 rounded-lg border border-amber-100/50 dark:border-amber-500/10'>
+          <div className='w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse'></div>
+          <span className='text-[10px] font-black uppercase tracking-widest text-amber-600/80 dark:text-amber-400/80'>
+            Low Stock:
+          </span>
+          <span className='text-xs font-bold text-amber-700 dark:text-amber-400'>{stats.lowStock}</span>
+        </div>
+
+        {/* Out of Stock */}
+        <div className='flex items-center gap-2 px-3 py-1.5 bg-rose-50/50 dark:bg-rose-500/5 rounded-lg border border-rose-100/50 dark:border-rose-500/10'>
+          <div className='w-1.5 h-1.5 rounded-full bg-rose-500'></div>
+          <span className='text-[10px] font-black uppercase tracking-widest text-rose-600/80 dark:text-rose-400/80'>
+            Out of Stock:
+          </span>
+          <span className='text-xs font-bold text-rose-700 dark:text-rose-400'>{stats.outOfStock}</span>
+        </div>
       </div>
 
-      {/* THANH CÔNG CỤ (Search & Create) */}
-      {/* THANH CÔNG CỤ (Search & Filters) */}
-      <div className='flex flex-col gap-4 mb-6'>
-        <div className='flex flex-col md:flex-row justify-between items-center gap-6'>
-          {/* Ô Search cũ */}
-          <div className='relative w-full md:w-96 group'>
-            <Search
-              className='absolute left-4 top-3.5 text-gray-400 group-focus-within:text-brand-500 transition-colors'
-              size={20}
-            />
+      {/* SEARCH & CREATE BAR */}
+      <div className='flex flex-col md:flex-row justify-between items-center gap-4'>
+        <div className='relative w-full md:w-[450px] group'>
+          <Search
+            className='absolute left-4 top-3.5 text-gray-400 group-focus-within:text-brand-500 transition-colors'
+            size={18}
+          />
+          <input
+            type='text'
+            placeholder='Search name or code...'
+            className='w-full pl-11 pr-4 py-3 bg-white dark:bg-gray-900 dark:text-white border border-gray-100 dark:border-gray-800 rounded-2xl outline-none focus:ring-2 focus:ring-brand-500 shadow-sm text-sm'
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value)
+              setCurrentPage(1)
+            }}
+          />
+        </div>
+
+        {profile?.role === Role.STORE_STAFF && (
+          <button
+            onClick={handleOpenCreateModal}
+            className='flex items-center gap-2 px-6 py-3 bg-brand-600 text-white rounded-xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-brand-700 shadow-lg shadow-brand-500/20 transition-all active:scale-95'
+          >
+            <Plus size={18} /> Create Product
+          </button>
+        )}
+      </div>
+
+      {/* BỘ LỌC CHI TIẾT */}
+      <div className='flex flex-wrap items-center gap-y-4 gap-x-6 bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm'>
+        {/* Stock Status Filter - MỚI */}
+        <div className='flex items-center gap-3'>
+          <span className='text-[10px] font-black uppercase text-gray-400 tracking-tighter'>Availability:</span>
+          <div className='flex p-1 bg-gray-100 dark:bg-gray-800 rounded-lg gap-1'>
+            {(['all', 'low', 'out'] as const).map((status) => (
+              <button
+                key={status}
+                onClick={() => {
+                  setStockStatus(status)
+                  setCurrentPage(1)
+                }}
+                className={`px-3 py-1.5 rounded-md text-[10px] font-black uppercase transition-all ${
+                  stockStatus === status
+                    ? 'bg-white dark:bg-gray-700 text-brand-600 shadow-sm'
+                    : 'text-gray-400 hover:text-gray-600'
+                }`}
+              >
+                {status === 'all' ? 'All' : status === 'low' ? 'Low' : 'Out'}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Category Filter */}
+        <div className='flex items-center gap-2 border-l border-gray-100 dark:border-gray-800 pl-6'>
+          <span className='text-[10px] font-black uppercase text-gray-400 tracking-tighter'>Category:</span>
+          <select
+            className='bg-transparent dark:text-gray-500 text-xs font-bold outline-none cursor-pointer'
+            value={selectedCategoryId}
+            onChange={(e) => {
+              setSelectedCategoryId(e.target.value)
+              setCurrentPage(1)
+            }}
+          >
+            <option value=''>All Categories</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.categoryName}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Brand Filter */}
+        <div className='flex items-center gap-2 border-l border-gray-100 dark:border-gray-800 pl-6'>
+          <span className='text-[10px] font-black uppercase text-gray-400 tracking-tighter'>Brand:</span>
+          <select
+            className='bg-transparent dark:text-gray-500 text-xs font-bold outline-none cursor-pointer'
+            value={selectedBrandId}
+            onChange={(e) => {
+              setSelectedBrandId(e.target.value)
+              setCurrentPage(1)
+            }}
+          >
+            <option value=''>All Brands</option>
+            {brands.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Price Range */}
+        <div className='flex items-center gap-3 border-l border-gray-100 dark:border-gray-800 pl-6'>
+          <span className='text-[10px] font-black uppercase text-gray-400 tracking-tighter'>Price (VND):</span>
+          <div className='flex items-center gap-2'>
             <input
               type='text'
-              placeholder='Search products...'
-              className='w-full pl-12 pr-4 py-3.5 bg-white dark:bg-gray-900 dark:text-white border border-gray-100 dark:border-gray-800 rounded-2xl outline-none focus:ring-2 focus:ring-brand-500 shadow-sm'
-              value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value)
-                setCurrentPage(1)
-              }}
+              placeholder='From'
+              className='w-20 bg-gray-50 dark:bg-gray-800 border border-transparent focus:border-brand-500 px-2 py-1.5 rounded-lg text-[11px] font-bold outline-none dark:text-gray-300 transition-all'
+              value={priceRange.min}
+              onChange={(e) => handlePriceChange('min', e.target.value)}
+            />
+            <span className='text-gray-300'>-</span>
+            <input
+              type='text'
+              placeholder='To'
+              className='w-20 bg-gray-50 dark:bg-gray-800 border border-transparent focus:border-brand-500 px-2 py-1.5 rounded-lg text-[11px] font-bold outline-none dark:text-gray-300 transition-all'
+              value={priceRange.max}
+              onChange={(e) => handlePriceChange('max', e.target.value)}
             />
           </div>
-
-          {profile?.role === Role.STORE_STAFF && (
-            <button
-              onClick={handleOpenCreateModal}
-              className='w-full md:w-auto flex items-center justify-center gap-2 px-8 py-3.5 bg-brand-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-brand-700 shadow-lg transition-all active:scale-95'
-            >
-              <Plus size={20} /> Create Product
-            </button>
-          )}
         </div>
 
-        {/* HÀNG BỘ LỌC MỚI (Category, Brand, Price) */}
-        <div className='flex flex-wrap items-center gap-4 bg-gray-50/50 dark:bg-white/5 p-4 rounded-2xl border border-gray-100 dark:border-white/5 mb-6'>
-          {/* Filter Category */}
-          <div className='flex items-center gap-2'>
-            <span className='text-[10px] font-black uppercase text-gray-400'>Category:</span>
-            <select
-              className='bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:ring-2 focus:ring-brand-500 dark:text-gray-300'
-              value={selectedCategoryId}
-              onChange={(e) => {
-                setSelectedCategoryId(e.target.value)
-                setCurrentPage(1)
-              }}
-            >
-              <option value=''>All Categories</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.categoryName}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Filter Brand */}
-          <div className='flex items-center gap-2 border-l border-gray-200 dark:border-gray-700 pl-4'>
-            <span className='text-[10px] font-black uppercase text-gray-400'>Brand:</span>
-            <select
-              className='bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:ring-2 focus:ring-brand-500 dark:text-gray-300'
-              value={selectedBrandId}
-              onChange={(e) => {
-                setSelectedBrandId(e.target.value)
-                setCurrentPage(1)
-              }}
-            >
-              <option value=''>All Brands</option>
-              {brands.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Filter Price */}
-          <div className='flex items-center gap-2 border-l border-gray-200 dark:border-gray-700 pl-4'>
-            <span className='text-[10px] font-black uppercase text-gray-400 tracking-wider'>Price Range:</span>
-
-            <div className='flex items-center gap-2 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl px-3 py-1.5 focus-within:ring-2 focus-within:ring-brand-500 transition-all'>
-              {/* Min Price Input */}
-              <input
-                type='text'
-                placeholder='From (VND)'
-                className='w-24 bg-transparent text-xs font-bold outline-none dark:text-gray-300'
-                value={priceRange.min}
-                onChange={(e) => handlePriceChange('min', e.target.value)}
-              />
-
-              <span className='text-gray-300 font-light'>-</span>
-
-              {/* Max Price Input */}
-              <input
-                type='text'
-                placeholder='To (VND)'
-                className='w-24 bg-transparent text-xs font-bold outline-none dark:text-gray-300'
-                value={priceRange.max}
-                onChange={(e) => handlePriceChange('max', e.target.value)}
-              />
-            </div>
-          </div>
-          {/* Reset Button */}
-          {(selectedCategoryId || selectedBrandId || priceRange.min || priceRange.max) && (
-            <button
-              onClick={() => {
-                setSelectedCategoryId('')
-                setSelectedBrandId('')
-                setPriceRange({ min: '', max: '' })
-                setSearchTerm('')
-              }}
-              className='ml-auto text-[10px] font-black text-rose-500 hover:text-rose-600 uppercase tracking-tighter transition-colors'
-            >
-              Clear All
-            </button>
-          )}
-        </div>
+        {/* Clear All */}
+        {(selectedCategoryId ||
+          selectedBrandId ||
+          priceRange.min ||
+          priceRange.max ||
+          stockStatus !== 'all' ||
+          searchTerm) && (
+          <button
+            onClick={() => {
+              setSelectedCategoryId('')
+              setSelectedBrandId('')
+              setPriceRange({ min: '', max: '' })
+              setSearchTerm('')
+              setStockStatus('all')
+            }}
+            className='ml-auto flex items-center gap-1 text-[10px] font-black text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 px-3 py-1.5 rounded-lg uppercase tracking-widest transition-all'
+          >
+            <RotateCcw size={12} /> Reset
+          </button>
+        )}
       </div>
 
       {/* BẢNG SẢN PHẨM */}

@@ -88,6 +88,7 @@ export default function VariationModal({
     }
 
     onSave({ ...form, id: isEditing ? variation?.id : undefined })
+    refetch()
   }
 
   const title = isCreating ? 'Create New Variation' : isEditing ? 'Edit Variation' : 'Variation Details'

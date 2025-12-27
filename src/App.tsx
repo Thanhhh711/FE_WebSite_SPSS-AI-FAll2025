@@ -52,6 +52,7 @@ import Videos from './pages/UiElements/Videos'
 import UserProfiles from './pages/UserProfiles'
 import { ErrorBoundary } from './utils/ErrorBoundary'
 import BasicTableHoliday from './components/tables/BasicTables/BasicTableHoliday'
+import BasicTablesTransaction from './pages/Tables/BasicTablesTransaction'
 
 const BasicTables = lazy(() => import('./pages/Tables/BasicTables'))
 
@@ -82,7 +83,7 @@ export default function App() {
 
             <Route path={AppPath.BASIC_TABLES_COUNTRIES} element={<BasicTablesCountries />} />
             <Route path={AppPath.BASIC_TABLES_VOUCHER} element={<BasicTablesVoucher />} />
-
+            <Route path={AppPath.BASIC_TABLES_TRANSACTION} element={<BasicTablesTransaction />} />
             <Route
               path={AppPath.BASIC_TABLES_SKINCONDITION}
               element={

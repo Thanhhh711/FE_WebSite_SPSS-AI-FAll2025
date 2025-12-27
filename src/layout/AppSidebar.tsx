@@ -121,6 +121,12 @@ const navItems: NavItem[] = [
         allowedRoles: [Role.ADMIN, Role.STORE_STAFF]
       },
       {
+        name: 'Transaction',
+
+        path: AppPath.BASIC_TABLES_TRANSACTION,
+        allowedRoles: [Role.ADMIN]
+      },
+      {
         name: 'Slot',
 
         path: AppPath.BASIC_TABLES_SLOT,

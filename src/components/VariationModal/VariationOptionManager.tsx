@@ -43,6 +43,7 @@ export default function VariationOptionManager({
       toast.success('Option added successfully!')
       setNewOptionValue('')
       invalidateParentQuery()
+      refetch()
     },
     onError: (error: any) => {
       toast.error(error.data?.message || 'Error creating option.')
