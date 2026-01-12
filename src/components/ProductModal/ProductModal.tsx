@@ -171,19 +171,19 @@ export default function ProductModal({ isOpen, onClose, product, onSave, isViewM
   const [imagePreviews, setImagePreviews] = useState<string[]>([])
   const [selectedVideoFile, setSelectedVideoFile] = useState<File | null>(null)
   const [isUploading, setIsUploading] = useState(false)
-  const [errors, setErrors] = useState<Partial<Record<keyof ProductFormState, string>>>({})
+  const [errors] = useState<Partial<Record<keyof ProductFormState, string>>>({})
 
-  const validateForm = () => {
-    const newErrors: any = {}
+  // const validateForm = () => {
+  //   const newErrors: any = {}
 
-    if (!form.name.trim()) newErrors.name = 'Product name is required'
-    if (form.price <= 0) newErrors.price = 'Price must be greater than 0'
-    if (form.quantityInStock < 0) newErrors.quantityInStock = 'Quantity cannot be negative'
-    if (form.description.length < 10) newErrors.description = 'Description must be at least 10 characters'
+  //   if (!form.name.trim()) newErrors.name = 'Product name is required'
+  //   if (form.price <= 0) newErrors.price = 'Price must be greater than 0'
+  //   if (form.quantityInStock < 0) newErrors.quantityInStock = 'Quantity cannot be negative'
+  //   if (form.description.length < 10) newErrors.description = 'Description must be at least 10 characters'
 
-    setErrors(newErrors) // Cập nhật state errors để UI hiển thị
-    return Object.keys(newErrors).length === 0
-  }
+  //   setErrors(newErrors) // Cập nhật state errors để UI hiển thị
+  //   return Object.keys(newErrors).length === 0
+  // }
 
   useEffect(() => {
     if (detailedProductData) {
