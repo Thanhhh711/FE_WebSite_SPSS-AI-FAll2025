@@ -171,6 +171,19 @@ export default function ProductModal({ isOpen, onClose, product, onSave, isViewM
   const [imagePreviews, setImagePreviews] = useState<string[]>([])
   const [selectedVideoFile, setSelectedVideoFile] = useState<File | null>(null)
   const [isUploading, setIsUploading] = useState(false)
+  const [errors, setErrors] = useState<Partial<Record<keyof ProductFormState, string>>>({})
+
+  const validateForm = () => {
+    const newErrors: any = {}
+
+    if (!form.name.trim()) newErrors.name = 'Product name is required'
+    if (form.price <= 0) newErrors.price = 'Price must be greater than 0'
+    if (form.quantityInStock < 0) newErrors.quantityInStock = 'Quantity cannot be negative'
+    if (form.description.length < 10) newErrors.description = 'Description must be at least 10 characters'
+
+    setErrors(newErrors) // Cập nhật state errors để UI hiển thị
+    return Object.keys(newErrors).length === 0
+  }
 
   useEffect(() => {
     if (detailedProductData) {
@@ -263,7 +276,7 @@ export default function ProductModal({ isOpen, onClose, product, onSave, isViewM
   }
 
   const handleSave = async () => {
-    if (!validateProductForm(form)) return
+    if (!validateProductForm(form, selectedImageFiles)) return
 
     const needsUpload = selectedImageFiles.length > 0 || selectedVideoFile !== null
     if (needsUpload) {
@@ -326,7 +339,6 @@ export default function ProductModal({ isOpen, onClose, product, onSave, isViewM
       }
 
       onSave(dataToSave)
-
       setSelectedImageFiles([])
       setImagePreviews([])
       setSelectedVideoFile(null)
@@ -362,6 +374,7 @@ export default function ProductModal({ isOpen, onClose, product, onSave, isViewM
         <ProductFormFields
           product={product ? product : null}
           form={form}
+          errors={errors}
           handleChange={handleChange}
           handleImageFileChange={handleImageFileChange}
           handleVideoFileChange={handleVideoFileChange}

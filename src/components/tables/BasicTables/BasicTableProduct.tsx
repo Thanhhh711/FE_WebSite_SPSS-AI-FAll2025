@@ -97,7 +97,22 @@ export default function BasicTableProduct({ onViewReviews }: BasicTableProductPr
       setSelectedProduct(null)
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || 'Something went wrong!')
+      // Parse lỗi Product (400 / 422) và toast chỉ ở đây
+      const data = error?.response?.data
+      let message = 'Something went wrong!'
+
+      if (data?.errors) {
+        if (Array.isArray(data.errors)) {
+          message = data.errors.join('\n')
+        } else if (typeof data.errors === 'object') {
+          message = Object.values(data.errors).flat().join('\n')
+        }
+      } else if (data?.message) {
+        message = data.message
+      }
+
+      toast.error(message)
+      console.log('Product error:', message)
     }
   })
 

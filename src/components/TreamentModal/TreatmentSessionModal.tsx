@@ -69,10 +69,18 @@ export default function TreatmentSessionModal({
 
   const queryClient = useQueryClient()
 
-  const { data: roomsResponse } = useQuery({
-    queryKey: ['rooms'],
-    queryFn: roomApi.getRooms,
-    staleTime: 1000 * 60 * 5
+  const { data: roomsResponse, isFetching: isRoomsLoading } = useQuery({
+    queryKey: ['availableRooms', form.sessionDate, form.startTime, form.endTime],
+    queryFn: () =>
+      roomApi.getRoomsAvailable({
+        startDate: form.sessionDate,
+        endDate: form.sessionDate, // Vì đây là session đơn lẻ nên start/end date giống nhau
+        startTime: form.startTime,
+        endTime: form.endTime
+      }),
+    // Chỉ kích hoạt khi có đủ ngày và giờ, và đang ở chế độ Create (hoặc tùy bạn cho phép Edit)
+    enabled: !!form.sessionDate && !!form.startTime && !!form.endTime && isOpen && !isEditing,
+    staleTime: 0 // Reset liên tục để đảm bảo tính khả dụng
   })
 
   // Thêm API vào treatmentPlanApi nếu chưa có (theo file bạn cung cấp ở trên)
@@ -438,8 +446,8 @@ export default function TreatmentSessionModal({
                 onChange={handleChange}
                 className={baseInputClass}
                 required
-                readOnly={isFieldsLocked}
-                disabled={isFieldsLocked}
+                readOnly={isFieldsLocked || isEditing}
+                disabled={isFieldsLocked || isEditing}
               />
             </div>
             {/* End Time */}
@@ -459,35 +467,40 @@ export default function TreatmentSessionModal({
               />
             </div>
             {/* Room */}
+            {/* Room */}
             <div>
-              <label className='mb-1.5 block text-sm font-medium text-gray-700'>Room</label>
+              <label className='mb-1.5 block text-sm font-medium text-gray-700'>
+                Room {isRoomsLoading && <span className='text-brand-500 text-xs'>(Checking...)</span>}
+              </label>
               <select
                 name='roomId'
                 value={form.roomId}
                 onChange={handleChange}
-                className={baseInputClass}
+                className={`${baseInputClass} ${!isRoomsLoading && currentRoomDisplayName.length === 0 && !isEditing ? 'border-red-500' : ''}`}
                 required
-                // Khóa trường Room nếu: (1) Ở chế độ Create và đã có Schedule được chọn, HOẶC (2) Ở chế độ Edit
-                // disabled={isFieldsLocked}
-                disabled={isFieldsLocked || isEditing}
+                // Khóa trường Room nếu đang load, hoặc đã có schedule cố định, hoặc đang edit
+                disabled={isRoomsLoading || isFieldsLocked || isEditing}
               >
-                {/* Trong chế độ Edit, vì trường Room bị disabled, 
-                  chúng ta sẽ chỉ hiển thị option của Room hiện tại để đảm bảo giá trị đúng 
-                */}
                 {isEditing && currentRoom ? (
                   <option value={currentRoom.id}>{currentRoomDisplayName}</option>
                 ) : (
                   <>
-                    <option value=''>Select Room</option>
+                    <option value=''>{isRoomsLoading ? 'Loading available rooms...' : 'Select Room'}</option>
                     {roomsResponse?.data.data.map((room) => (
                       <option key={room.id} value={room.id}>
-                        {/* Hiển thị Room Name / Location (hoặc Floor Number) cho chế độ Create */}
-                        {room.roomName}/ {room.location} (Floor {room.floorNumber})
+                        {room.roomName} - Floor {room.floorNumber}
                       </option>
                     ))}
                   </>
                 )}
               </select>
+              {!isRoomsLoading &&
+                !isEditing &&
+                form.sessionDate &&
+                form.startTime &&
+                roomsResponse?.data.data.length === 0 && (
+                  <p className='mt-1 text-[10px] text-red-500 font-medium'>No rooms available for this time slot.</p>
+                )}
             </div>
           </div>
 

@@ -16,12 +16,28 @@ interface AssignRoomModalProps {
 }
 
 export default function AssignRoomModal({ isOpen, onClose, onAssign }: AssignRoomModalProps) {
-  // Lấy danh sách Phòng
-  const { data: roomsQuery } = useQuery({
-    queryKey: ['allRoomsForAssignment'],
-    queryFn: roomApi.getRooms
+  // Trạng thái Form
+  const [formData, setFormData] = useState({
+    roomId: '',
+    staffId: '',
+    startDate: new Date().toISOString().split('T')[0],
+    endDate: new Date().toISOString().split('T')[0],
+    startTime: '08:00', // Giá trị mặc định hoặc để trống
+    endTime: '17:00' // Giá trị mặc định hoặc để trống
   })
-
+  // Lấy danh sách Phòng
+  const { data: roomsQuery, isFetching: isRoomsLoading } = useQuery({
+    queryKey: ['availableRooms', formData.startDate, formData.endDate, formData.startTime, formData.endTime],
+    queryFn: () =>
+      roomApi.getRoomsAvailable({
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        startTime: formData.startTime,
+        endTime: formData.endTime
+      }),
+    enabled: !!formData.startDate && !!formData.endDate && isOpen, // Chỉ gọi khi modal mở và có đủ ngày
+    placeholderData: (previousData) => previousData // Giữ dữ liệu cũ trong khi load dữ liệu mới để UI không bị giật
+  })
   // Lấy danh sách Nhân viên (Beauty Advisor)
   const { data: staffQuery } = useQuery({
     queryKey: ['beatyAdvisors'],
@@ -30,14 +46,6 @@ export default function AssignRoomModal({ isOpen, onClose, onAssign }: AssignRoo
 
   const availableRooms: Room[] = roomsQuery?.data.data || []
   const staffList: User[] = staffQuery?.data.data || [] // Giả định User[]
-
-  // Trạng thái Form
-  const [formData, setFormData] = useState<BookingPayload>({
-    roomId: '',
-    staffId: '',
-    startDate: new Date().toISOString().split('T')[0], // Mặc định là ngày hiện tại
-    endDate: new Date().toISOString().split('T')[0] // Mặc định là ngày hiện tại
-  })
 
   // State quản lý lỗi (tuỳ chọn)
   const [errors, setErrors] = useState<Partial<Record<keyof BookingPayload, string>>>({})
@@ -97,28 +105,57 @@ export default function AssignRoomModal({ isOpen, onClose, onAssign }: AssignRoo
   const baseInputClass =
     'w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm text-gray-800 dark:text-white/90'
   const errorClass = 'mt-1 text-xs text-red-500'
-  const getInputClass = (fieldName: keyof BookingPayload) => {
-    return `${baseInputClass} ${errors[fieldName] ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'focus:border-brand-500 focus:ring-1 focus:ring-brand-500'}`
-  }
+  // const getInputClass = (fieldName: keyof BookingPayload) => {
+  //   return `${baseInputClass} ${errors[fieldName] ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'focus:border-brand-500 focus:ring-1 focus:ring-brand-500'}`
+  // }
 
   // Thay thế div modal nội bộ bằng ModalRegistration component
   return (
     <ModalRegistration isOpen={isOpen} onClose={onClose} title='Assign Room to Staff'>
       <form onSubmit={handleSubmit} className='p-6 space-y-4'>
+        {/* Date Selection First - Vì phòng phụ thuộc vào ngày */}
+        <div className='grid grid-cols-2 gap-4'>
+          <div>
+            <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>Start Date *</label>
+            <input
+              type='date'
+              name='startDate'
+              value={formData.startDate}
+              onChange={handleChange}
+              className={baseInputClass}
+              required
+            />
+          </div>
+          <div>
+            <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>End Date *</label>
+            <input
+              type='date'
+              name='endDate'
+              value={formData.endDate}
+              onChange={handleChange}
+              className={baseInputClass}
+              required
+            />
+          </div>
+        </div>
+
         {/* Room Selection */}
         <div>
           <label htmlFor='roomId' className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>
-            Room Name *
+            Available Room * {isRoomsLoading && <span className='text-blue-500 text-xs'>(Updating...)</span>}
           </label>
           <select
             id='roomId'
             name='roomId'
             value={formData.roomId}
             onChange={handleChange}
-            className={getInputClass('roomId')}
+            className={`${baseInputClass} ${errors.roomId ? 'border-red-500' : ''}`}
             required
+            disabled={isRoomsLoading}
           >
-            <option value=''>--- Select a Room ---</option>
+            <option value=''>
+              {isRoomsLoading ? 'Loading available rooms...' : '--- Select an Available Room ---'}
+            </option>
             {availableRooms.map((room) => (
               <option key={room.id} value={room.id}>
                 {`${room.roomName} (${room.location} - Floor ${room.floorNumber})`}
@@ -126,6 +163,9 @@ export default function AssignRoomModal({ isOpen, onClose, onAssign }: AssignRoo
             ))}
           </select>
           {errors.roomId && <p className={errorClass}>{errors.roomId}</p>}
+          {!isRoomsLoading && availableRooms.length === 0 && (
+            <p className='mt-1 text-xs text-amber-600'>No rooms available for the selected dates.</p>
+          )}
         </div>
 
         {/* Staff Selection */}
@@ -138,68 +178,30 @@ export default function AssignRoomModal({ isOpen, onClose, onAssign }: AssignRoo
             name='staffId'
             value={formData.staffId}
             onChange={handleChange}
-            className={getInputClass('staffId')}
+            className={baseInputClass}
             required
           >
             <option value=''>--- Select a Staff ---</option>
             {staffList.map((staff) => (
-              // Giả định User có userId và emailAddress
               <option key={staff.userId} value={staff.userId}>
                 {staff.surName && staff.firstName ? `${staff.surName} ${staff.firstName}` : staff.userId}
               </option>
             ))}
           </select>
-          {errors.staffId && <p className={errorClass}>{errors.staffId}</p>}
-        </div>
-
-        {/* Start Date & End Date (Gộp lại) */}
-        <div className='grid grid-cols-2 gap-4'>
-          {/* Start Date */}
-          <div>
-            <label htmlFor='startDate' className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>
-              Start Date *
-            </label>
-            <input
-              type='date'
-              id='startDate'
-              name='startDate'
-              value={formData.startDate}
-              onChange={handleChange}
-              className={getInputClass('startDate')}
-              required
-            />
-            {errors.startDate && <p className={errorClass}>{errors.startDate}</p>}
-          </div>
-
-          {/* End Date */}
-          <div>
-            <label htmlFor='endDate' className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>
-              End Date *
-            </label>
-            <input
-              type='date'
-              id='endDate'
-              name='endDate'
-              value={formData.endDate}
-              onChange={handleChange}
-              className={getInputClass('endDate')}
-              required
-            />
-            {errors.endDate && <p className={errorClass}>{errors.endDate}</p>}
-          </div>
         </div>
 
         <div className='flex justify-end gap-3 pt-2 border-t border-gray-100 dark:border-gray-800'>
           <button
             type='button'
             onClick={onClose}
-            className='px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-400 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors'
+            className='px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300'
           >
             Cancel
           </button>
           <button
             type='submit'
-            className='px-4 py-2.5 text-sm font-medium text-white bg-brand-500 rounded-lg shadow-brand-xs hover:bg-brand-600 transition-colors'
+            disabled={isRoomsLoading}
+            className='px-4 py-2.5 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 disabled:opacity-50'
           >
             Confirm Assignment
           </button>

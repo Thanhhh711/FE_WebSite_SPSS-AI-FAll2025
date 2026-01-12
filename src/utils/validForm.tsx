@@ -4,7 +4,8 @@ import { toast } from 'react-toastify'
 import { ProductFormState } from '../components/ProductModal/ProductFormFields'
 import { ProductForm } from '../types/product.type'
 
-export const validateProductForm = (form: ProductFormState): boolean => {
+// Thêm tham số selectedImageFiles để check ảnh mới chọn
+export const validateProductForm = (form: ProductFormState, selectedImageFiles: File[] = []): boolean => {
   const requiredFields: (keyof ProductFormState)[] = [
     'name',
     'englishName',
@@ -27,6 +28,7 @@ export const validateProductForm = (form: ProductFormState): boolean => {
     'variationOptionIds'
   ]
 
+  // 1. Validate các field text/number/array mặc định
   for (const field of requiredFields) {
     const value = form[field]
 
@@ -44,6 +46,14 @@ export const validateProductForm = (form: ProductFormState): boolean => {
       toast.error(`Please select at least one value for ${field}`)
       return false
     }
+  }
+
+  // 2. Validate Hình ảnh (MỚI)
+  // Kiểm tra: form.images (ảnh cũ) và selectedImageFiles (ảnh mới chọn)
+  const totalImages = form.images.length + selectedImageFiles.length
+  if (totalImages === 0) {
+    toast.error('Please upload at least one product image')
+    return false
   }
 
   return true

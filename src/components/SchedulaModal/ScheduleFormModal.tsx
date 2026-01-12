@@ -61,22 +61,54 @@ const ScheduleFormModal: React.FC<ScheduleFormModalProps> = ({
   // --- DATA FETCHING FUNCTIONS ---
 
   // Hàm lấy danh sách phòng
-  const fetchRooms = async () => {
+  // 1. Sửa lại hàm fetchRooms để nhận tham số date, start, end
+  const fetchRooms = async (date: string, start: string, end: string) => {
+    if (!date || !start || !end) return
+
     setIsRoomLoading(true)
     try {
-      const response = await roomApi.getRooms()
+      // Gọi API getRoomsAvailable với các thuộc tính từ giao diện
+      const response = await roomApi.getRoomsAvailable({
+        startDate: date,
+        endDate: date, // Trong Schedule thường start/end cùng 1 ngày
+        startTime: start,
+        endTime: end
+      })
       const rooms = response.data.data || []
       setRoomList(rooms)
-      if (rooms.length > 0 && formData.roomId === '') {
-        setFormData((prev) => ({ ...prev, roomId: rooms[0].id }))
+
+      // Nếu phòng hiện tại đang chọn không còn trống ở thời gian mới, hãy reset nó
+      if (rooms.length > 0 && !rooms.find((r) => r.id === formData.roomId)) {
+        if (!isEditMode) setFormData((prev) => ({ ...prev, roomId: rooms[0].id }))
+      } else if (rooms.length === 0) {
+        setFormData((prev) => ({ ...prev, roomId: '' }))
       }
     } catch (error) {
-      console.error('Error fetching room list:', error)
-      showToast('Failed to load room list.', 'error')
+      console.error('Error fetching available rooms:', error)
+      showToast('Failed to load available rooms.', 'error')
     } finally {
       setIsRoomLoading(false)
     }
   }
+
+  // 2. Thêm một useEffect để tự động gọi lại fetchRooms khi người dùng thay đổi ngày hoặc giờ
+  useEffect(() => {
+    if (visible && !isEditMode) {
+      fetchRooms(formData.shiftDate, formData.startTime, formData.endTime)
+    }
+  }, [formData.shiftDate, formData.startTime, formData.endTime, visible])
+
+  // 3. Trong useEffect khởi tạo (Initial Data Loading), bỏ fetchRooms() cũ đi
+  useEffect(() => {
+    if (visible) {
+      fetchStaff()
+      // Nếu ở chế độ Edit, có thể vẫn cần fetchRooms() cũ hoặc danh sách toàn bộ để hiển thị đúng phòng cũ
+      if (isEditMode) {
+        roomApi.getRooms().then((res) => setRoomList(res.data.data || []))
+      }
+      // ... logic setFormData cho EditMode giữ nguyên
+    }
+  }, [visible, isEditMode, scheduleToEdit])
 
   // Hàm lấy danh sách Staff (Beauty Advisors)
   const fetchStaff = async () => {
@@ -147,7 +179,7 @@ const ScheduleFormModal: React.FC<ScheduleFormModalProps> = ({
   useEffect(() => {
     if (visible) {
       // Fetch static data lists
-      fetchRooms()
+      // fetchRooms()
       fetchStaff()
       //   fetchSlots()
 

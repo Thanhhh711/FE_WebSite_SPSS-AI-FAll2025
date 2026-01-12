@@ -40,6 +40,7 @@ interface ProductFormFieldsProps {
   brandOptions: SelectOption[]
   categoryOptions: SelectOption[]
   product: Product | null
+  errors: Partial<Record<keyof ProductFormState, string>>
 }
 
 const baseInputClass =
@@ -183,7 +184,8 @@ export default function ProductFormFields({
   variationOptions,
   brandOptions,
   categoryOptions,
-  product
+  product,
+  errors
 }: ProductFormFieldsProps) {
   // --- VIEW MODE --- (Hiển thị tĩnh, không có controls)
 
@@ -191,7 +193,7 @@ export default function ProductFormFields({
   const [categoryName, setCategoryName] = useState('')
   const isModalOpen = currentImageIndex !== -1
   const currentImageUrl = isModalOpen ? form.images[currentImageIndex]?.imageUrl : ''
-  const [errors] = useState<Partial<Record<keyof ProductFormState, string>>>({})
+  // const [errors, setErrors] = useState<Partial<Record<keyof ProductFormState, string>>>({})
   // --- 2. HÀM XỬ LÝ SỰ KIỆN ---
 
   const openImage = (clickedImage: Image) => {
@@ -604,6 +606,7 @@ export default function ProductFormFields({
           isRequired={true}
           handleChange={handleChange}
           isViewMode={isViewMode}
+          error={errors.description}
         />
         <Field
           id='mainFunction'
