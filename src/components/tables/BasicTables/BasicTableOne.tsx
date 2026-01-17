@@ -489,7 +489,7 @@ export default function BasicTableUsers() {
               <button
                 disabled={currentPage === 1}
                 onClick={() => setCurrentPage((prev) => prev - 1)}
-                className='p-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl disabled:opacity-30 shadow-sm transition-all hover:border-brand-500 hover:text-brand-500'
+                className='p-2.5 bg-white dark:text-slate-400 dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-2xl disabled:opacity-30 shadow-sm transition-all hover:border-brand-500 hover:text-brand-500 '
               >
                 <svg className='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
                   <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M15 19l-7-7 7-7' />
@@ -498,7 +498,7 @@ export default function BasicTableUsers() {
               <button
                 disabled={currentPage === totalPages}
                 onClick={() => setCurrentPage((prev) => prev + 1)}
-                className='p-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl disabled:opacity-30 shadow-sm transition-all hover:border-brand-500 hover:text-brand-500'
+                className='p-2.5 bg-white dark:text-slate-400 dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-2xl disabled:opacity-30 shadow-sm transition-all hover:border-brand-500 hover:text-brand-500'
               >
                 <svg className='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
                   <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M9 5l7 7-7 7' />

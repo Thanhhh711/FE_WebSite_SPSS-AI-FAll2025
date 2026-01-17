@@ -29,6 +29,7 @@ export enum AppPath {
   BASIC_TABLES_SKINTYPE = '/basic-tables-skin-type',
   BASIC_TABLES_VARIATION = '/basic-tables-variation',
   BASIC_TABLES_TRANSACTION = '/basic-tables-transaction',
+  BASIC_TABLES_RECORD = '/basic-tables-record',
 
   //PRODUCT
   DETAIL_PRODUCT = '/product-detail',

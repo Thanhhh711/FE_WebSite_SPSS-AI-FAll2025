@@ -4,6 +4,7 @@ import { SystermUserForm, User, UserForm } from '../types/user.type'
 import http from '../utils/http'
 
 export const USERS = 'users'
+export const ROLE = 'role'
 export const ACCOUNT = 'account'
 const userApi = {
   getUsers: () => http.get<SuccessResponse<User[]>>(`${USERS}`),
@@ -25,6 +26,8 @@ const userApi = {
 
   changeRole: (userId: string, roleId: string) => http.patch(`${USERS}/${userId}/assign-role`, { roleId }),
 
-  getBeatyAdvisor: () => http.get<SuccessResponse<User[]>>(`${ACCOUNT}/beauty-advisor`)
+  getBeatyAdvisor: () => http.get<SuccessResponse<User[]>>(`${ACCOUNT}/beauty-advisor`),
+
+  getCustomersByRoleName: () => http.get<SuccessResponse<User[]>>(`${USERS}/${ROLE}/Customer`)
 }
 export default userApi

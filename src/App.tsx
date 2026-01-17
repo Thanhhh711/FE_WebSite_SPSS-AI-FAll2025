@@ -53,6 +53,7 @@ import UserProfiles from './pages/UserProfiles'
 import { ErrorBoundary } from './utils/ErrorBoundary'
 import BasicTableHoliday from './components/tables/BasicTables/BasicTableHoliday'
 import BasicTablesTransaction from './pages/Tables/BasicTablesTransaction'
+import BasicTableRecord from './components/tables/BasicTables/BasicTableRecord'
 
 const BasicTables = lazy(() => import('./pages/Tables/BasicTables'))
 
@@ -150,6 +151,7 @@ export default function App() {
         {/* === Only SKINCARE SPECIALIST === */}
         <Route element={<ProtectedRoute allowedRoles={[Role.BEAUTY_ADVISOR]} userRole={userRole} />}>
           <Route element={<AppLayout />}>
+            <Route path={AppPath.BASIC_TABLES_RECORD} element={<BasicTableRecord />} />
             <Route path={AppPath.PATIENTS} element={<BasicTablesPatients />} />
 
             {/* <Route path={AppPath.BASIC_TABLES_REGISTRATION} element={<BasicTableRegistration />} /> */}

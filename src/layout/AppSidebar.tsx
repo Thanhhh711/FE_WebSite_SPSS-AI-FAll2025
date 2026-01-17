@@ -146,6 +146,7 @@ const navItems: NavItem[] = [
         path: AppPath.BASIC_TABLES_SHEDULES,
         allowedRoles: [Role.SCHEDULE_MANAGER, Role.ADMIN, Role.BEAUTY_ADVISOR]
       },
+      { name: 'Record', path: AppPath.BASIC_TABLES_RECORD, pro: false, allowedRoles: [Role.BEAUTY_ADVISOR] },
 
       {
         name: 'Holidays',
