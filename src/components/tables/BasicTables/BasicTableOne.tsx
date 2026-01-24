@@ -160,8 +160,9 @@ export default function BasicTableUsers() {
     const allUsers = usersResponse?.data || []
     return allUsers.filter((user) => {
       if (user.roleName === RoleEnum.ADMIN) return false
+      const fullName = `${user.firstName} ${user.surName}`.toLowerCase()
       const matchesSearch =
-        user.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        fullName.includes(searchTerm.toLowerCase()) ||
         user.emailAddress.toLowerCase().includes(searchTerm.toLowerCase())
       const matchesRole = selectedRoleFilter === 'All' || user.roleName === selectedRoleFilter
       return matchesSearch && matchesRole
@@ -405,7 +406,9 @@ export default function BasicTableUsers() {
                           />
                         </div>
                         <div>
-                          <p className='font-bold text-gray-900 dark:text-white leading-tight'>{user.userName}</p>
+                          <p className='font-bold text-gray-900 dark:text-white leading-tight'>
+                            {user.firstName} {user.surName}
+                          </p>
                           <p className='text-[11px] text-gray-500 font-medium mt-0.5'>{user.emailAddress}</p>
                         </div>
                       </div>

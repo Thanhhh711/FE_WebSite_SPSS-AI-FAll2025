@@ -1,4 +1,4 @@
-import { SkinCondition, SkinConditionForm, SkinType, SkinTypeForm } from '../types/skin.type'
+import { SkinCondition, SkinConditionForm, SkinProfile, SkinType, SkinTypeForm } from '../types/skin.type'
 import http from '../utils/http'
 import { SuccessResponse } from '../utils/utils.type'
 
@@ -30,4 +30,10 @@ export const skinTypeApi = {
   updateSkinType: (id: string, body: SkinTypeForm) => http.put<SuccessResponse<SkinType>>(`${SKIN_TYPES}/${id}`, body),
 
   deleteSkinType: (id: string) => http.delete<SuccessResponse<null>>(`${SKIN_TYPES}/${id}`)
+}
+
+const SKIN_PROFILES = 'skin-profiles'
+
+export const skinProfileApi = {
+  getSkinProfileByUserId: (id: string) => http.get<SuccessResponse<SkinProfile>>(`${SKIN_PROFILES}/${id}`)
 }

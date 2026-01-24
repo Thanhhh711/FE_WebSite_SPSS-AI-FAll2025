@@ -130,7 +130,7 @@ export default function UserInfoCard({
         </div>
 
         {/* Date of Birth */}
-        <div>
+        {/* <div>
           <Label>Date of Birth</Label>
           {isEditing ? (
             <input
@@ -143,7 +143,7 @@ export default function UserInfoCard({
           ) : (
             <p className='mt-1 font-medium'>{user.doB ? new Date(user.doB).toLocaleDateString() : 'N/A'}</p>
           )}
-        </div>
+        </div> */}
       </div>
 
       {/* SECTION: Professional Expertise (Chỉ hiện cho Expert/Admin/BA) */}

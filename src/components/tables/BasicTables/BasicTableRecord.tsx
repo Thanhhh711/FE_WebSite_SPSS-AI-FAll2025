@@ -33,9 +33,10 @@ export default function BasicTableRecord() {
   const filteredData = useMemo(() => {
     const allUsers = usersResponse?.data || []
     return allUsers.filter((user) => {
-      if (user.roleName === 'Admin') return false
+      if (user.roleName === Role.ADMIN) return false
+      const fullName = `${user.firstName} ${user.surName}`.toLowerCase()
       const matchesSearch =
-        user.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        fullName.includes(searchTerm.toLowerCase()) ||
         user.emailAddress.toLowerCase().includes(searchTerm.toLowerCase())
       const matchesRole = selectedRoleFilter === 'All' || user.roleName === selectedRoleFilter
       return matchesSearch && matchesRole
@@ -155,7 +156,10 @@ export default function BasicTableRecord() {
                             alt='profile'
                           />
                           <div>
-                            <p className='font-bold text-slate-900 dark:text-white'>{user.userName}</p>
+                            <p className='font-bold text-slate-900 dark:text-white'>
+                              {user.firstName}
+                              {user.surName}
+                            </p>
                             <p className='text-xs text-slate-500 font-medium'>{user.emailAddress}</p>
                           </div>
                         </div>

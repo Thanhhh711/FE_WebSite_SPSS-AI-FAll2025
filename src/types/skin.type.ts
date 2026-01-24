@@ -30,3 +30,25 @@ export interface SkinTypeForm {
   name: string
   description: string
 }
+
+export interface SkinProfile {
+  id: string
+  skinTypeId: string
+  skinTypeName: string
+  age: number
+  gender: 'male' | 'female' | 'other'
+  livingEnvironment: number
+  climateRegion: number
+  humidityLevel: number
+  uvIndex: number
+  pollutionLevel: number
+  skinHistory: string
+  dailyRoutine: string
+  waterIntake: string
+  stressLevel: string
+  diet: string
+  exerciseFrequency: string
+  sleepHabit: string
+  allergy: string
+  sensitivities: string
+}

@@ -13,6 +13,8 @@ import { uploadFile } from '../utils/supabaseStorage'
 import UserAddressCard from '../components/UserProfile/UserAddressCard'
 import { ClipboardList, FileText } from 'lucide-react'
 import { AppPath } from '../constants/Paths'
+import { skinProfileApi } from '../api/skin.api'
+import { useQuery } from '@tanstack/react-query'
 
 export default function UserProfiles() {
   const { id } = useParams<{ id: string }>()
@@ -23,7 +25,7 @@ export default function UserProfiles() {
   const isMyProfile = myAccount?.userId === id
   const isBAViewingExpert = myAccount?.role === Role.BEAUTY_ADVISOR
   const isAdmin = myAccount?.role === Role.ADMIN
-
+  const isCustomer = userData?.userId === id && userData?.roleName === Role.CUSTOMER
   const fetchUser = async () => {
     if (!id) return
     try {
@@ -36,6 +38,13 @@ export default function UserProfiles() {
       toast.error('Failed to load user information')
     }
   }
+
+  const { data: skinData } = useQuery({
+    queryKey: ['skin-profile', id],
+    queryFn: () => skinProfileApi.getSkinProfileByUserId(id as string),
+    enabled: !!id && isCustomer,
+    gcTime: 0
+  })
 
   useEffect(() => {
     fetchUser()
@@ -136,6 +145,7 @@ export default function UserProfiles() {
 
       <UserMetaCard
         user={userData}
+        skinProfile={skinData?.data.data}
         isEditing={isEditing}
         isMyProfile={isMyProfile}
         onAvatarChange={(file) =>
